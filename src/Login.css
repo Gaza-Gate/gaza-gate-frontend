@@ -1,0 +1,137 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  direction: rtl;
+  min-height: 100vh;
+  background-color: #fff7ed;
+}
+
+/* ── المنتصف ── */
+.lp-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+    background-color: #f7e1c8;
+}
+
+/* ── الكارد الأبيض ── */
+.lp-card {
+  width: 100%;
+  max-width: 580px;      /* كانت 460px */
+  background: #ffffff;   /* عكس اللون — برتقالي */
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.13);
+  padding: 2.8rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── الهيدر ── */
+.lp-header { text-align: right; margin-bottom: 1.8rem; }
+.lp-header h1 { font-size: 1.6rem; font-weight: 700; color: #111827; margin-bottom: 0.3rem; }
+.lp-header p  { font-size: 0.88rem; color: #6b7280; }
+
+/* ── الفورم ── */
+.lp-form { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.lp-field { display: flex; flex-direction: column; gap: 5px; }
+.lp-field label { font-size: 0.85rem; font-weight: 500; color: #374151; }
+
+.lp-input-wrap { position: relative; }
+.lp-input-wrap input {
+  width: 100%;
+  padding: 11px 14px 11px 40px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #111827;
+  direction: rtl;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+.lp-input-wrap input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+}
+.lp-input-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  display: flex; align-items: center;
+  background: none; border: none;
+  cursor: pointer; padding: 0;
+}
+
+/* ── تذكرني + نسيت ── */
+.lp-opts { display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; }
+.lp-remember { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #6b7280; cursor: pointer; }
+.lp-remember input { accent-color: #f97316; width: 15px; height: 15px; }
+.lp-forgot { background: none; border: none; font-size: 0.85rem; color: #f97316; cursor: pointer; font-family: inherit; padding: 0; }
+.lp-forgot:hover { text-decoration: underline; }
+
+/* ── رسائل ── */
+.lp-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; text-align: center; margin-top: 0.3rem; }
+.lp-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; text-align: center; margin-top: 0.3rem; }
+
+/* ── زر الدخول ── */
+.lp-btn-submit {
+  width: 100%; padding: 13px;
+  background: #FE6D00; color: #000000;
+  border: none; border-radius: 12px;
+  font-size: 1rem; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 0.4rem;
+}
+.lp-btn-submit:hover:not(:disabled) { background: #ea6c0a; }
+.lp-btn-submit:active:not(:disabled) { transform: scale(0.98); }
+.lp-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.lp-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── فاصل ── */
+.lp-divider { display: flex; align-items: center; gap: 10px; color: #d1d5db; font-size: 0.8rem; margin: 1.4rem 0; }
+.lp-divider::before, .lp-divider::after { content: ""; flex: 1; height: 1px; background: #e5e7eb; }
+
+/* ── سوشيال ── */
+.lp-socials {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.4rem;
+}
+.lp-social-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #111827;
+  font-weight: 500;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.lp-social-btn:hover { background: #f9fafb; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+/* ── إنشاء حساب ── */
+.lp-signup { font-size: 0.85rem; color: #6b7280; text-align: center; }
+.lp-signup a { color: #f97316; font-weight: 500; text-decoration: none; }
+.lp-signup a:hover { text-decoration: underline; }
+
+@media (max-width: 520px) {
+  .lp-card { padding: 2rem 1.3rem; }
+}
