@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "./assets/logo.png";
-
+import logo from "../assets/logo.png";
 export default function SplashScreen() {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(true);

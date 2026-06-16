@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ForgotPassword.css";
- 
+import { validateEmail, validateResetPasswordForm } from "../utils/validators";
+
 function Steps({ current }) {
   return (
     <div className="fp-steps">
@@ -25,9 +26,8 @@ function StepEmail({ onNext }) {
 
   const handle = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("أدخل بريداً إلكترونياً صحيحاً"); return;
-    }
+    const err = validateEmail(email);
+    if (err) { setError(err); return; }
     setError(""); setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
@@ -172,12 +172,9 @@ function StepNewPassword({ resetToken, onDone }) {
 
   const handle = async (e) => {
     e.preventDefault();
-    if (pass.length < 8) { setError("كلمة المرور يجب أن تكون 8 أحرف على الأقل"); return; }
-    if (!/[A-Z]/.test(pass)) { setError("يجب أن تحتوي على حرف كبير"); return; }
-    if (!/[a-z]/.test(pass)) { setError("يجب أن تحتوي على حرف صغير"); return; }
-    if (!/[0-9]/.test(pass)) { setError("يجب أن تحتوي على رقم"); return; }
-    if (!/[^A-Za-z0-9]/.test(pass)) { setError("يجب أن تحتوي على رمز مثل @ # $"); return; }
-    if (pass !== confirm) { setError("كلمتا المرور غير متطابقتين"); return; }
+    const errs = validateResetPasswordForm({ newPassword: pass, confirmPassword: confirm });
+    if (errs.password) { setError(errs.password); return; }
+    if (errs.confirmPassword) { setError(errs.confirmPassword); return; }
     setError(""); setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/auth/reset-password", {

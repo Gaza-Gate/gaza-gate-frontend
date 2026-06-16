@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./Login";
-import ForgotPassword from "./ForgotPassword";
-import SplashScreen from "./SplashScreen";
+import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import SplashScreen from "./pages/SplashScreen";
 import Onboarding from "./pages/Onboarding"
 // import Dashboard from "./pages/Dashboard"
 import Register from "./pages/Register"
