@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Editstoreprofile.css";
 import { validateName, validateStoreName, validateStoreDescription } from "../utils/validators";
+import { updateStoreProfile, getAuthToken } from "../services/authService";
 
 // ── Icons ──
 const StoreIcon = () => (
@@ -124,23 +125,18 @@ export default function EditStoreProfile() {
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setLoading(true);
     setSuccess("");
-    try {
-      const res = await fetch("http://localhost:5000/api/seller/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
+ try {
+      const token = getAuthToken();
+      await updateStoreProfile(
+        {
           storeName: form.storeName,
           storeDescription: form.storeDescription,
           city: form.city,
           fullName: form.fullName,
           phone: form.phone,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+        },
+        token
+      );
       setSuccess("تم حفظ التغييرات بنجاح ✅");
     } catch (err) {
       setErrors({ general: err.message });

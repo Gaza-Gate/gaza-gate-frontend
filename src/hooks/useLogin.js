@@ -1,25 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+ import { loginSeller, forgotPassword } from "../services/authService";
  
 // ================================================================
 //  useLogin.js — كل منطق تسجيل الدخول هون
 // ================================================================
 
-const BASE_URL = "http://localhost:5000";
- 
-async function loginWithEmail(email, password) {
-  const res = await fetch(`http://localhost:5000/api/auth/seller/local/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "حدث خطأ");
-  return data;
-}
-  
-    
- 
 export function useLogin() {
   const navigate = useNavigate();
   const [email, setEmail]       = useState("");
@@ -50,10 +36,11 @@ export function useLogin() {
     if (err) { setError(err); return; }
     setLoading(true);
     try {
-      const data = await loginWithEmail(email, password);
+      // الاعتماد على دالة authService وتمرير البيانات لها
+     const data = await loginSeller(email, password);
       (remember ? localStorage : sessionStorage).setItem("token", data.token);
       setSuccess(`أهلاً ${data.user.name}! جاري تحويلك... ✅`);
-       navigate("/dashboard")  
+      navigate("/dashboard");  
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,13 +52,8 @@ export function useLogin() {
     if (!email.trim()) { setError("أدخل بريدك أولاً"); return; }
     setError(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+      // الاعتماد على دالة authService وتمرير البريد لها
+      await forgotPassword(email);
       setSuccess("تم إرسال رابط الاستعادة على بريدك ✅");
     } catch (err) {
       setError(err.message);

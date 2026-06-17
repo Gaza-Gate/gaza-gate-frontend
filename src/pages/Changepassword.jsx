@@ -2,16 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Changepassword.css";
 import { validatePassword, validateConfirmPassword } from "../utils/validators";
+import { changePassword, getAuthToken } from "../services/authService";
 
 // ── Icons ──
 const BackArrow = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="15 18 9 12 15 6" />
+    <polyline points="9 18 15 12 9 6" />
   </svg>
 );
 
 const ShieldIcon = () => (
-  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#9ca3af" strokeWidth="1.8">
+  <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#9ca3af" strokeWidth="1.8">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
@@ -24,7 +25,7 @@ const LockIcon = () => (
 );
 
 const TipsIcon = () => (
-  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#374151" strokeWidth="2">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#f97316" strokeWidth="2">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
@@ -121,23 +122,16 @@ export default function ChangePassword() {
 
     setLoading(true);
     setSuccess("");
-    try {
-      const res = await fetch("http://localhost:5000/api/seller/change-password", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            localStorage.getItem("token") || sessionStorage.getItem("token")
-          }`,
-        },
-        body: JSON.stringify({
+try {
+      const token = getAuthToken();
+      await changePassword(
+        {
           currentPassword: form.currentPassword,
           newPassword: form.newPassword,
           confirmPassword: form.confirmPassword,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+        },
+        token
+      );
       setSuccess("تم تحديث كلمة المرور بنجاح");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
@@ -151,7 +145,7 @@ export default function ChangePassword() {
     <div className="cp-wrapper">
       <div className="cp-container">
 
-        {/* Breadcrumb */}
+        {/* Breadcrumb — aligned to the right as in the screenshot */}
         <button className="cp-breadcrumb" onClick={() => navigate(-1)}>
           العودة للملف الشخصي
           <BackArrow />
@@ -169,8 +163,8 @@ export default function ChangePassword() {
         {/* Tips */}
         <div className="cp-tips">
           <div className="cp-tips-title">
-            نصائح لكلمة مرور قوية:
             <TipsIcon />
+            نصائح لكلمة مرور قوية:
           </div>
           <ul>
             <li>• استخدم 6 أحرف على الأقل</li>
@@ -222,7 +216,7 @@ export default function ChangePassword() {
             </div>
           )}
 
-          {/* Actions */}
+          {/* Actions: submit (right) | cancel (left) — matches screenshot */}
           <div className="cp-actions">
             <button type="submit" className="cp-btn-submit" disabled={loading}>
               {loading ? <span className="cp-spinner" /> : <LockIcon />}

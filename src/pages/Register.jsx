@@ -1,6 +1,7 @@
  import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { validateRegisterForm } from "../utils/validators"
+import { registerSeller } from "../services/authService"
 
 export default function Register() {
   const navigate = useNavigate()
@@ -17,7 +18,6 @@ export default function Register() {
     setForm(prev => ({ ...prev, [name]: value }))
     setErrors(prev => ({ ...prev, [name]: "" }))
   }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validateRegisterForm(form)
@@ -25,21 +25,15 @@ export default function Register() {
 
     setLoading(true)
     try {
-      const res = await fetch("http://localhost:5000/api/auth/seller/local/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          password: form.password,
-          confirmPassword: form.confirmPassword,
-          storeName: form.storeName,
-          storeDescription: form.storeDescription,
-        }),
+    await registerSeller({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        storeName: form.storeName,
+        storeDescription: form.storeDescription,
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "حدث خطأ")
       navigate("/login")
     } catch (err) {
       setErrors({ general: err.message })
@@ -47,8 +41,7 @@ export default function Register() {
       setLoading(false)
     }
   }
-
-  return (
+    return (
     <div className="min-h-screen bg-orange-100 flex items-center justify-center p-6" dir="rtl">
       <div className="bg-white rounded-2xl shadow-md p-10 w-full max-w-md">
         <div className="text-center mb-6">

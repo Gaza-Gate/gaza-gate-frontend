@@ -1,8 +1,17 @@
-import React, { useState } from "react";
+ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ForgotPassword.css";
 import { validateEmail, validateResetPasswordForm } from "../utils/validators";
+import { forgotPassword, resendVerificationCode, verifyResetCode, resetPassword } from "../services/authService";
 
+  const EyeIcon = ({ open }) => (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#9ca3af" strokeWidth="2">
+      {open
+        ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+        : <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>
+      }
+    </svg>
+  );
 function Steps({ current }) {
   return (
     <div className="fp-steps">
@@ -19,7 +28,7 @@ function Steps({ current }) {
 }
 
 function StepEmail({ onNext }) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,13 +39,7 @@ function StepEmail({ onNext }) {
     if (err) { setError(err); return; }
     setError(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+      await forgotPassword(email);
       onNext(email);
     } catch (err) {
       setError(err.message);
@@ -90,13 +93,7 @@ function StepOTP({ email, onNext }) {
 
   const handleResend = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/resend-verification-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+      await resendVerificationCode(email);
       setError("");
       alert("تم إعادة إرسال الرمز ✅");
     } catch (err) {
@@ -109,13 +106,7 @@ function StepOTP({ email, onNext }) {
     if (otp.some((d) => !d)) { setError("أدخل الرمز كاملاً"); return; }
     setError(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/verify-reset-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: otp.join("") }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+      const data = await verifyResetCode(email, otp.join(""));
       onNext(otp.join(""), data.resetToken);
     } catch (err) {
       setError(err.message);
@@ -161,14 +152,6 @@ function StepNewPassword({ resetToken, onDone }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const EyeIcon = ({ open }) => (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#9ca3af" strokeWidth="2">
-      {open
-        ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
-        : <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>
-      }
-    </svg>
-  );
 
   const handle = async (e) => {
     e.preventDefault();
@@ -177,13 +160,7 @@ function StepNewPassword({ resetToken, onDone }) {
     if (errs.confirmPassword) { setError(errs.confirmPassword); return; }
     setError(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resetToken, newPassword: pass, confirmPassword: confirm }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+      await resetPassword(resetToken, pass, confirm);
       onDone();
     } catch (err) {
       setError(err.message);
@@ -230,7 +207,7 @@ function StepNewPassword({ resetToken, onDone }) {
 }
 
 export default function ForgotPassword() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [resetToken, setResetToken] = useState("");
