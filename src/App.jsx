@@ -5,6 +5,9 @@ import SplashScreen from "./pages/SplashScreen";
 import Onboarding from "./pages/Onboarding"
 // import Dashboard from "./pages/Dashboard"
 import Register from "./pages/Register"
+import EditStoreProfile from "./pages/EditStoreProfile";
+import ChangePassword from "./pages/ChangePassword";
+
 
  
 
@@ -20,6 +23,8 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" />} />
         {/* <Route path="/dashboard" element={<Dashboard />} /> */}
         <Route path="/register" element={<Register />} />
+        <Route path="/seller/profile/edit" element={<EditStoreProfile />} />
+         <Route path="/seller/account/password" element={<ChangePassword />} />
       </Routes>
     </BrowserRouter>
   );
