@@ -24,7 +24,7 @@ const steps = [
   },
 ]
 
-export default function Onboarding() {
+export default function SellerOnboarding() {
   const [current, setCurrent] = useState(0)
   const navigate = useNavigate()
 

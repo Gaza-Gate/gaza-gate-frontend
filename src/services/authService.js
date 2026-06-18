@@ -38,3 +38,32 @@ export async function changePassword(passwordData, token) {
 export async function updateStoreProfile(profileData, token) {
   return request("/api/seller/profile", profileData, token, "PUT");
 }
+
+export async function sellerGoogleLogin(googleToken) {
+  return request("/api/auth/seller/google", { token: googleToken }, null, "POST");
+}
+export async function resendVerificationCode(email) {
+  return request("/api/auth/resend-verification", { email });
+}
+
+
+export async function verifyResetCode(email, code) {
+  return request("/api/auth/verify-reset-code", { email, code });
+}
+
+export async function resetPassword(resetToken, newPassword, confirmPassword) {
+  return request("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
+}
+
+
+export async function getConversations(token) {
+  return request("/api/seller/conversations", undefined, token, "GET");
+}
+
+export async function getMessages(conversationId, token) {
+  return request(`/api/seller/conversations/${conversationId}/messages`, undefined, token, "GET");
+}
+
+export async function sendMessage(conversationId, text, token) {
+  return request(`/api/seller/conversations/${conversationId}/messages`, { text }, token);
+}
