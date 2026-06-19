@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,3 +36,8 @@ html, body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-up { animation: fadeUp .4s ease both; }
+=======
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+>>>>>>> 8bf8847a9bc241688e56f5486eae3cc236a004d0
