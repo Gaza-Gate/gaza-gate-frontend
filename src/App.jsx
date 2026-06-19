@@ -16,7 +16,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/onboarding" element={<SellerOnboarding />} />
+        <Route path="
+        
+        " element={<SellerOnboarding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="*" element={<Navigate to="/" />} />
