@@ -6,6 +6,8 @@ import InputField from '../components/InputField'
 import OAuthButtons from '../components/OAuthButtons'
 import { customerRegisterSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
+import { useGoogleLogin } from '@react-oauth/google'
+import { customerGoogleLogin } from '../services/authService'
 
 export default function RegisterCustomer() {
   const navigate = useNavigate()
@@ -28,6 +30,21 @@ export default function RegisterCustomer() {
       setSubmitting(false)
     }
   }
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const data = await customerGoogleLogin(tokenResponse.access_token)
+        console.log(data)
+        navigate('/dashboard/customer')
+      } catch (err) {
+        console.log(err)
+      }
+    },
+    onError: () => {
+      console.log('فشل تسجيل الدخول بجوجل')
+    }
+  })
 
   return (
     <FormCard>
@@ -52,7 +69,7 @@ export default function RegisterCustomer() {
         )}
       </Formik>
       <Divider />
-      <OAuthButtons />
+      <OAuthButtons onGoogle={() => handleGoogleLogin()} />
       <FooterLink text="ليوجد عندك حساب؟" linkText="تسجيل دخول" to="/login/customer" />
     </FormCard>
   )
