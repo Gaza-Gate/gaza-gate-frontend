@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Changepassword.css";
+import "./ChangePassword.css";
 import { validatePassword, validateConfirmPassword } from "../utils/validators";
 import { changePassword, getAuthToken } from "../services/authService";
 
