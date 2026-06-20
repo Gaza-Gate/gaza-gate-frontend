@@ -1,76 +1,76 @@
-// ================================================================
-//  authService.js
-//  All API calls related to authentication live here.
-//  To connect your real backend:
-//    1. Replace BASE_URL with your actual API URL
-//    2. Remove the mock delay / mock response block
-//    3. The rest of the code stays the same
-// ================================================================
- 
-const BASE_URL = "https://api.example.com";
- 
-// ----------------------------------------------------------------
-//  Helper: wrap every fetch call with consistent error handling
-// ----------------------------------------------------------------
-async function request(endpoint, body) {
-  // 🔧 If your backend needs extra headers (e.g. API key), add them here:
+const BASE_URL = import.meta.env.VITE_API_URL || "https://gaza-gate-backend.onrender.com";
+
+async function request(endpoint, body, token = null, method = "POST") {
   const headers = {
     "Content-Type": "application/json",
-    // "X-Api-Key": "YOUR_API_KEY_HERE",
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
- 
-  // ── MOCK: simulates a network delay (DELETE this block when using real API) ──
-  await new Promise((resolve) => setTimeout(resolve, 1200));
- 
-  if (body.email === "test@test.com" && body.password === "123456") {
-    // ── MOCK: successful login response ──
-    return {
-      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.MOCK_TOKEN",
-      user: { id: 1, name: "صاحب المتجر", email: body.email },
-    };
-  } else {
-    // ── MOCK: failed login ──
-    throw new Error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-  }
-  // ── END MOCK ──────────────────────────────────────────────────
- 
-  // ✅ REAL API call (uncomment when ready):
-  // const res = await fetch(`${BASE_URL}${endpoint}`, {
-  //   method: "POST",
-  //   headers,
-  //   body: JSON.stringify(body),
-  // });
-  // const data = await res.json();
-  // if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
-  // return data;
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    method,
+    headers,
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
+  return data;
 }
- 
-// ----------------------------------------------------------------
-//  loginUser — email + password login
-//  Returns: { token: string, user: object }
-//
-//  After getting `token`, store it and attach it to future requests:
-//    localStorage.setItem("token", data.token)
-//    Authorization: `Bearer ${token}`   ← add this header to protected routes
-// ----------------------------------------------------------------
-export async function loginUser(email, password) {
-  return request("/auth/login", { email, password });
+
+export function getAuthToken() {
+  return localStorage.getItem("token") || sessionStorage.getItem("token");
 }
- 
-// ----------------------------------------------------------------
-//  forgotPassword
-//  Returns: { message: string }
-// ----------------------------------------------------------------
+
+export async function loginSeller(email, password) {
+  return request("/api/auth/seller/local/login", { email, password });
+}
+
+export async function registerSeller(formData) {
+  return request("/api/auth/seller/local/register", formData);
+}
+
 export async function forgotPassword(email) {
-  return request("/auth/forgot-password", { email });
+  return request("/api/auth/forgot-password", { email });
 }
- 
-// ----------------------------------------------------------------
-//  socialLogin — Google / Facebook / Apple
-//  @param provider  "google" | "facebook" | "apple"
-//  @param token     access token from the provider's SDK
-//  Returns: { token: string, user: object }
-// ----------------------------------------------------------------
-export async function socialLogin(provider, token) {
-  return request("/auth/social", { provider, token });
+
+export async function changePassword(passwordData, token) {
+  return request("/api/seller/change-password", passwordData, token, "PUT");
+}
+
+export async function updateStoreProfile(profileData, token) {
+  return request("/api/seller/profile", profileData, token, "PUT");
+}
+
+export async function sellerGoogleLogin(googleToken) {
+  return request("/api/auth/seller/google", { token: googleToken }, null, "POST");
+}
+
+export async function customerGoogleLogin(googleToken) {
+  return request("/api/auth/customer/google", { token: googleToken }, null, "POST");
+}
+
+export async function resendVerificationCode(email) {
+  return request("/api/auth/resend-verification", { email });
+}
+
+
+export async function verifyResetCode(email, code) {
+  return request("/api/auth/verify-reset-code", { email, code });
+}
+
+export async function resetPassword(resetToken, newPassword, confirmPassword) {
+  return request("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
+}
+
+
+export async function getConversations(token) {
+  return request("/api/seller/conversations", undefined, token, "GET");
+}
+
+
+
+export async function getMessages(conversationId, token) {
+  return request(`/api/seller/conversations/${conversationId}/messages`, undefined, token, "GET");
+}
+
+export async function sendMessage(conversationId, text, token) {
+  return request(`/api/seller/conversations/${conversationId}/messages`, { text }, token);
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
@@ -6,6 +6,8 @@ import InputField from '../components/InputField'
 import OAuthButtons from '../components/OAuthButtons'
 import { sellerRegisterSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
+import { useGoogleLogin } from '@react-oauth/google'
+import { sellerGoogleLogin } from '../services/authService'
 
 export default function RegisterSeller() {
   const navigate = useNavigate()
@@ -30,6 +32,21 @@ export default function RegisterSeller() {
       setSubmitting(false)
     }
   }
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const data = await sellerGoogleLogin(tokenResponse.access_token)
+        console.log(data)
+        navigate('/seller/onboarding')
+      } catch (err) {
+        console.log(err)
+      }
+    },
+    onError: () => {
+      console.log('فشل تسجيل الدخول بجوجل')
+    }
+  })
 
   return (
     <FormCard>
@@ -56,7 +73,7 @@ export default function RegisterSeller() {
         )}
       </Formik>
       <Divider />
-      <OAuthButtons />
+      <OAuthButtons onGoogle={() => handleGoogleLogin()} />
       <FooterLink text="عندك حساب؟" linkText="تسجيل دخول" to="/login/seller" />
     </FormCard>
   )

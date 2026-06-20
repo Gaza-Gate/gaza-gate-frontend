@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-import { useNavigate } from 'react-router-dom'
+ import { useNavigate } from 'react-router-dom'
 import SellerIllustration from '../assets/SellerIllustration'
 import BuyerIllustration from '../assets/BuyerIllustration'
 
@@ -31,77 +30,26 @@ export default function Onboarding() {
         أهلا بك في منصة بوابة غزة
       </h1>
       <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', width: '100%', maxWidth: 800 }}>
-        <PortalCard
-          title="بوابة البائع"
-          description="أدر منتجاتك، تتبع مبيعاتك، ونمّ عملك."
-          illustration={<SellerIllustration />}
-          fillLabel="أنشئ متجري"
-          outlineLabel="تسجيل دخول"
-          onFill={() => navigate('/register/seller')}
-          onOutline={() => navigate('/login/seller')}
-        />
-        <PortalCard
-          title="بوابة المشتري"
-          description="تسوق، تتبع طلباتك، وتواصل مع البائعين."
-          illustration={<BuyerIllustration />}
-          fillLabel="أنشئ حسابي"
-          outlineLabel="تسجيل دخول"
-          onFill={() => navigate('/register/customer')}
-          onOutline={() => navigate('/login/customer')}
-        />
+          <PortalCard
+        title="بوابة البائع"
+        description="أدر منتجاتك، تتبع مبيعاتك، ونمّ عملك."
+        illustration={<SellerIllustration />}
+        fillLabel="أنشئ متجري"
+        outlineLabel="تسجيل دخول"
+        onFill={() => navigate('/seller/onboarding')}
+        onOutline={() => navigate('/seller/onboarding')}
+      />
+            <PortalCard
+        title="بوابة المشتري"
+        description="تسوق، تتبع طلباتك، وتواصل مع البائعين."
+        illustration={<BuyerIllustration />}
+        fillLabel="أنشئ حسابي"
+        outlineLabel="تسجيل دخول"
+        onFill={() => navigate('/onboarding/customer')}
+        onOutline={() => navigate('/onboarding/customer')}
+      />
       </div>
       <style>{`@media(max-width:600px){.onboarding-grid{grid-template-columns:1fr!important}}`}</style>
     </div>
   )
 }
-=======
- import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import OnboardingStep from "../components/OnboardingStep";
-import { Store, TrendingUp, Users } from "lucide-react"
-
-const steps = [
-  {
-    badge: "بائع",
-    title: "بيتك متجرك",
-    desc: "حول خبرتك إلى متجر رقمي يصل لزبائن في كل مكان.",
-    icon: Store,
-  },
-  {
-    badge: "داشبورد",
-    title: "تحكّم بمبيعاتك",
-    desc: "لوحة تحكم بسيطة لإدارة طلباتك ومنتجاتك وأرباحك في مكان واحد.",
-    icon: TrendingUp,
-  },
-  {
-    badge: "مجتمع",
-    title: "مع مجتمعك",
-    desc: "انضم لآلاف البائعين الناجحين في منطقتك وابدأ رحلتك.",
-    icon: Users,
-  },
-]
-
-export default function Onboarding() {
-  const [current, setCurrent] = useState(0)
-  const navigate = useNavigate()
-
-  const handleNext = () => {
-    if (current < steps.length - 1) setCurrent(current + 1)
-     else navigate("/login") // أو أي صفحة بعد الأونبوردينج
-  }
-
-   const handleSkip = () => navigate("/login")
-
-  return (
-    <div className="min-h-screen bg-orange-50 flex items-center justify-center p-6" dir="rtl">
-      <OnboardingStep
-        step={steps[current]}
-        current={current}
-        total={steps.length}
-        onNext={handleNext}
-        onSkip={handleSkip}
-      />
-    </div>
-  )
-}
->>>>>>> 8bf8847a9bc241688e56f5486eae3cc236a004d0
