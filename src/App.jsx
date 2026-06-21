@@ -14,8 +14,13 @@ import SellerOnboarding from './pages/SellerOnboarding'
 import EditStoreProfile from './pages/EditStoreProfile'
 import ChangePassword   from './pages/ChangePassword'
 import Messages         from './pages/Messages'
+import OrdersManagement from "./pages/OrdersManagement";
+import OrderDetails from "./pages/OrderDetails";
+import RatingsManagement from "./pages/RatingsManagement";
+import NotificationsPage from "./pages/NotificationsPage";
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import StoreProfile from "./pages/StoreProfile";
 
 export default function App() {
 
@@ -42,9 +47,16 @@ export default function App() {
       <Route path="/seller/profile/edit"    element={<EditStoreProfile />} />
       <Route path="/seller/account/password" element={<ChangePassword />} />
       <Route path="/seller/messages"        element={<Messages />} />
+      <Route path="/store-profile" element={<StoreProfile />} />
+      <Route path="/seller/orders" element={<OrdersManagement />} />
+      <Route path="/seller/orders/:id" element={<OrderDetails />} />
+      <Route path="/seller/ratings" element={<RatingsManagement />} />
+      <Route path="/seller/notifications" element={<NotificationsPage />} />
+
 
       {/* أي رابط غير موجود يتم توجيهه للبداية */}
       <Route path="*" element={<Navigate to="/" replace />} />
+     
 
     </Routes>
 
