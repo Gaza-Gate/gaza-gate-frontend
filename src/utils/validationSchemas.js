@@ -66,3 +66,12 @@ export const resetPasswordSchema = Yup.object({
     .required('تأكيد كلمة المرور مطلوب')
     .oneOf([Yup.ref('newPassword')], 'كلمتا المرور غير متطابقتين'),
 })
+
+
+export const sellerRegisterGoogleSchema = Yup.object({
+  firstName: Yup.string().required('الاسم الأول مطلوب'),
+  lastName: Yup.string().required('الاسم الثاني مطلوب'),
+  email: Yup.string().email('بريد غير صالح').required('البريد مطلوب'),
+  storeName: Yup.string().required('اسم المتجر مطلوب'),
+  storeDescription: Yup.string(),
+})

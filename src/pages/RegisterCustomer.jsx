@@ -23,7 +23,7 @@ export default function RegisterCustomer() {
         password: values.password,
         confirmPassword: values.confirmPassword,
       })
-      navigate('/verify-email', { state: { email: values.email } })
+      navigate('/verify-otp', { state: { email: values.email } })
     } catch (err) {
       setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {

@@ -1,7 +1,8 @@
- import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./RatingsManagement.css";
 import logo from "../assets/logo.png";
+import SellerNavbar from "../components/SellerNavbar";
 
 // ── Icons ──
 const StarIcon = ({ filled }) => (
@@ -173,74 +174,8 @@ const RatingsManagement = () => {
 
   return (
     <div className="rm-root" dir="rtl">
-      {/* Navbar */}
-      <nav className="rm-navbar">
-        <div className="rm-nav-logo">
-          <img src={logo} alt="Gaza Gate" className="rm-logo-img" />
-        </div>
-        <div className="rm-nav-links">
-          <a href="#" className="rm-nav-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-            </svg>
-            لوحة التحكم
-          </a>
-          <a href="#" className="rm-nav-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-            المنتجات
-          </a>
-          <a href="#" className="rm-nav-link" onClick={() => navigate("/seller/profile")}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            ملف المتجر
-          </a>
-          <div className="rm-dropdown" ref={moreRef}>
-            <button type="button" className="rm-nav-link rm-dropdown-trigger" onClick={() => setMoreOpen((p) => !p)}>
-              المزيد
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={moreOpen ? "rm-chevron-open" : ""}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {moreOpen && (
-              <div className="rm-dropdown-menu">
-                <a href="#" className="rm-dropdown-item" onClick={(e) => { e.preventDefault(); setMoreOpen(false); navigate("/seller/orders"); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                    <line x1="3" y1="6" x2="21" y2="6"/>
-                    <path d="M16 10a4 4 0 0 1-8 0"/>
-                  </svg>
-                  الطلبات
-                </a>
-                <a href="#" className="rm-dropdown-item" onClick={(e) => { e.preventDefault(); setMoreOpen(false); navigate("/seller/ratings"); }}>
-                  <StarIcon filled />
-                  التقييمات
-                </a>
-                <a href="#" className="rm-dropdown-item" onClick={(e) => { e.preventDefault(); setMoreOpen(false); navigate("/seller/messages"); }}>
-                  <ReplyIcon />
-                  المراسلات
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="rm-nav-left">
-          <button className="rm-btn-notif">
-            <BellIcon />
-            <span className="rm-notif-dot"></span>
-          </button>
-          <button className="rm-btn-logout" onClick={() => navigate("/login")}>
-            <span>خروج</span>
-            <LogoutIcon />
-          </button>
-        </div>
-      </nav>
+      
+       <SellerNavbar />
 
       <main className="rm-main">
 

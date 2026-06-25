@@ -40,15 +40,15 @@ export async function updateStoreProfile(profileData, token) {
 }
 
 export async function sellerGoogleLogin(googleToken) {
-  return request("/api/auth/seller/google", { token: googleToken }, null, "POST");
-}
+  return request("/api/auth/seller/google/login", { token: googleToken }, null, "POST");
+ }
 
 export async function customerGoogleLogin(googleToken) {
   return request("/api/auth/customer/google", { token: googleToken }, null, "POST");
 }
 
 export async function resendVerificationCode(email) {
-  return request("/api/auth/resend-verification", { email });
+  return request("/api/auth/resend-verification-code", { email });
 }
 
 
@@ -74,3 +74,16 @@ export async function getMessages(conversationId, token) {
 export async function sendMessage(conversationId, text, token) {
   return request(`/api/seller/conversations/${conversationId}/messages`, { text }, token);
 }
+
+export async function verifyEmail(email, code) {
+  return request("/api/auth/verify-email", { email, code });
+}
+export async function sellerGoogleRegister(googleToken) {
+  return request("/api/auth/seller/google/register/init", { token: googleToken })
+}
+
+export async function sellerGoogleRegisterComplete(data) {
+  return request("/api/auth/seller/google/register/complete", data)
+}
+
+ 

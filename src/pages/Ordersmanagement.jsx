@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./OrdersManagement.css";
 import logo from "../assets/logo.png";
+import SellerNavbar from "../components/SellerNavbar";
+
 
 // ── Icons ──
 const EyeIcon = () => (
@@ -80,104 +82,8 @@ const OrdersManagement = () => {
 
   return (
     <div className="om-root" dir="rtl">
-      {/* Navbar */}
-      <nav className="om-navbar">
-        <div className="om-nav-logo">
-          <img src={logo} alt="Gaza Gate" className="om-logo-img" />
-        </div>
-        <div className="om-nav-links">
-          <a href="#" className="om-nav-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-            </svg>
-            لوحة التحكم
-          </a>
-          <a href="#" className="om-nav-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-            المنتجات
-          </a>
-          <a href="#" className="om-nav-link" onClick={() => navigate("/seller/profile")}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            ملف المتجر
-          </a>
-          <div className="om-dropdown" ref={moreRef}>
-            <button
-              type="button"
-              className="om-nav-link om-dropdown-trigger"
-              onClick={() => setMoreOpen((prev) => !prev)}
-            >
-              المزيد
-              <svg
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                className={moreOpen ? "om-chevron-open" : ""}
-              >
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {moreOpen && (
-              <div className="om-dropdown-menu">
-                <a
-                  href="#"
-                  className="om-dropdown-item"
-                  onClick={(e) => { e.preventDefault(); setMoreOpen(false); navigate("/seller/orders"); }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                    <line x1="3" y1="6" x2="21" y2="6"/>
-                    <path d="M16 10a4 4 0 0 1-8 0"/>
-                  </svg>
-                  الطلبات
-                </a>
-                <a
-                  href="#"
-                  className="om-dropdown-item"
-                  onClick={(e) => { e.preventDefault(); setMoreOpen(false); navigate("/seller/ratings"); }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                  </svg>
-                  التقييمات
-                </a>
-                <a
-                  href="#"
-                  className="om-dropdown-item"
-                  onClick={(e) => { e.preventDefault(); setMoreOpen(false); navigate("/seller/messages"); }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                  المراسلات
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="om-nav-left">
-          <button className="om-btn-notif">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <span className="om-notif-dot"></span>
-          </button>
-          <button className="om-btn-logout" onClick={() => navigate("/login")}>
-            <span>خروج</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </div>
-      </nav>
+      
+     <SellerNavbar />
 
       <main className="om-main">
 

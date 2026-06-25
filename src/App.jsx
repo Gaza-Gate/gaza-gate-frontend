@@ -1,6 +1,7 @@
  import { Routes, Route, Navigate } from 'react-router-dom'
 
 // تحديث مسارات الاستيراد لتكون من المجلد الحالي أو المجلدات المباشرة
+import Dashboard from './pages/Dashboard'
 import SplashScreen     from './pages/SplashScreen'
 import Onboarding       from './pages/Onboarding'
 import BuyerOnboarding  from './pages/BuyerOnboarding'
@@ -18,9 +19,11 @@ import OrdersManagement from "./pages/OrdersManagement";
 import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
+import VerifyOTP from "./pages/VerifyOTP";
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
+import ProductsList from "./pages/ProductsList";
 
 export default function App() {
 
@@ -43,15 +46,20 @@ export default function App() {
       <Route path="/forgot-password"      element={<ForgotPassword />} />
 
       {/* مسارات البائع الإضافية */}
+       <Route path="/seller/dashboard" element={<Dashboard />} />
       <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
       <Route path="/seller/profile/edit"    element={<EditStoreProfile />} />
       <Route path="/seller/account/password" element={<ChangePassword />} />
       <Route path="/seller/messages"        element={<Messages />} />
       <Route path="/store-profile" element={<StoreProfile />} />
       <Route path="/seller/orders" element={<OrdersManagement />} />
+      <Route path="/seller/products" element={<ProductsList />} />
       <Route path="/seller/orders/:id" element={<OrderDetails />} />
       <Route path="/seller/ratings" element={<RatingsManagement />} />
       <Route path="/seller/notifications" element={<NotificationsPage />} />
+      <Route path="/verify-otp" element={<VerifyOTP />} />
+       
+     
 
 
       {/* أي رابط غير موجود يتم توجيهه للبداية */}
@@ -61,4 +69,8 @@ export default function App() {
     </Routes>
 
   )
-}
+}  
+ 
+
+ 
+ 

@@ -36,10 +36,10 @@ export function useLogin() {
     if (err) { setError(err); return; }
     setLoading(true);
     try {
-      const data = await loginSeller(email, password);
-      (remember ? localStorage : sessionStorage).setItem("token", data.token);
-      setSuccess(`أهلاً ${data.user.name}! جاري تحويلك... ✅`);
-      navigate("/dashboard");
+    const result = await loginSeller(email, password);
+      (remember ? localStorage : sessionStorage).setItem("token", result.data.accessToken);
+      setSuccess(`أهلاً ${result.data.user.name}! جاري تحويلك... ✅`);
+      setTimeout(() => navigate("/dashboard"), 1000);
     } catch (err) {
       setError(err.message);
     } finally {

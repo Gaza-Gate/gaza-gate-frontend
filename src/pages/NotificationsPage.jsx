@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./NotificationsPage.css";
 import logo from "../assets/logo.png";
+import SellerNavbar from "../components/SellerNavbar";
 
 // ── Icons ──
 const BellIcon = () => (
@@ -110,70 +111,8 @@ export default function NotificationsPage() {
 
   return (
     <div className="np-root" dir="rtl">
-
-      {/* ── Navbar ── */}
-      <nav className="np-navbar">
-        <div className="np-nav-logo">
-          <img src={logo} alt="Gaza Gate" className="np-logo-img" />
-        </div>
-
-        <div className="np-nav-links">
-          <a href="#" className="np-nav-link" onClick={(e) => { e.preventDefault(); navigate("/seller/dashboard"); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-            </svg>
-            لوحة التحكم
-          </a>
-          <a href="#" className="np-nav-link" onClick={(e) => { e.preventDefault(); navigate("/seller/products"); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
-            المنتجات
-          </a>
-          <a href="#" className="np-nav-link" onClick={(e) => { e.preventDefault(); navigate("/seller/profile"); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            ملف المتجر
-          </a>
-          <div className="np-dropdown" ref={moreRef}>
-            <button className="np-nav-link np-dropdown-trigger" onClick={() => setMoreOpen((p) => !p)}>
-              المزيد
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={moreOpen ? "np-chevron-open" : ""}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {moreOpen && (
-              <div className="np-dropdown-menu">
-                <a href="#" className="np-dropdown-item" onClick={(e) => { e.preventDefault(); navigate("/seller/orders"); }}>
-                  <CartIcon /> الطلبات
-                </a>
-                <a href="#" className="np-dropdown-item" onClick={(e) => { e.preventDefault(); navigate("/seller/ratings"); }}>
-                  <StarIcon /> التقييمات
-                </a>
-                <a href="#" className="np-dropdown-item" onClick={(e) => { e.preventDefault(); navigate("/seller/messages"); }}>
-                  <MessageIcon /> المراسلات
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="np-nav-left">
-          <button className="np-btn-notif" onClick={() => navigate("/seller/notifications")}>
-            <BellIcon />
-            {unreadCount > 0 && <span className="np-notif-dot"></span>}
-          </button>
-          <button className="np-btn-logout" onClick={() => navigate("/login")}>
-            <span>خروج</span>
-            <LogoutIcon />
-          </button>
-        </div>
-      </nav>
+ 
+       <SellerNavbar />
 
       <main className="np-main">
 
