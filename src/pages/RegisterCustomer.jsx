@@ -50,7 +50,7 @@ const handleGoogleSuccess = async (credentialResponse) => {
       } catch (err) {
         console.log(err)
       }
-    },
+    }
     onError: () => {
       console.log('فشل تسجيل الدخول بجوجل')
     }
