@@ -6,18 +6,16 @@ import InputField from '../components/InputField'
 import OAuthButtons from '../components/OAuthButtons'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { useGoogleLogin } from '@react-oauth/google'
-import { customerGoogleLogin } from '../services/authService'
 
-export default function LoginCustomer() {
+export default function LoginSeller() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
-      await authAPI.customerLogin({ email: values.email, password: values.password })
-      navigate('/dashboard/customer')
+      await authAPI.sellerLogin({ email: values.email, password: values.password })
+      navigate('/dashboard/seller')
     } catch (err) {
       setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
@@ -25,24 +23,9 @@ export default function LoginCustomer() {
     }
   }
 
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const data = await customerGoogleLogin(tokenResponse.access_token)
-        console.log(data)
-        navigate('/dashboard/customer')
-      } catch (err) {
-        console.log(err)
-      }
-    },
-    onError: () => {
-      console.log('فشل تسجيل الدخول بجوجل')
-    }
-  })
-
   return (
     <FormCard>
-      <CardHeader icon={<>🏪 <span>يا هلا بعودتك!</span> 😄</>} subtitle="تسوق من حيث توقفت" />
+      <CardHeader icon={<>🏪 مرحباً بك من جديد 👋</>} subtitle="ادخل بياناتك للوصول للوحة التحكم" />
       <Formik initialValues={{ email: '', password: '' }} validationSchema={loginSchema} onSubmit={handleSubmit}>
         {({ isSubmitting }) => (
           <Form noValidate>
@@ -55,8 +38,8 @@ export default function LoginCustomer() {
         )}
       </Formik>
       <Divider />
-      <OAuthButtons onGoogle={() => handleGoogleLogin()} />
-      <FooterLink text="ليوجد عندك حساب؟" linkText="إنشاء حسابي" to="/register/customer" />
+      <OAuthButtons />
+      <FooterLink text="ليس عندك حساب؟" linkText="إنشاء حسابي" to="/register/seller" />
     </FormCard>
   )
 }

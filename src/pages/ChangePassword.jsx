@@ -3,14 +3,13 @@ import { useNavigate } from "react-router-dom";
 import "./ChangePassword.css";
 import { validatePassword, validateConfirmPassword } from "../utils/validators";
 import { changePassword, getAuthToken } from "../services/authService";
+
 // ── Icons ──
-function BackArrow() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
+const BackArrow = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
 
 const ShieldIcon = () => (
   <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#9ca3af" strokeWidth="1.8">

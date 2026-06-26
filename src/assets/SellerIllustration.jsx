@@ -16,7 +16,8 @@ export default function SellerIllustration() {
     }}>
       {/* استدعاء الصورة من مجلد public مباشرة */}
       <img 
-        src="/seller.png" alt="بائع"    
+        src="/buyer.png" 
+        alt="مشتري" 
         style={{ 
           width: '100%', 
           height: '100%', 

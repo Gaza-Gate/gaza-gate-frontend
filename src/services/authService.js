@@ -8,10 +8,10 @@ async function request(endpoint, body, token = null, method = "POST") {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.data?.message || data.message || "حدث خطأ، حاول مرة ثانية");
+  if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
   return data;
 }
 
@@ -39,39 +39,18 @@ export async function updateStoreProfile(profileData, token) {
   return request("/api/seller/profile", profileData, token, "PUT");
 }
 
-// ── Google Login (للمستخدم الموجود مسبقاً) ──
-// الـ backend بده: { token: "<google_id_token>" }
-export async function sellerGoogleLogin(googleIdToken) {
-  return request("/api/auth/seller/google/login", { token: googleIdToken });
+export async function sellerGoogleLogin(googleToken) {
+  return request("/api/auth/seller/google", { token: googleToken }, null, "POST");
 }
 
-export async function customerGoogleLogin(googleIdToken) {
-  return request("/api/auth/customer/google/login", { token: googleIdToken });
-}
-
-// ── Google Register للـ Seller (خطوتين) ──
-// الخطوة 1: إرسال الـ token → يرجع pendingToken
-export async function sellerGoogleRegisterInit(googleIdToken) {
-  return request("/api/auth/seller/google/register/init", { token: googleIdToken });
-}
-
-// الخطوة 2: إكمال التسجيل بـ pendingToken + بيانات المتجر
-export async function sellerGoogleRegisterComplete(pendingToken, storeName, storeDescription) {
-  return request("/api/auth/seller/google/register/complete", {
-    pendingToken,
-    storeName,
-    storeDescription,
-  });
-}
-
-// ── Google Register للـ Customer ──
-export async function customerGoogleRegister(googleIdToken) {
-  return request("/api/auth/customer/google/register", { token: googleIdToken });
+export async function customerGoogleLogin(googleToken) {
+  return request("/api/auth/customer/google", { token: googleToken }, null, "POST");
 }
 
 export async function resendVerificationCode(email) {
-  return request("/api/auth/resend-verification-code", { email });
+  return request("/api/auth/resend-verification", { email });
 }
+
 
 export async function verifyResetCode(email, code) {
   return request("/api/auth/verify-reset-code", { email, code });
@@ -81,9 +60,12 @@ export async function resetPassword(resetToken, newPassword, confirmPassword) {
   return request("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
 }
 
+
 export async function getConversations(token) {
   return request("/api/seller/conversations", undefined, token, "GET");
 }
+
+
 
 export async function getMessages(conversationId, token) {
   return request(`/api/seller/conversations/${conversationId}/messages`, undefined, token, "GET");
@@ -91,8 +73,4 @@ export async function getMessages(conversationId, token) {
 
 export async function sendMessage(conversationId, text, token) {
   return request(`/api/seller/conversations/${conversationId}/messages`, { text }, token);
-}
-
-export async function verifyEmail(email, code) {
-  return request("/api/auth/verify-email", { email, code });
 }

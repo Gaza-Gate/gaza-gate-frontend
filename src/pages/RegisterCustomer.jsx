@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
-import { GoogleLogin } from '@react-oauth/google'
+import OAuthButtons from '../components/OAuthButtons'
 import { customerRegisterSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { customerGoogleRegister, customerGoogleLogin } from '../services/authService'
+import { useGoogleLogin } from '@react-oauth/google'
+import { customerGoogleLogin } from '../services/authService'
 
 export default function RegisterCustomer() {
   const navigate = useNavigate()
@@ -24,33 +25,26 @@ export default function RegisterCustomer() {
       })
       navigate('/verify-email', { state: { email: values.email } })
     } catch (err) {
-      setApiError(err.response?.data?.data?.message || err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setApiError('')
-    const googleIdToken = credentialResponse.credential
-    try {
-      // حاول register أولاً
-      const data = await customerGoogleRegister(googleIdToken)
-      const token = data.data?.token || data.token
-      if (token) localStorage.setItem('token', token)
-      navigate('/home/customer')
-    } catch {
-      // إذا موجود مسبقاً → login مباشرة
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
       try {
-        const data = await customerGoogleLogin(googleIdToken)
-        const token = data.data?.token || data.token
-        if (token) localStorage.setItem('token', token)
-        navigate('register/customer')
+        const data = await customerGoogleLogin(tokenResponse.access_token)
+        console.log(data)
+        navigate('/dashboard/customer')
       } catch (err) {
-        setApiError(err.message || 'فشل التسجيل بجوجل')
+        console.log(err)
       }
+    },
+    onError: () => {
+      console.log('فشل تسجيل الدخول بجوجل')
     }
-  }
+  })
 
   return (
     <FormCard>
@@ -75,16 +69,8 @@ export default function RegisterCustomer() {
         )}
       </Formik>
       <Divider />
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={() => setApiError('فشل التسجيل بجوجل')}
-          text="continue_with"
-          locale="ar"
-          width="400"
-        />
-      </div>
-      <FooterLink text="عندك حساب؟" linkText="تسجيل دخول" to="/login/customer" />
+      <OAuthButtons onGoogle={() => handleGoogleLogin()} />
+      <FooterLink text="ليوجد عندك حساب؟" linkText="تسجيل دخول" to="/login/customer" />
     </FormCard>
   )
 }

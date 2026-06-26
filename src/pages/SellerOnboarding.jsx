@@ -30,10 +30,10 @@ export default function SellerOnboarding() {
 
 const handleNext = () => {
   if (current < steps.length - 1) setCurrent(current + 1)
-   else navigate("/register/seller")
+   else navigate("/login/seller")
 }
 
-  const handleSkip = () => navigate("/register/seller")
+  const handleSkip = () => navigate("/login/seller")
 
   return (
     <div className="min-h-screen bg-orange-50 flex items-center justify-center p-6" dir="rtl">

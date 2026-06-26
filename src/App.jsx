@@ -11,9 +11,9 @@ import RegisterSeller   from './pages/RegisterSeller'
 import VerifyEmail      from './pages/VerifyEmail'
 import ForgotPassword   from './pages/ForgotPassword'
 import SellerOnboarding from './pages/SellerOnboarding'
+import EditStoreProfile from './pages/EditStoreProfile'
 import ChangePassword   from './pages/ChangePassword'
 import Messages         from './pages/Messages'
-import CustomerHome from './pages/CustomerHome'
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -36,9 +36,10 @@ export default function App() {
       <Route path="/register/seller"      element={<RegisterSeller />} />
       <Route path="/verify-email"         element={<VerifyEmail />} />
       <Route path="/forgot-password"      element={<ForgotPassword />} />
-       <Route path="/home/customer" element={<CustomerHome />} />
+
       {/* مسارات البائع الإضافية */}
       <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
+      <Route path="/seller/profile/edit"    element={<EditStoreProfile />} />
       <Route path="/seller/account/password" element={<ChangePassword />} />
       <Route path="/seller/messages"        element={<Messages />} />
 

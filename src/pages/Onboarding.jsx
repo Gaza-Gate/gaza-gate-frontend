@@ -30,24 +30,23 @@ export default function Onboarding() {
         أهلا بك في منصة بوابة غزة
       </h1>
       <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', width: '100%', maxWidth: 800 }}>
-          <PortalCard  
-        title="بوابة المشتري"
-        showUnderline={true}
-         description="تسوق، تتبع طلباتك، وتواصل مع البائعين."
+          <PortalCard
+        title="بوابة البائع"
+        description="أدر منتجاتك، تتبع مبيعاتك، ونمّ عملك."
         illustration={<SellerIllustration />}
         fillLabel="أنشئ متجري"
         outlineLabel="تسجيل دخول"
-        onFill={() => navigate('/onboarding/customer')}
-       onOutline={() => navigate('/Login/customer')}
+        onFill={() => navigate('/seller/onboarding')}
+        onOutline={() => navigate('/seller/onboarding')}
       />
             <PortalCard
-        title ="بوابة البائع"
-        description="أدر منتجاتك، تتبع مبيعاتك، ونمّ عملك."
-         illustration={<BuyerIllustration />}
+        title="بوابة المشتري"
+        description="تسوق، تتبع طلباتك، وتواصل مع البائعين."
+        illustration={<BuyerIllustration />}
         fillLabel="أنشئ حسابي"
         outlineLabel="تسجيل دخول"
-        onFill={() => navigate('/seller/onboarding')}
-        onOutline={() => navigate('/login/seller')}
+        onFill={() => navigate('/onboarding/customer')}
+        onOutline={() => navigate('/onboarding/customer')}
       />
       </div>
       <style>{`@media(max-width:600px){.onboarding-grid{grid-template-columns:1fr!important}}`}</style>

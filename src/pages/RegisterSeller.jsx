@@ -38,13 +38,13 @@ export default function RegisterSeller() {
       try {
         const data = await sellerGoogleLogin(tokenResponse.access_token)
         console.log(data)
-        navigate('/ng')
+        navigate('/seller/onboarding')
       } catch (err) {
         console.log(err)
       }
     },
     onError: () => {
-      console.log('فشل تسجseller/onboardiيل الدخول بجوجل')
+      console.log('فشل تسجيل الدخول بجوجل')
     }
   })
 
