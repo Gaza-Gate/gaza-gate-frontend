@@ -1,0 +1,26 @@
+[33m9422cd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m merge with main
+[33mb87aca6[m initial commit
+[33m07123af[m[33m ([m[1;31morigin/main[m[33m)[m Update ChangePassword.jsx
+[33m5cddb4f[m Rename Changepassword.css to ChangePassword.css
+[33m7d6a706[m Rename Changepassword.jsx to ChangePassword.jsx
+[33m751b84c[m Merge pull request #3 from Gaza-Gate/merge-final
+[33mb5cb30e[m Fix navigation routes, Google OAuth buttons, and Buyer/Seller onboarding design
+[33m14b1480[m Merge branch 'main' of https://github.com/Gaza-Gate/gaza-gate-frontend
+[33mcc2d3bc[m تحديثات على App.jsx
+[33m63a639e[m Merge pull request #2 from Gaza-Gate/merge-test
+[33m6545e91[m Upload project files
+[33mf8804ff[m Initial commit for Gaza Gate project
+[33m8c64dc9[m Initial commit for Gaza Gate Project
+[33m2049799[m Initial commit for Gaza Gate Project
+[33mc187c5c[m feat: add Messages page with CSS
+[33m70010d6[m fix: align frontend auth calls with actual backend API endpoints
+[33mcbeb121[m fix: vercel.json encoding to UTF-8
+[33mca0d258[m fix: rewrite vercel.json properly
+[33mf15bbb7[m fix: add vercel rewrites for react router
+[33m8bf8847[m refactor: reorganize file structure
+[33mff311af[m initial commit
+[33m1d37d4f[m Remove all files from GitHub repository
+[33m2f4e6bc[m Merge remote main branch with local repository
+[33m4800276[m Initial commit: Add onboarding, login, and register pages with styles
+[33mca035d4[m Delete README.md
+[33m0a9ffa4[m Initial commit

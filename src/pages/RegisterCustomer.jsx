@@ -29,29 +29,29 @@ export default function RegisterCustomer() {
       setSubmitting(false)
     }
   }
-
-  const handleGoogleSuccess = async (credentialResponse) => {
+const handleGoogleSuccess = async (credentialResponse) => {
     setApiError('')
     const googleIdToken = credentialResponse.credential
     try {
-      // حاول register أولاً
-      const data = await customerGoogleRegister(googleIdToken)
+      // حاول تسجيل دخول أولاً
+      const data = await customerGoogleLogin(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
-      navigate('/home/customer')
+      navigate('/home/customer') // حساب موجود → هوم
+      
     } catch {
-      // إذا موجود مسبقاً → login مباشرة
+      // ما عنده حساب → اعمل register
       try {
-        const data = await customerGoogleLogin(googleIdToken)
+        const data = await customerGoogleRegister(googleIdToken)
         const token = data.data?.token || data.token
         if (token) localStorage.setItem('token', token)
-        navigate('register/customer')
+        navigate('/register/customer') // حساب جديد → يكمل بياناته
       } catch (err) {
         setApiError(err.message || 'فشل التسجيل بجوجل')
       }
     }
   }
-
+  
   return (
     <FormCard>
       <CardHeader icon={<>🏪 اكتشف آلاف المنتجات 🛍️</>} subtitle="عالمك من التسوق يبدأ من هنا" />
