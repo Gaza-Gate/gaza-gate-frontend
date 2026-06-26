@@ -30,32 +30,22 @@ export default function RegisterCustomer() {
       setSubmitting(false)
     }
   }
-const handleGoogleSuccess = async (credentialResponse) => {
-    setApiError('')
-    const googleIdToken = credentialResponse.credential
-    try {
-      // حاول تسجيل دخول أولاً
-      const data = await customerGoogleLogin(googleIdToken)
-      const token = data.data?.token || data.token
-      if (token) localStorage.setItem('token', token)
-      navigate('/home/customer') // حساب موجود → هوم
-      
-    } catch {
-      // ما عنده حساب → اعمل register
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
       try {
-        const data = await customerGoogleRegister(googleIdToken)
-        const token = data.data?.token || data.token
-        if (token) localStorage.setItem('token', token)
-        navigate('/register/customer') // حساب جديد → يكمل بياناته
+        const data = await customerGoogleLogin(tokenResponse.access_token)
+        console.log(data)
+        navigate('/dashboard/customer')
       } catch (err) {
         console.log(err)
       }
-    }
+    },
     onError: () => {
       console.log('فشل تسجيل الدخول بجوجل')
     }
-  }
-  
+  })
+
   return (
     <FormCard>
       <CardHeader icon={<>🏪 اكتشف آلاف المنتجات 🛍️</>} subtitle="عالمك من التسوق يبدأ من هنا" />
