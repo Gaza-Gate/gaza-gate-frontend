@@ -1,0 +1,457 @@
+.home-wrapper {
+  min-height: 100vh;
+  background: var(--bg-page);
+  font-family: "Tajawal", sans-serif;
+  direction: rtl;
+}
+
+/* ════════ Navbar ════════ */
+.home-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+}
+
+.home-nav-side {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.home-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.home-icon-btn--ghost {
+  color: var(--text-mid);
+}
+
+.home-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.home-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-mid);
+  text-decoration: none;
+}
+
+.home-nav-link:hover {
+  color: var(--orange);
+}
+
+.home-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.home-nav-btn:hover {
+  background: var(--orange-dark);
+}
+
+.home-nav-logo {
+  height: 56px;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .home-nav-links { display: none; }
+}
+
+/* ════════ Hero ════════ */
+.home-hero {
+  position: relative;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: linear-gradient(120deg, #0c1c33 0%, #142c4d 45%, #1c3357 100%);
+}
+
+.home-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 30%, rgba(249, 115, 22, 0.25), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08), transparent 45%);
+}
+
+.home-hero-deco {
+  position: absolute;
+  left: 8%;
+  top: 50%;
+  transform: translateY(-50%) rotate(-8deg);
+  color: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .home-hero-deco { display: none; }
+}
+
+.home-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin-right: auto;
+  padding: 0 6%;
+  text-align: right;
+}
+
+.home-hero-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+
+.home-hero-title {
+  font-size: 46px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.25;
+  margin-bottom: 18px;
+}
+
+.home-hero-text {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 520px;
+  margin-bottom: 30px;
+  line-height: 1.8;
+}
+
+.home-hero-btn {
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 15px 42px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.35);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.home-hero-btn:hover { background: var(--orange-dark); }
+.home-hero-btn:active { transform: scale(0.98); }
+
+@media (max-width: 600px) {
+  .home-hero-title { font-size: 32px; }
+  .home-hero { padding: 40px 0; min-height: auto; }
+}
+
+/* ════════ Sections عامة ════════ */
+.home-section {
+  padding: 40px 32px;
+}
+
+.home-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.home-section-head h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.home-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--orange);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ════════ الأقسام ════════ */
+.home-categories {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.home-category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: var(--orange-pale);
+  border: none;
+  border-radius: 14px;
+  padding: 22px 30px;
+  min-width: 150px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.home-category-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card);
+}
+
+.home-category-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--orange-light);
+  color: var(--orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ════════ بانرات ════════ */
+.home-banners {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.home-banner {
+  position: relative;
+  border-radius: 16px;
+  padding: 28px 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-banner--dark {
+  background: #16284a;
+  color: #fff;
+}
+
+.home-banner--orange {
+  background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+  color: #fff;
+}
+
+.home-banner-deco {
+  position: absolute;
+  left: 10px;
+  bottom: -20px;
+  opacity: 0.18;
+}
+
+.home-banner-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.home-banner h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 2px 0;
+}
+
+.home-banner p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 14px;
+}
+
+.home-banner-btn {
+  align-self: flex-start;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 20px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-banner-btn--light {
+  background: #fff;
+  color: var(--orange-dark);
+}
+
+@media (max-width: 800px) {
+  .home-banners { grid-template-columns: 1fr; }
+}
+
+/* ════════ منتجات مميزة ════════ */
+.home-products {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.home-product-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.home-product-card:hover {
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.home-product-img {
+  width: 100%;
+  height: 190px;
+  overflow: hidden;
+}
+
+.home-product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-product-info {
+  padding: 16px 18px;
+  text-align: right;
+}
+
+.home-product-status {
+  display: inline-block;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 8px;
+}
+
+.home-product-info h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+}
+
+.home-product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.home-product-price {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--orange);
+}
+
+.home-product-qty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .home-products { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .home-products { grid-template-columns: 1fr; }
+}
+
+/* ════════ كيف يعمل سوق ════════ */
+.home-howitworks-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 28px;
+}
+
+.home-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.home-step {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 26px 18px;
+  text-align: center;
+}
+
+.home-step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--orange-light);
+  color: var(--orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.home-step h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+
+.home-step p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .home-steps { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .home-steps { grid-template-columns: 1fr; }
+  .home-section { padding: 32px 16px; }
+}

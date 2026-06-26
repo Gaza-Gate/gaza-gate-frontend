@@ -1,0 +1,143 @@
+/* ── CustomerNavbar.css ── */
+
+.cn-nav {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 32px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+}
+
+/* ── Logo ── */
+.cn-logo {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.cn-logo-img {
+  height: 58px;
+  object-fit: contain;
+}
+
+.cn-logo-text {
+  font-weight: 800;
+  font-size: 20px;
+  color: #f97316;
+  letter-spacing: -0.5px;
+}
+
+/* ── Links ── */
+.cn-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cn-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: "Tajawal", inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cn-link:hover {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.cn-link.active {
+  background: #f97316;
+  color: #fff;
+}
+
+/* ── Actions ── */
+.cn-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cn-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.cn-icon-btn:hover {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.cn-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: #f97316;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cn-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  font-family: "Tajawal", inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cn-logout:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .cn-nav {
+    padding: 0 16px;
+  }
+  .cn-links {
+    display: none;
+  }
+  .cn-logout span {
+    display: none;
+  }
+}
