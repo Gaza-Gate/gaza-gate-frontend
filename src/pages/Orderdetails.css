@@ -1,0 +1,360 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.od-root {
+  min-height: 100vh;
+  background: #f9fafb;
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  direction: rtl;
+  padding: 28px 40px 60px;
+}
+
+.od-container {
+  width: 100%;
+  margin: 0;
+}
+
+/* ── Back link ── */
+.od-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #f97316;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  margin-bottom: 18px;
+  margin-right: 0;
+  margin-left: auto;
+}
+.od-back:hover { color: #ea6c0a; }
+
+.od-title-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
+.od-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.od-subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+/* ── Success banner ── */
+.od-success-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 18px;
+  color: #16a34a;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.od-success-banner-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.od-success-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: right;
+}
+
+.od-success-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.od-success-sub {
+  font-size: 0.78rem;
+  color: #15803d;
+  opacity: 0.85;
+}
+
+/* ── Badges ── */
+.od-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.od-badge-yellow { background: #fef3c7; color: #b45309; }
+.od-badge-green { background: #dcfce7; color: #16a34a; }
+.od-badge-blue { background: #dbeafe; color: #2563eb; }
+.od-badge-purple { background: #f3e8ff; color: #9333ea; }
+.od-badge-gray { background: #f3f4f6; color: #4b5563; }
+
+/* ── Workflow card ── */
+.od-workflow-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-bottom: 22px;
+}
+
+.od-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 28px;
+}
+
+.od-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.od-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.od-step-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.od-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.od-step-done,
+.od-step-current {
+  background: #16a34a;
+  color: #fff;
+}
+
+.od-step-pending {
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  color: #9ca3af;
+}
+
+.od-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+}
+
+.od-step-line-done {
+  background: #16a34a;
+}
+
+.od-step-label {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.od-step-label-current {
+  color: #111827;
+  font-weight: 600;
+}
+
+.od-update-block {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 18px;
+  text-align: center;
+}
+
+.od-btn-update {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 28px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.od-btn-update:hover { background: #ea6c0a; }
+
+.od-update-note {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 10px;
+}
+
+/* ── Info cards ── */
+/* ── Info cards wrapper - centered ── */
+.od-info-grid-wrapper {
+  max-width: 760px;
+  margin: 0 auto 22px;
+}
+
+.od-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.od-info-card,
+.od-products-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+
+.od-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 14px;
+}
+
+.od-info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.od-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.87rem;
+}
+
+.od-info-key {
+  color: #6b7280;
+}
+
+.od-info-value {
+  color: #111827;
+  font-weight: 500;
+}
+
+.od-info-row-single {
+  justify-content: flex-end;
+  gap: 8px;
+  color: #6b7280;
+}
+
+/* ── Products ── */
+.od-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.od-product-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.od-product-total {
+  color: #111827;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.od-product-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.od-product-name {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.od-product-sub {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+.od-product-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Summary ── */
+.od-summary {
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.od-summary-total {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .od-info-grid { grid-template-columns: 1fr; }
+  .od-step-label { font-size: 0.68rem; }
+  .od-step-circle { width: 30px; height: 30px; }
+}

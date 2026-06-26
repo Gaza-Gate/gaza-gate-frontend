@@ -106,8 +106,8 @@ function StepOTP({ email, onNext }) {
     if (otp.some((d) => !d)) { setError("أدخل الرمز كاملاً"); return; }
     setError(""); setLoading(true);
     try {
-      const data = await verifyResetCode(email, otp.join(""));
-      onNext(otp.join(""), data.resetToken);
+    const data = await verifyResetCode(email, otp.join(""));
+    onNext(otp.join(""), data.data.resetToken);
     } catch (err) {
       setError(err.message);
     } finally {

@@ -1,0 +1,205 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.pfm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2.5rem 1.5rem;
+  overflow-y: auto;
+}
+
+.pfm-card {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 2.2rem 2.5rem 2rem;
+  max-width: 760px;
+  width: 100%;
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.pfm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.pfm-header h2 { font-size: 1.3rem; font-weight: 700; color: #111827; }
+
+.pfm-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+.pfm-close:hover { color: #111827; }
+
+.pfm-image-section { margin-bottom: 1.4rem; }
+.pfm-image-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+  text-align: right;
+}
+
+.pfm-image-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.pfm-upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.pfm-upload-btn:hover { border-color: #f97316; color: #f97316; }
+
+.pfm-image-preview {
+  width: 76px;
+  height: 76px;
+  border-radius: 14px;
+  background: #fcd9b6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.pfm-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.pfm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 1.1rem;
+}
+.pfm-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: right;
+}
+.pfm-field input,
+.pfm-field select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: #111827;
+  direction: rtl;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-align: right;
+}
+.pfm-field input:focus,
+.pfm-field select:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.pfm-radio-row {
+  display: flex;
+  gap: 24px;
+  padding-top: 4px;
+}
+.pfm-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #374151;
+  cursor: pointer;
+}
+.pfm-radio input {
+  width: 17px;
+  height: 17px;
+  accent-color: #f97316;
+  margin: 0;
+  cursor: pointer;
+}
+
+.pfm-error {
+  font-size: 0.78rem;
+  color: #dc2626;
+  text-align: right;
+}
+
+.pfm-banner-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.pfm-actions {
+  display: flex;
+  gap: 14px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.4rem;
+  margin-top: 0.6rem;
+}
+
+.pfm-btn-cancel {
+  flex: 1;
+  padding: 14px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.pfm-btn-cancel:hover:not(:disabled) { background: #f9fafb; }
+
+.pfm-btn-save {
+  flex: 1;
+  padding: 14px;
+  background: #f97316;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pfm-btn-save:hover:not(:disabled) { background: #ea6c0a; }
+.pfm-btn-cancel:disabled, .pfm-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 560px) {
+  .pfm-card { padding: 1.6rem 1.3rem 1.4rem; }
+  .pfm-image-row { justify-content: space-between; }
+}

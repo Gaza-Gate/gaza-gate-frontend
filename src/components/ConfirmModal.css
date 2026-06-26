@@ -1,0 +1,84 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.cfm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.cfm-card {
+  background: #f8fafc;
+  border-radius: 28px;
+  padding: 3.5rem 3rem 2.5rem;
+  max-width: 540px;
+  width: 100%;
+  text-align: center;
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.cfm-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 2.5rem;
+  line-height: 1.5;
+}
+
+.cfm-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.cfm-btn-cancel {
+  flex: 1;
+  padding: 16px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  color: #6b7280;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cfm-btn-cancel:hover:not(:disabled) { background: #f9fafb; }
+
+.cfm-btn-confirm {
+  flex: 1;
+  padding: 16px;
+  background: #f97316;
+  border: none;
+  border-radius: 16px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cfm-btn-confirm:hover:not(:disabled) { background: #ea6c0a; }
+.cfm-btn-confirm:disabled, .cfm-btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cfm-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cfmSpin 0.7s linear infinite;
+}
+@keyframes cfmSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+  .cfm-card { padding: 2.5rem 1.5rem 2rem; border-radius: 22px; }
+  .cfm-title { font-size: 1.2rem; }
+}

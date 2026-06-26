@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   root: './', // التأكد أن الجذر هو المجلد الحالي
   server: {
-    port: 5173,
+    port: 3000,
     strictPort: true, // يمنع تغيير البورت تلقائياً
     open: true // يفتح المتصفح تلقائياً
   },

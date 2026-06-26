@@ -3,6 +3,7 @@ import { Send, Search, Info, Loader2, Bell, LogOut, Home, Package, User, Chevron
 import { getAuthToken, getConversations, getMessages, sendMessage } from "../services/authService";
 import logo from "../assets/logo.png";
 import "./Messages.css";
+import SellerNavbar from "../components/SellerNavbar";
 
 const COLORS = ["#F97316", "#8B5CF6", "#EF4444", "#10B981", "#3B82F6", "#EC4899"];
 function avatarColor(name = "") {
@@ -107,53 +108,7 @@ export default function Messages() {
   return (
     <div className="messages-wrapper" dir="rtl">
 
-      {/* Navbar */}
-      <nav className="messages-nav">
-        <div>
-          <img src={logo} alt="Gaza Gate" className="messages-nav-logo" />
-        </div>
-
-        <div className="messages-nav-links">
-          {[
-            { icon: <Home size={16} />, label: "لوحة التحكم" },
-            { icon: <Package size={16} />, label: "المنتجات" },
-            { icon: <User size={16} />, label: "ملف المتجر" },
-          ].map((item) => (
-            <a key={item.label} href="#" className="messages-nav-link">
-              {item.icon}
-              {item.label}
-            </a>
-          ))}
-
-          <div className="messages-dropdown">
-            <button
-              className="messages-dropdown-btn"
-              onClick={(e) => { e.stopPropagation(); setShowMore(!showMore); }}
-            >
-              <ChevronDown size={16} className={`messages-dropdown-icon ${showMore ? "open" : ""}`} />
-              المزيد
-            </button>
-            {showMore && (
-              <div className="messages-dropdown-menu">
-                {["الطلبات", "التقارير", "الإعدادات"].map((item) => (
-                  <a key={item} href="#" className="messages-dropdown-item">{item}</a>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="messages-nav-actions">
-          <button className="messages-bell-btn">
-            <Bell size={20} color="#374151" />
-            <span className="messages-bell-dot" />
-          </button>
-          <button className="messages-logout-btn">
-            <LogOut size={16} color="#f97316" />
-            خروج
-          </button>
-        </div>
-      </nav>
+      <SellerNavbar />
 
       {/* Page title */}
       <div className="messages-title-area">

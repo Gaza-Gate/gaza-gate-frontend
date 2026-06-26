@@ -11,17 +11,22 @@ export default function LoginSeller() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
 
-  async function handleSubmit(values, { setSubmitting }) {
-    try {
-      setApiError('')
-      await authAPI.sellerLogin({ email: values.email, password: values.password })
-      navigate('/dashboard/seller')
-    } catch (err) {
-      setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
-    } finally {
-      setSubmitting(false)
-    }
+async function handleSubmit(values, { setSubmitting }) {
+  try {
+    setApiError('')
+    const res = await authAPI.sellerLogin({ email: values.email, password: values.password })
+    const { accessToken, user } = res.data.data
+
+    localStorage.setItem('token', accessToken)
+    localStorage.setItem('user', JSON.stringify(user))
+
+    navigate(/seller/dashboard')
+  } catch (err) {
+    setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
+  } finally {
+    setSubmitting(false)
   }
+}
 
   return (
     <FormCard>

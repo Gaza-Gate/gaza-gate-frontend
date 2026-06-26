@@ -1,59 +1,68 @@
- import { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
-import OAuthButtons from '../components/OAuthButtons'
-import { sellerRegisterSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { useGoogleLogin } from '@react-oauth/google'
-import { sellerGoogleLogin } from '../services/authService'
+import { GoogleLogin } from '@react-oauth/google'
+import { sellerGoogleRegister, sellerGoogleRegisterComplete } from '../services/authService'
+import { sellerRegisterSchema, sellerRegisterGoogleSchema } from '../utils/validationSchemas'
+
+function parseJwt(token) {
+  const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+  return JSON.parse(atob(base64))
+}
 
 export default function RegisterSeller() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
+  const [pendingToken, setPendingToken] = useState(null)
+  const [googleInitialValues, setGoogleInitialValues] = useState(null)
+
+  const defaultValues = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', storeName: '', storeDescription: '' }
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
-      await authAPI.sellerRegister({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        password: values.password,
-        confirmPassword: values.confirmPassword,
-        storeName: values.storeName,
-        storeDescription: values.storeDescription,
-      })
-      navigate('/verify-email', { state: { email: values.email } })
+
+      if (pendingToken) {
+        // مسار جوجل - complete
+        await sellerGoogleRegisterComplete({
+          pendingToken,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          storeName: values.storeName,
+          storeDescription: values.storeDescription,
+        })
+        navigate('/seller/dashboard')
+      } else {
+        // مسار عادي
+        await authAPI.sellerRegister({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+          storeName: values.storeName,
+          storeDescription: values.storeDescription,
+        })
+        navigate('/verify-otp', { state: { email: values.email } })
+      }
     } catch (err) {
-      setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const data = await sellerGoogleLogin(tokenResponse.access_token)
-        console.log(data)
-        navigate('/seller/onboarding')
-      } catch (err) {
-        console.log(err)
-      }
-    },
-    onError: () => {
-      console.log('فشل تسجيل الدخول بجوجل')
-    }
-  })
-
   return (
     <FormCard>
       <CardHeader icon={<>🏪 أنشئ متجرك الآن 🚀</>} subtitle="عالمك التجاري ينتظر إبداعك اليوم!" />
       <Formik
-        initialValues={{ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', storeName: '', storeDescription: '' }}
-        validationSchema={sellerRegisterSchema}
+        initialValues={googleInitialValues || defaultValues}
+        enableReinitialize={true}
+       validationSchema={pendingToken ? sellerRegisterGoogleSchema : sellerRegisterSchema}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting }) => (
@@ -64,16 +73,48 @@ export default function RegisterSeller() {
               <InputField name="lastName" type="text" label="الاسم الثاني" placeholder="الاسم الثاني" icon="user" />
             </div>
             <InputField name="email" type="email" label="البريد الإلكتروني" placeholder="name@gmail.com" icon="email" />
-            <InputField name="password" type="password" label="كلمة المرور" placeholder="••••••••" icon="password" />
-            <InputField name="confirmPassword" type="password" label="تأكيد كلمة المرور" placeholder="••••••••" icon="password" />
+            {!pendingToken && (
+              <>
+                <InputField name="password" type="password" label="كلمة المرور" placeholder="••••••••" icon="password" />
+                <InputField name="confirmPassword" type="password" label="تأكيد كلمة المرور" placeholder="••••••••" icon="password" />
+              </>
+            )}
             <InputField name="storeName" type="text" label="اسم متجرك" placeholder="مثال: متجر سمير" icon="store" />
             <InputField name="storeDescription" type="text" label="وصف المتجر (اختياري)" placeholder="مثال: منتجات يدوية وتطريز..." textarea />
-            <PrimaryBtn loading={isSubmitting}>إنشاء حسابي</PrimaryBtn>
+            <PrimaryBtn loading={isSubmitting}>
+              {pendingToken ? 'إكمال التسجيل' : 'إنشاء حسابي'}
+            </PrimaryBtn>
           </Form>
         )}
       </Formik>
-      <Divider />
-      <OAuthButtons onGoogle={() => handleGoogleLogin()} />
+
+      {!pendingToken && (
+        <>
+          <Divider />
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              try {
+                const profile = parseJwt(credentialResponse.credential)
+                const data = await sellerGoogleRegister(credentialResponse.credential)
+                setPendingToken(data.data.pendingToken)
+                setGoogleInitialValues({
+                  firstName: profile.given_name || '',
+                  lastName: profile.family_name || '',
+                  email: profile.email || '',
+                  password: 'GOOGLE_AUTH',
+                  confirmPassword: 'GOOGLE_AUTH',
+                  storeName: '',
+                  storeDescription: '',
+                })
+              } catch (err) {
+                console.log(err)
+              }
+            }}
+            onError={() => console.log('فشل')}
+          />
+        </>
+      )}
+
       <FooterLink text="عندك حساب؟" linkText="تسجيل دخول" to="/login/seller" />
     </FormCard>
   )
