@@ -16,7 +16,7 @@ import ChangePassword   from './pages/ChangePassword'
 import Messages         from './pages/Messages'
 // استبدل السطر القديم بهذا السطر:
 import OrdersManagement from "./pages/Ordersmanagement";
-import OrderDetails from "./pages/OrderDetails";
+import OrderDetails from "./pages/Orderdetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
