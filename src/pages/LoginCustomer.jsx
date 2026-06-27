@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, RememberRow, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
 import { GoogleLogin } from '@react-oauth/google'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { customerGoogleLogin } from '../services/authService'
+import { customerGoogleLogin, customerGoogleRegister } from '../services/authService'
 
 export default function LoginCustomer() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
+
+  const location = useLocation();
+const token = location.state?.googleIdToken;
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
@@ -20,7 +23,7 @@ export default function LoginCustomer() {
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
     } catch (err) {
-      setApiError(err.response?.data?.message || err.response?.data?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(err.response?.data?.data?.message || err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
       setSubmitting(false)
     }
@@ -29,28 +32,23 @@ export default function LoginCustomer() {
   const handleGoogleSuccess = async (credentialResponse) => {
     setApiError('')
     const googleIdToken = credentialResponse.credential
-
     try {
+      // حاول login أولاً
       const data = await customerGoogleLogin(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
-    } catch (loginErr) {
-      const msg = loginErr.message || ''
-      const noAccount =
-        loginErr.code === 'NOT_FOUND' ||
-        msg.toLowerCase().includes('no account') ||
-        msg.includes('لا يوجد حساب')
-
-      if (noAccount) {
-        // ✅ ما عندوش حساب → وديه يكمل تسجيله بصفحة منفصلة
-        // (بدون إعادة استخدام نفس التوكن — هو يضغط زر Google من جديد هناك)
+    } catch {
+      // إذا فشل → المستخدم جديد، سجّله تلقائياً
+      try {
+        const data = await customerGoogleRegister(googleIdToken)
+        const token = data.data?.token || data.token
+        if (token) localStorage.setItem('token', token)
         navigate('/register/customer')
-        return
+      } catch (err) {
+        setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
+        navigate('/register/customer', { state: { googleIdToken } });
       }
-
-      // أي خطأ آخر (كلمة مرور غلط، حساب مش موثق...) اعرضه عادي
-      setApiError(msg || 'فشل تسجيل الدخول بجوجل')
     }
   }
 

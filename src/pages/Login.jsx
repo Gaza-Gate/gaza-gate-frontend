@@ -22,35 +22,22 @@ export default function LoginSeller() {
       localStorage.setItem('userType', 'seller')
       navigate('/seller/dashboard')
     } catch (err) {
-      setApiError(err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
       setSubmitting(false)
     }
   }
 
-  async function handleGoogleSuccess(credentialResponse) {
-    setApiError('')
+async function handleGoogleSuccess(credentialResponse) {
     try {
       const res = await sellerGoogleLogin(credentialResponse.credential)
       const { accessToken, user } = res.data
       localStorage.setItem('token', accessToken)
       localStorage.setItem('user', JSON.stringify(user))
       localStorage.setItem('userType', 'seller')
-      navigate('/seller/dashboard')
-    } catch (loginErr) {
-      const msg = loginErr.message || ''
-      const noAccount =
-        loginErr.code === 'NOT_FOUND' ||
-        msg.toLowerCase().includes('no account') ||
-        msg.includes('لا يوجد حساب')
-
-      if (noAccount) {
-        // ✅ ما عندوش حساب → وديه يكمل بيانات متجره (نفس فلو RegisterSeller الموجود)
-        navigate('/register/seller', { state: { googleCredential: credentialResponse.credential } })
-        return
-      }
-
-      setApiError(msg || 'فشل تسجيل الدخول بجوجل')
+      navigate('/seller/dashboard') // ✅ نفس مسار handleSubmit
+    } catch (err) {
+      setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
     }
   }
 

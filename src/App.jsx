@@ -5,7 +5,7 @@ import SplashScreen     from './pages/SplashScreen'
 import Onboarding       from './pages/Onboarding'
 import BuyerOnboarding  from './pages/BuyerOnboarding'
 import LoginCustomer    from './pages/LoginCustomer'
-import Login from './pages/Login'
+import Login from          './pages/Login'
 import RegisterCustomer from './pages/RegisterCustomer'
 import RegisterSeller   from './pages/RegisterSeller'
 import VerifyEmail      from './pages/VerifyEmail'
@@ -14,7 +14,7 @@ import SellerOnboarding from './pages/SellerOnboarding'
 import EditStoreProfile from './pages/EditStoreProfile'
 import ChangePassword   from './pages/ChangePassword'
 import Messages         from './pages/Messages'
-import OrdersManagement from "./pages/OrdersManagement";
+import OrdersManagement from "./pages/Ordersmanagement";
 import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";

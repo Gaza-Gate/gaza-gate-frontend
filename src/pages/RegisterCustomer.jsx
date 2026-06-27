@@ -15,14 +15,6 @@ export default function RegisterCustomer() {
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
-      if (googleIdToken) {
-        // مستخدم جوجل بيكمل بياناته فقط (بدون كلمة مرور)
-        const data = await customerGoogleRegister(googleIdToken /*, values لو الـ API بتقبل بيانات إضافية */)
-        const token = data.data?.token || data.token
-        if (token) localStorage.setItem('token', token)
-        navigate('/home/customer')
-        return
-      }
       await authAPI.customerRegister({
         firstName: values.firstName,
         lastName: values.lastName,
@@ -32,39 +24,33 @@ export default function RegisterCustomer() {
       })
       navigate('/verify-email', { state: { email: values.email } })
     } catch (err) {
-      setApiError(err.response?.data?.data?.message || err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(err.response?.data?.data?.message || err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
       setSubmitting(false)
     }
   }
- const handleGoogleSuccess = async (credentialResponse) => {
+
+  const handleGoogleSuccess = async (credentialResponse) => {
     setApiError('')
     const googleIdToken = credentialResponse.credential
-
     try {
-      const data = await customerGoogleLogin(googleIdToken)
+      // حاول register أولاً
+      const data = await customerGoogleRegister(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
-    } catch (loginErr) {
-      const msg = loginErr.message || ''
-      const noAccount =
-        loginErr.code === 'NOT_FOUND' ||
-        msg.toLowerCase().includes('no account') ||
-        msg.includes('لا يوجد حساب')
-
-      if (noAccount) {
-        // ✅ ما عندوش حساب → وديه يكمل تسجيله بصفحة منفصلة
-        // (بدون إعادة استخدام نفس التوكن — هو يضغط زر Google من جديد هناك)
-        navigate('/register/customer')
-        return
+    } catch {
+      // إذا موجود مسبقاً → login مباشرة
+      try {
+        const data = await customerGoogleLogin(googleIdToken)
+        const token = data.data?.token || data.token
+        if (token) localStorage.setItem('token', token)
+        navigate('register/customer')
+      } catch (err) {
+        setApiError(err.message || 'فشل التسجيل بجوجل')
       }
-
-      // أي خطأ آخر (كلمة مرور غلط، حساب مش موثق...) اعرضه عادي
-      setApiError(msg || 'فشل تسجيل الدخول بجوجل')
     }
   }
-
 
   return (
     <FormCard>
