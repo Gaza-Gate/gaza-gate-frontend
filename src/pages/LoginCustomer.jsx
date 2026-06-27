@@ -6,7 +6,7 @@ import InputField from '../components/InputField'
 import { GoogleLogin } from '@react-oauth/google'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { customerGoogleLogin, customerGoogleRegister } from '../services/authService'
+import { customerGoogleLogin } from '../services/authService'
 
 export default function LoginCustomer() {
   const navigate = useNavigate()
@@ -31,13 +31,11 @@ export default function LoginCustomer() {
     const googleIdToken = credentialResponse.credential
 
     try {
-      // حاول login أولاً
       const data = await customerGoogleLogin(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
     } catch (loginErr) {
-      // ✅ إذا الرسالة "لا يوجد حساب" → وديه يكمل بيانات حسابه (مش تسجيل دخول فاشل بمعنى الخطأ)
       const msg = loginErr.message || ''
       const noAccount =
         loginErr.code === 'NOT_FOUND' ||
@@ -45,18 +43,9 @@ export default function LoginCustomer() {
         msg.includes('لا يوجد حساب')
 
       if (noAccount) {
-        try {
-          // جرب تسجيل الحساب تلقائياً بنفس التوكن
-          const data = await customerGoogleRegister(googleIdToken)
-          const token = data.data?.token || data.token
-          if (token) localStorage.setItem('token', token)
-          // وديه يكمّل بياناته (مثلاً اسمه، عنوانه..) إذا التسجيل التلقائي ما كمّلها كلها
-          navigate('/register/customer', { state: { googleIdToken } })
-        } catch (registerErr) {
-          // لو حتى التسجيل التلقائي فشل، وديه لصفحة التسجيل ليكمل يدوياً
-          setApiError('')
-          navigate('/register/customer', { state: { googleIdToken } })
-        }
+        // ✅ ما عندوش حساب → وديه يكمل تسجيله بصفحة منفصلة
+        // (بدون إعادة استخدام نفس التوكن — هو يضغط زر Google من جديد هناك)
+        navigate('/register/customer')
         return
       }
 

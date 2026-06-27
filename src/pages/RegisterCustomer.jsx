@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
@@ -10,23 +10,19 @@ import { customerGoogleRegister, customerGoogleLogin } from '../services/authSer
 
 export default function RegisterCustomer() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const googleIdToken = location.state?.googleIdToken || null // ✅ هذا السطر كان ناقص
   const [apiError, setApiError] = useState('')
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
-
       if (googleIdToken) {
-        // مستخدم جاي من جوجل ولسا بدون حساب → كمّل تسجيله ببياناته
-        const data = await customerGoogleRegister(googleIdToken)
+        // مستخدم جوجل بيكمل بياناته فقط (بدون كلمة مرور)
+        const data = await customerGoogleRegister(googleIdToken /*, values لو الـ API بتقبل بيانات إضافية */)
         const token = data.data?.token || data.token
         if (token) localStorage.setItem('token', token)
         navigate('/home/customer')
         return
       }
-
       await authAPI.customerRegister({
         firstName: values.firstName,
         lastName: values.lastName,
@@ -41,28 +37,34 @@ export default function RegisterCustomer() {
       setSubmitting(false)
     }
   }
-
-  const handleGoogleSuccess = async (credentialResponse) => {
+ const handleGoogleSuccess = async (credentialResponse) => {
     setApiError('')
-    const idToken = credentialResponse.credential
+    const googleIdToken = credentialResponse.credential
+
     try {
-      // حاول register أولاً
-      const data = await customerGoogleRegister(idToken)
+      const data = await customerGoogleLogin(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
-    } catch {
-      // إذا موجود مسبقاً → login مباشرة
-      try {
-        const data = await customerGoogleLogin(idToken)
-        const token = data.data?.token || data.token
-        if (token) localStorage.setItem('token', token)
-        navigate('/home/customer')
-      } catch (err) {
-        setApiError(err.message || 'فشل التسجيل بجوجل')
+    } catch (loginErr) {
+      const msg = loginErr.message || ''
+      const noAccount =
+        loginErr.code === 'NOT_FOUND' ||
+        msg.toLowerCase().includes('no account') ||
+        msg.includes('لا يوجد حساب')
+
+      if (noAccount) {
+        // ✅ ما عندوش حساب → وديه يكمل تسجيله بصفحة منفصلة
+        // (بدون إعادة استخدام نفس التوكن — هو يضغط زر Google من جديد هناك)
+        navigate('/register/customer')
+        return
       }
+
+      // أي خطأ آخر (كلمة مرور غلط، حساب مش موثق...) اعرضه عادي
+      setApiError(msg || 'فشل تسجيل الدخول بجوجل')
     }
   }
+
 
   return (
     <FormCard>
@@ -80,37 +82,22 @@ export default function RegisterCustomer() {
               <InputField name="lastName" type="text" label="الاسم الثاني" placeholder="الاسم الثاني" icon="user" />
             </div>
             <InputField name="email" type="email" label="البريد الإلكتروني" placeholder="name@gmail.com" icon="email" />
-
-            {/* ✅ لو جاي من جوجل، ما في حاجة لكلمة مرور */}
-            {!googleIdToken && (
-              <>
-                <InputField name="password" type="password" label="كلمة المرور" placeholder="••••••••" icon="password" />
-                <InputField name="confirmPassword" type="password" label="تأكيد كلمة المرور" placeholder="••••••••" icon="password" />
-              </>
-            )}
-
-            <PrimaryBtn loading={isSubmitting}>
-              {googleIdToken ? 'إكمال التسجيل' : 'إنشاء حساب'}
-            </PrimaryBtn>
+            <InputField name="password" type="password" label="كلمة المرور" placeholder="••••••••" icon="password" />
+            <InputField name="confirmPassword" type="password" label="تأكيد كلمة المرور" placeholder="••••••••" icon="password" />
+            <PrimaryBtn loading={isSubmitting}>إنشاء حساب</PrimaryBtn>
           </Form>
         )}
       </Formik>
-
-      {!googleIdToken && (
-        <>
-          <Divider />
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setApiError('فشل التسجيل بجوجل')}
-              text="continue_with"
-              locale="ar"
-              width="400"
-            />
-          </div>
-        </>
-      )}
-
+      <Divider />
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={() => setApiError('فشل التسجيل بجوجل')}
+          text="continue_with"
+          locale="ar"
+          width="400"
+        />
+      </div>
       <FooterLink text="عندك حساب؟" linkText="تسجيل دخول" to="/login/customer" />
     </FormCard>
   )
