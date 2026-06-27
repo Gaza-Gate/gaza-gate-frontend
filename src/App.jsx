@@ -17,7 +17,7 @@ import Messages         from './pages/Messages'
 // استبدل السطر القديم بهذا السطر:
 import OrdersManagement from "./pages/Ordersmanagement";
 import OrderDetails from "./pages/Orderdetails";
-import RatingsManagement from "./pages/RatingsManagement";
+import Ratingsmanagement from "./pages/Ratingsmanagement";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/Verifyotp";
 import CustomerHome from "./pages/CustomerHome";   // ✅ إضافة جديدة
