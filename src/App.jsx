@@ -19,7 +19,7 @@ import OrdersManagement from "./pages/Ordersmanagement";
 import OrderDetails from "./pages/Orderdetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
-import VerifyOTP from "./pages/VerifyOTP";
+import VerifyOTP from "./pages/Verifyotp";
 import CustomerHome from "./pages/CustomerHome";   // ✅ إضافة جديدة
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
