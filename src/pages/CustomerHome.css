@@ -13,6 +13,10 @@
   background: #fff;
   border-bottom: 1px solid var(--border);
   padding: 14px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 }
 
 .home-nav-side {
@@ -32,11 +36,10 @@
   font-size: 14px;
   color: var(--orange);
   font-weight: 600;
+  transition: opacity 0.2s;
 }
-
-.home-icon-btn--ghost {
-  color: var(--text-mid);
-}
+.home-icon-btn:hover { opacity: 0.8; }
+.home-icon-btn--ghost { color: var(--text-mid); }
 
 .home-nav-links {
   display: flex;
@@ -51,11 +54,9 @@
   font-size: 14px;
   color: var(--text-mid);
   text-decoration: none;
+  transition: color 0.2s;
 }
-
-.home-nav-link:hover {
-  color: var(--orange);
-}
+.home-nav-link:hover { color: var(--orange); }
 
 .home-nav-btn {
   display: flex;
@@ -72,10 +73,7 @@
   cursor: pointer;
   transition: background 0.2s;
 }
-
-.home-nav-btn:hover {
-  background: var(--orange-dark);
-}
+.home-nav-btn:hover { background: var(--orange-dark); }
 
 .home-nav-logo {
   height: 56px;
@@ -89,68 +87,83 @@
 /* ════════ Hero ════════ */
 .home-hero {
   position: relative;
-  min-height: 560px;
+  min-height: 520px;
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: linear-gradient(120deg, #0c1c33 0%, #142c4d 45%, #1c3357 100%);
+  background: linear-gradient(120deg, #0c1c33 0%, #142c4d 50%, #1c3357 100%);
 }
 
+/* طبقة التدرج اللوني فوق الخلفية */
 .home-hero-overlay {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 15% 30%, rgba(249, 115, 22, 0.25), transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08), transparent 45%);
+    radial-gradient(circle at 15% 40%, rgba(249, 115, 22, 0.22), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(255,255,255,0.06), transparent 40%);
+  z-index: 0;
 }
 
-.home-hero-deco {
+/* ── صورة اليمين (الموبايل والعربة) ── */
+.home-hero-img-wrap {
   position: absolute;
-  left: 8%;
-  top: 50%;
-  transform: translateY(-50%) rotate(-8deg);
-  color: rgba(255, 255, 255, 0.16);
-  pointer-events: none;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 48%;
+  z-index: 1;
+  overflow: hidden;
 }
 
-@media (max-width: 900px) {
-  .home-hero-deco { display: none; }
+.home-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  /* تدرج خفي على الجانب عشان يندمج مع النص */
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, black 60%);
+  opacity: 0.85;
 }
 
+/* ── المحتوى النصي ── */
 .home-hero-content {
   position: relative;
-  z-index: 1;
-  max-width: 760px;
+  z-index: 2;
+  max-width: 540px;
   margin-right: auto;
-  padding: 0 6%;
+  margin-left: 4%;
+  padding: 60px 5% 60px 0;
   text-align: right;
 }
 
 .home-hero-pill {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.13);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 999px;
-  padding: 8px 18px;
+  padding: 8px 20px;
   font-size: 13px;
   margin-bottom: 22px;
+  backdrop-filter: blur(4px);
 }
 
 .home-hero-title {
-  font-size: 46px;
+  font-size: 48px;
   font-weight: 800;
   color: #fff;
-  line-height: 1.25;
+  line-height: 1.22;
   margin-bottom: 18px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 
 .home-hero-text {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.78);
-  max-width: 520px;
-  margin-bottom: 30px;
-  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.80);
+  max-width: 440px;
+  margin-bottom: 34px;
+  line-height: 1.85;
 }
 
 .home-hero-btn {
@@ -158,21 +171,32 @@
   color: #fff;
   border: none;
   border-radius: 12px;
-  padding: 15px 42px;
+  padding: 15px 48px;
   font-size: 16px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 10px 28px rgba(249, 115, 22, 0.40);
   transition: background 0.2s, transform 0.15s;
 }
+.home-hero-btn:hover  { background: var(--orange-dark); }
+.home-hero-btn:active { transform: scale(0.97); }
 
-.home-hero-btn:hover { background: var(--orange-dark); }
-.home-hero-btn:active { transform: scale(0.98); }
-
+@media (max-width: 900px) {
+  .home-hero-img-wrap { width: 55%; opacity: 0.5; }
+  .home-hero-title { font-size: 36px; }
+}
 @media (max-width: 600px) {
-  .home-hero-title { font-size: 32px; }
-  .home-hero { padding: 40px 0; min-height: auto; }
+  .home-hero { min-height: auto; }
+  .home-hero-img-wrap { display: none; }
+  .home-hero-content {
+    margin: 0 auto;
+    padding: 50px 20px;
+    text-align: center;
+  }
+  .home-hero-title  { font-size: 30px; }
+  .home-hero-text   { margin: 0 auto 30px; }
+  .home-hero-pill   { font-size: 12px; }
 }
 
 /* ════════ Sections عامة ════════ */
@@ -231,7 +255,6 @@
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.2s;
 }
-
 .home-category-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-card);
@@ -265,11 +288,7 @@
   gap: 6px;
 }
 
-.home-banner--dark {
-  background: #16284a;
-  color: #fff;
-}
-
+.home-banner--dark   { background: #16284a; color: #fff; }
 .home-banner--orange {
   background: linear-gradient(135deg, var(--orange), var(--orange-dark));
   color: #fff;
@@ -311,12 +330,10 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
-
-.home-banner-btn--light {
-  background: #fff;
-  color: var(--orange-dark);
-}
+.home-banner-btn:hover { opacity: 0.88; }
+.home-banner-btn--light { background: #fff; color: var(--orange-dark); }
 
 @media (max-width: 800px) {
   .home-banners { grid-template-columns: 1fr; }
@@ -335,8 +352,8 @@
   overflow: hidden;
   border: 1px solid var(--border);
   transition: box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
 }
-
 .home-product-card:hover {
   box-shadow: var(--shadow-card);
   transform: translateY(-2px);
@@ -347,12 +364,13 @@
   height: 190px;
   overflow: hidden;
 }
-
 .home-product-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
 }
+.home-product-card:hover .home-product-img img { transform: scale(1.04); }
 
 .home-product-info {
   padding: 16px 18px;
@@ -401,7 +419,7 @@
   .home-products { grid-template-columns: 1fr; }
 }
 
-/* ════════ كيف يعمل سوق ════════ */
+/* ════════ كيف يعمل سوق؟ ════════ */
 .home-howitworks-title {
   text-align: center;
   font-size: 20px;
@@ -421,6 +439,11 @@
   border-radius: 14px;
   padding: 26px 18px;
   text-align: center;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.home-step:hover {
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
 }
 
 .home-step-icon {
@@ -452,6 +475,6 @@
   .home-steps { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 520px) {
-  .home-steps { grid-template-columns: 1fr; }
+  .home-steps   { grid-template-columns: 1fr; }
   .home-section { padding: 32px 16px; }
 }

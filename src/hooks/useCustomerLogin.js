@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginSeller } from "../services/authService";
+import { loginCustomer } from "../services/authService";
 
 // ================================================================
 //  useLogin.js — كل منطق تسجيل الدخول هون
 // ================================================================
 
-export function useLogin() {
+export function usecustomerlogin() {
   const navigate = useNavigate();
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -36,10 +36,10 @@ export function useLogin() {
     if (err) { setError(err); return; }
     setLoading(true);
     try {
-    const result = await loginSeller(email, password);
-      (remember ? localStorage : sessionStorage).setItem("token", result.data.accessToken);
-      setSuccess(`أهلاً ${result.data.user.name}! جاري تحويلك... ✅`);
-      setTimeout(() => navigate("/seller/dashboard"), 1000);
+      const data = await loginCustomer(email, password);
+      (remember ? localStorage : sessionStorage).setItem("token", data.token);
+      setSuccess(`أهلاً ${data.user.name}! جاري تحويلك... ✅`);
+      navigate("/home/customer");
     } catch (err) {
       setError(err.message);
     } finally {

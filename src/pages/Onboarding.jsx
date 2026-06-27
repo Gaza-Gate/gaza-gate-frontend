@@ -1,4 +1,4 @@
- import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import SellerIllustration from '../assets/SellerIllustration'
 import BuyerIllustration from '../assets/BuyerIllustration'
 
@@ -8,7 +8,8 @@ function PortalCard({ title, description, illustration, fillLabel, outlineLabel,
       <div style={{ width: 180, height: 155, marginBottom: '1.25rem' }}>
         {illustration}
       </div>
-      <h2 style={{ fontSize: 19, fontWeight: 800, marginBottom: '.4rem', textDecoration: 'underline', textUnderlineOffset: 3 }}>{title}</h2>
+      {/* تم إزالة textDecoration و textUnderlineOffset من هنا */}
+      <h2 style={{ fontSize: 19, fontWeight: 800, marginBottom: '.4rem' }}>{title}</h2>
       <p style={{ fontSize: 14, color: 'var(--text-mid)', marginBottom: '1.25rem', lineHeight: 1.6 }}>{description}</p>
       <div style={{ width: '100%' }}>
         <button onClick={onFill} style={{ display: 'block', width: '100%', padding: 12, background: 'var(--orange)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontFamily: "'Tajawal', sans-serif", fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 8, boxShadow: 'var(--shadow-btn)' }}>
@@ -30,24 +31,24 @@ export default function Onboarding() {
         أهلا بك في منصة بوابة غزة
       </h1>
       <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', width: '100%', maxWidth: 800 }}>
-          <PortalCard
-        title="بوابة البائع"
-        description="أدر منتجاتك، تتبع مبيعاتك، ونمّ عملك."
-        illustration={<SellerIllustration />}
-        fillLabel="أنشئ متجري"
-        outlineLabel="تسجيل دخول"
-        onFill={() => navigate('/seller/onboarding')}
-        onOutline={() => navigate('/seller/onboarding')}
-      />
-            <PortalCard
-        title="بوابة المشتري"
-        description="تسوق، تتبع طلباتك، وتواصل مع البائعين."
-        illustration={<BuyerIllustration />}
-        fillLabel="أنشئ حسابي"
-        outlineLabel="تسجيل دخول"
-        onFill={() => navigate('/onboarding/customer')}
-        onOutline={() => navigate('/onboarding/customer')}
-      />
+        <PortalCard  
+          title="بوابة البائع"
+          description="أدر منتجاتك، تتبع مبيعاتك، ونمّ عملك."
+          illustration={<SellerIllustration />}
+          fillLabel="أنشئ متجري"
+          outlineLabel="تسجيل دخول"
+          onFill={() => navigate('/seller/onboarding')}
+          onOutline={() => navigate('/login/seller')}
+        />
+        <PortalCard
+          title ="بوابة المشتري"
+          description="تسوق، تتبع طلباتك، وتواصل مع البائعين."
+          illustration={<BuyerIllustration />}
+          fillLabel="أنشئ حسابي"
+          outlineLabel="تسجيل دخول"
+          onFill={() => navigate('/onboarding/customer')}
+          onOutline={() => navigate('/Login/customer')}
+        />
       </div>
       <style>{`@media(max-width:600px){.onboarding-grid{grid-template-columns:1fr!important}}`}</style>
     </div>

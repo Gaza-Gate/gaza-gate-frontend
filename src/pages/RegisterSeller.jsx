@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
@@ -15,18 +15,42 @@ function parseJwt(token) {
 
 export default function RegisterSeller() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [apiError, setApiError] = useState('')
   const [pendingToken, setPendingToken] = useState(null)
   const [googleInitialValues, setGoogleInitialValues] = useState(null)
 
   const defaultValues = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', storeName: '', storeDescription: '' }
 
+  // ✅ لو جاي من صفحة تسجيل الدخول بـ Google ومعه credential، شغّل نفس فلو تهيئة pendingToken تلقائياً
+  useEffect(() => {
+    const cred = location.state?.googleCredential
+    if (!cred || pendingToken) return
+
+    (async () => {
+      try {
+        const profile = parseJwt(cred)
+        const data = await sellerGoogleRegister(cred)
+        setPendingToken(data.data.pendingToken)
+        setGoogleInitialValues({
+          firstName: profile.given_name || '',
+          lastName: profile.family_name || '',
+          email: profile.email || '',
+          password: 'GOOGLE_AUTH',
+          confirmPassword: 'GOOGLE_AUTH',
+          storeName: '',
+          storeDescription: '',
+        })
+      } catch (err) {
+        setApiError(err.message || 'حدث خطأ أثناء تجهيز التسجيل بجوجل')
+      }
+    })()
+  }, [location.state, pendingToken])
+
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
-
       if (pendingToken) {
-        // مسار جوجل - complete
         await sellerGoogleRegisterComplete({
           pendingToken,
           firstName: values.firstName,
@@ -37,7 +61,6 @@ export default function RegisterSeller() {
         })
         navigate('/seller/dashboard')
       } else {
-        // مسار عادي
         await authAPI.sellerRegister({
           firstName: values.firstName,
           lastName: values.lastName,
@@ -62,7 +85,7 @@ export default function RegisterSeller() {
       <Formik
         initialValues={googleInitialValues || defaultValues}
         enableReinitialize={true}
-       validationSchema={pendingToken ? sellerRegisterGoogleSchema : sellerRegisterSchema}
+        validationSchema={pendingToken ? sellerRegisterGoogleSchema : sellerRegisterSchema}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting }) => (
@@ -107,10 +130,10 @@ export default function RegisterSeller() {
                   storeDescription: '',
                 })
               } catch (err) {
-                console.log(err)
+                setApiError(err.message || 'فشل التسجيل بجوجل')
               }
             }}
-            onError={() => console.log('فشل')}
+            onError={() => setApiError('فشل التسجيل بجوجل')}
           />
         </>
       )}
