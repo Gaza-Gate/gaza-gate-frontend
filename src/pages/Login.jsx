@@ -45,8 +45,9 @@ export default function LoginSeller() {
         msg.includes('لا يوجد حساب')
 
       if (noAccount) {
-        // ✅ ما عندوش حساب → وديه يكمل بيانات متجره (نفس فلو RegisterSeller الموجود)
-        navigate('/register/seller', { state: { googleCredential: credentialResponse.credential } })
+        // ✅ ما عندوش حساب → وديه يكمل تسجيله، وهو يضغط زر Google من جديد هناك
+        // (بدون تمرير نفس التوكن المستخدم)
+        navigate('/register/seller')
         return
       }
 
