@@ -14,12 +14,11 @@ import SellerOnboarding from './pages/SellerOnboarding'
 import EditStoreProfile from './pages/EditStoreProfile'
 import ChangePassword   from './pages/ChangePassword'
 import Messages         from './pages/Messages'
-// استبدل السطر القديم بهذا السطر:
-import OrdersManagement from "./pages/Ordersmanagement";
-import OrderDetails from "./pages/Orderdetails";
-import Ratingsmanagement from "./pages/Ratingsmanagement";
+import OrdersManagement from "./pages/OrdersManagement";
+import OrderDetails from "./pages/OrderDetails";
+import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
-import VerifyOTP from "./pages/Verifyotp";
+import VerifyOTP from "./pages/VerifyOTP";
 import CustomerHome from "./pages/CustomerHome";   // ✅ إضافة جديدة
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
