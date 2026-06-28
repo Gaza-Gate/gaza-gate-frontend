@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, RememberRow, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
@@ -11,9 +11,6 @@ import { customerGoogleLogin, customerGoogleRegister } from '../services/authSer
 export default function LoginCustomer() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
-
-  const location = useLocation();
-const token = location.state?.googleIdToken;
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
@@ -39,15 +36,14 @@ const token = location.state?.googleIdToken;
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
     } catch {
-      // إذا فشل → المستخدم جديد، سجّله تلقائياً
+      // إذا فشل → المستخدم جديد، سجّله تلقائياً وودّيه دغري عالهوم
       try {
         const data = await customerGoogleRegister(googleIdToken)
         const token = data.data?.token || data.token
         if (token) localStorage.setItem('token', token)
-        navigate('/register/customer')
+        navigate('/home/customer')
       } catch (err) {
         setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
-        navigate('/register/customer', { state: { googleIdToken } });
       }
     }
   }
