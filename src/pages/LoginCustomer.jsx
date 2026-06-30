@@ -30,19 +30,20 @@ export default function LoginCustomer() {
     setApiError('')
     const googleIdToken = credentialResponse.credential
     try {
+      // أول محاولة: تسجيل دخول مباشر
       const data = await customerGoogleLogin(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
     } catch {
       try {
+        // لو الحساب غير موجود، ننشئه تلقائياً بدون أي خطوات إضافية
         const data = await customerGoogleRegister(googleIdToken)
         const token = data.data?.token || data.token
         if (token) localStorage.setItem('token', token)
-        navigate('/register/customer')
+        navigate('/home/customer')
       } catch (err) {
         setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
-        navigate('/register/customer', { state: { googleIdToken } })
       }
     }
   }

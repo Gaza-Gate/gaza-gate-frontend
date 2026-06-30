@@ -34,16 +34,18 @@ export default function RegisterCustomer() {
     setApiError('')
     const googleIdToken = credentialResponse.credential
     try {
+      // ينشئ الحساب تلقائياً عبر جوجل
       const data = await customerGoogleRegister(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
     } catch {
       try {
+        // إذا كان الحساب موجوداً مسبقاً، نسجّل دخوله مباشرة
         const data = await customerGoogleLogin(googleIdToken)
         const token = data.data?.token || data.token
         if (token) localStorage.setItem('token', token)
-        navigate('register/customer')
+        navigate('/home/customer')
       } catch (err) {
         setApiError(err.message || 'فشل التسجيل بجوجل')
       }
