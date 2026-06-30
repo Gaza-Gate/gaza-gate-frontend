@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
-import { GoogleLogin } from '@react-oauth/google'
 import { customerRegisterSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
 import { customerGoogleRegister, customerGoogleLogin } from '../services/authService'
+import GoogleBtn from '../components/GoogleBtn'
 
 export default function RegisterCustomer() {
   const navigate = useNavigate()
@@ -34,13 +34,11 @@ export default function RegisterCustomer() {
     setApiError('')
     const googleIdToken = credentialResponse.credential
     try {
-      // حاول register أولاً
       const data = await customerGoogleRegister(googleIdToken)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
     } catch {
-      // إذا موجود مسبقاً → login مباشرة
       try {
         const data = await customerGoogleLogin(googleIdToken)
         const token = data.data?.token || data.token
@@ -75,18 +73,10 @@ export default function RegisterCustomer() {
         )}
       </Formik>
       <Divider />
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-  <GoogleLogin
-    onSuccess={handleGoogleSuccess}
-    onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
-    text="continue_with"
-    locale="ar"
-    width={Math.min(
-      typeof window !== 'undefined' ? window.innerWidth - 48 : 400,
-      400
-    ).toString()}
-  />
-</div>
+      <GoogleBtn
+        onSuccess={handleGoogleSuccess}
+        onError={() => setApiError('فشل التسجيل بجوجل')}
+      />
       <FooterLink text="عندك حساب؟" linkText="تسجيل دخول" to="/login/customer" />
     </FormCard>
   )

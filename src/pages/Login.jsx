@@ -5,8 +5,8 @@ import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, RememberRow, Api
 import InputField from '../components/InputField'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { GoogleLogin } from '@react-oauth/google'
 import { sellerGoogleLogin } from '../services/authService'
+import GoogleBtn from '../components/GoogleBtn'
 
 export default function LoginSeller() {
   const navigate = useNavigate()
@@ -28,14 +28,14 @@ export default function LoginSeller() {
     }
   }
 
-async function handleGoogleSuccess(credentialResponse) {
+  async function handleGoogleSuccess(credentialResponse) {
     try {
       const res = await sellerGoogleLogin(credentialResponse.credential)
       const { accessToken, user } = res.data
       localStorage.setItem('token', accessToken)
       localStorage.setItem('user', JSON.stringify(user))
       localStorage.setItem('userType', 'seller')
-      navigate('/seller/dashboard') // ✅ نفس مسار handleSubmit
+      navigate('/seller/dashboard')
     } catch (err) {
       setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
     }
@@ -56,7 +56,7 @@ async function handleGoogleSuccess(credentialResponse) {
         )}
       </Formik>
       <Divider />
-      <GoogleLogin
+      <GoogleBtn
         onSuccess={handleGoogleSuccess}
         onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
       />
