@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, RememberRow, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
-import { useGoogleLogin } from '@react-oauth/google'
+import { GoogleLogin } from '@react-oauth/google'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
 import { customerGoogleLogin, customerGoogleRegister } from '../services/authService'
@@ -48,17 +48,18 @@ export default function LoginCustomer() {
       setSubmitting(false)
     }
   }
-
-const handleGoogleSuccess = async (tokenResponse) => {
+const handleGoogleSuccess = async (credentialResponse) => {
   setApiError('')
+  // credentialResponse.credential هو id_token طازج دايماً
+  // بعتيه فوراً للـ backend بدون تأخير
   try {
-    const data = await customerGoogleLogin(tokenResponse.access_token)
+    const data = await customerGoogleLogin(credentialResponse.credential)
     const token = data.data?.token || data.token
     if (token) localStorage.setItem('token', token)
     navigate('/home/customer')
   } catch {
     try {
-      const data = await customerGoogleRegister(tokenResponse.access_token)
+      const data = await customerGoogleRegister(credentialResponse.credential)
       const token = data.data?.token || data.token
       if (token) localStorage.setItem('token', token)
       navigate('/home/customer')
@@ -83,11 +84,17 @@ const handleGoogleSuccess = async (tokenResponse) => {
         )}
       </Formik>
       <Divider />
-     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-  <GoogleBtn
-  onSuccess={handleGoogleSuccess}
-  onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
-/>
+    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+  <GoogleLogin
+    onSuccess={handleGoogleSuccess}
+    onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
+    text="continue_with"
+    locale="ar"
+    width={Math.min(
+    typeof window !== 'undefined' ? window.innerWidth - 48 : 400,
+    400
+  ).toString()}
+  />
 </div>
       <FooterLink text="ليس لديك حساب؟" linkText="إنشاء حسابي" to="/register/customer" />
     </FormCard>
