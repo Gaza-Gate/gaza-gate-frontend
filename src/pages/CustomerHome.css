@@ -87,10 +87,11 @@
 /* ════════ Hero ════════ */
 .home-hero {
   position: relative;
-  min-height: 520px;
+  min-height: 680px;
   display: flex;
   align-items: center;
   overflow: hidden;
+  justify-content: flex-start; /* النص جهة اليمين (في اتجاه RTL) */
   background: linear-gradient(120deg, #0c1c33 0%, #142c4d 50%, #1c3357 100%);
 }
 
@@ -98,12 +99,10 @@
 .home-hero-overlay {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 15% 40%, rgba(249, 115, 22, 0.22), transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(255,255,255,0.06), transparent 40%);
-  z-index: 0;
+  /* تغيير اللون ليكون أسود شفاف بسيط بدلاً من التدرج القوي */
+  background: rgba(0, 0, 0, 0.6); 
+  z-index: 1;
 }
-
 /* ── صورة اليمين (الموبايل والعربة) ── */
 .home-hero-img-wrap {
   position: absolute;
@@ -135,6 +134,12 @@
   margin-left: 4%;
   padding: 60px 5% 60px 0;
   text-align: right;
+  /* هذه الخصائص هي المسؤولة عن محاذاة النص لليمين */
+  margin-right: 8%; /* لضبط المسافة من جهة اليمين */
+  margin-left: auto; /* دفع المحتوى لليسار ليبقى على اليمين */
+  text-align: right; /* محاذاة النص داخل الحاوية لليمين */
+  
+  padding: 60px 0 60px 5%; /* توزيع المساحات */
 }
 
 .home-hero-pill {
@@ -148,22 +153,21 @@
   margin-bottom: 22px;
   backdrop-filter: blur(4px);
 }
-
 .home-hero-title {
-  font-size: 48px;
-  font-weight: 800;
+  font-family: "Tajawal", sans-serif; /* تأكد أن هذا هو الخط المستخدم */
+  font-size: 40px;
+  font-weight: 500;          /* لجعل الخط عريضاً جداً (Extra Bold) */
   color: #fff;
-  line-height: 1.22;
-  margin-bottom: 18px;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  line-height: 1.1;          /* تقليل المسافة بين الأسطر لتبدو متراصة */
+  letter-spacing: -0.5px;    /* تقليل التباعد بين الحروف لجعل الكلمة أكثر تماسكاً */
+  margin-bottom: 20px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2); /* إضافة ظل خفيف جداً يبرز الحروف */
 }
-
 .home-hero-text {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.80);
-  max-width: 440px;
-  margin-bottom: 34px;
-  line-height: 1.85;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 40px;
+  line-height: 1.6;
 }
 
 .home-hero-btn {
@@ -235,7 +239,7 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .home-category-card {
@@ -270,7 +274,13 @@
   align-items: center;
   justify-content: center;
 }
-
+.home-category-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  /* هذا السطر هو الحل: يقوم بإخفاء الخلفية البيضاء */
+  mix-blend-mode: multiply; 
+}
 /* ════════ بانرات ════════ */
 .home-banners {
   display: grid;
@@ -386,6 +396,7 @@
   border-radius: 999px;
   padding: 3px 10px;
   margin-bottom: 8px;
+align-self: flex-end;
 }
 
 .home-product-info h4 {
@@ -478,3 +489,22 @@
   .home-steps   { grid-template-columns: 1fr; }
   .home-section { padding: 32px 16px; }
 }
+
+.home-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+object-fit: contain;
+}
+ 
+.home-nav-side {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+ 
+.home-icon-btn span {
+  font-weight: 600;
+}
+ 
