@@ -76,16 +76,16 @@ export default function RegisterCustomer() {
       </Formik>
       <Divider />
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-  <div style={{ width: '100%', maxWidth: '400px' }}>
-    <GoogleLogin
-      onSuccess={handleGoogleSuccess}
-      onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
-      text="continue_with"
-      locale="ar"
-      useOneTap={false}
-      width={Math.min(window.innerWidth - 48, 400).toString()}
-    />
-  </div>
+  <GoogleLogin
+    onSuccess={handleGoogleSuccess}
+    onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
+    text="continue_with"
+    locale="ar"
+    width={Math.min(
+      typeof window !== 'undefined' ? window.innerWidth - 48 : 400,
+      400
+    ).toString()}
+  />
 </div>
       <FooterLink text="عندك حساب؟" linkText="تسجيل دخول" to="/login/customer" />
     </FormCard>
