@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Upload } from "lucide-react";
 import "./ProductFormModal.css";
-import { createProduct, updateProduct } from "../services/productService";
+import { createProduct, updateProduct, getCategories } from "../services/productService";
 import { getAuthToken } from "../services/authService";
-
-const CATEGORIES = ["الاطعمة", "ملابس", "أدوات منزلية", "إلكترونيات", "أخرى"];
 
 const emptyForm = {
   name: "",
+  description: "",
   price: "",
-  category: CATEGORIES[0],
+  categoryId: "",
   stockType: "unlimited", // "limited" | "unlimited"
   quantity: "",
   status: "active", // "active" | "hidden"
@@ -25,14 +24,23 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
 
+  // جلب قائمة الفئات من الباك اند عند فتح المودال
+useEffect(() => {
+  if (!open) return;
+  getCategories()
+    .then((res) => setCategories(res.data?.categories ?? []))
+    .catch(() => setCategories([]));
+}, [open]);
   useEffect(() => {
     if (!open) return;
     if (product) {
       setForm({
         name: product.name ?? "",
+        description: product.description ?? "",
         price: product.price ?? "",
-        category: product.category ?? CATEGORIES[0],
+        categoryId: product.categoryId ?? "",
         stockType: product.stockType ?? (product.quantity != null ? "limited" : "unlimited"),
         quantity: product.quantity ?? "",
         status: product.status ?? "active",
@@ -66,7 +74,7 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
     if (!form.name.trim()) errs.name = "اسم المنتج مطلوب";
     if (!form.price) errs.price = "السعر مطلوب";
     else if (Number(form.price) <= 0) errs.price = "السعر غير صحيح";
-    if (!form.category) errs.category = "الفئة مطلوبة";
+    if (!form.categoryId) errs.categoryId = "الفئة مطلوبة";
     if (form.stockType === "limited") {
       if (form.quantity === "" || Number(form.quantity) < 0) {
         errs.quantity = "الكمية مطلوبة";
@@ -86,17 +94,18 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
     try {
       const fd = new FormData();
       fd.append("name", form.name.trim());
+      fd.append("description", form.description.trim());
       fd.append("price", form.price);
-      fd.append("category", form.category);
+      fd.append("categoryId", form.categoryId);
       fd.append("stockType", form.stockType);
       fd.append("quantity", form.stockType === "limited" ? form.quantity : "");
       fd.append("status", form.status);
       if (imageFile) fd.append("image", imageFile);
 
       if (isEditMode) {
-        await updateProduct(product._id ?? product.id, fd, token);
+       await updateProduct(product._id ?? product.id, fd);
       } else {
-        await createProduct(fd, token);
+        await createProduct(fd);
       }
       onSaved?.();
       onClose();
@@ -148,6 +157,18 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
           </div>
 
           <div className="pfm-field">
+            <label>وصف المنتج</label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="وصف مختصر للمنتج..."
+              rows={3}
+            />
+            {errors.description && <p className="pfm-error">{errors.description}</p>}
+          </div>
+
+          <div className="pfm-field">
             <label>السعر (₪) *</label>
             <input type="number" name="price" min="0" step="0.01" value={form.price} onChange={handleChange} placeholder="0" />
             {errors.price && <p className="pfm-error">{errors.price}</p>}
@@ -155,12 +176,15 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
 
           <div className="pfm-field">
             <label>الفئة *</label>
-            <select name="category" value={form.category} onChange={handleChange}>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+            <select name="categoryId" value={form.categoryId} onChange={handleChange}>
+              <option value="" disabled>
+                اختر الفئة
+              </option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            {errors.category && <p className="pfm-error">{errors.category}</p>}
+            {errors.categoryId && <p className="pfm-error">{errors.categoryId}</p>}
           </div>
 
           <div className="pfm-field">

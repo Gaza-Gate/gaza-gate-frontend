@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Editstoreprofile.css";
 import { validateName, validateStoreName, validateStoreDescription } from "../utils/validators";
-import { updateStoreProfile, getAuthToken } from "../services/authService";
+import { getSellerProfile, updateSellerProfile } from "../services/profileService";
 
 // ── Icons ──
 const StoreIcon = () => (
@@ -77,22 +77,69 @@ const WarnIcon = () => (
   </svg>
 );
 
+// رقم فلسطيني لازم يبلش بـ 059 أو 056
+function validatePhone(phone) {
+  if (!phone) return ""; // اختياري
+  const cleaned = phone.trim();
+  if (!/^(059|056)\d{7}$/.test(cleaned)) {
+    return "رقم الهاتف يجب أن يبدأ بـ 059 أو 056 ويتكون من 10 أرقام";
+  }
+  return "";
+}
+
 export default function EditStoreProfile() {
   const navigate = useNavigate();
   const fileRef = useRef(null);
 
-  const [storeImage, setStoreImage] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null); // للعرض فقط
+  const [avatarFile, setAvatarFile] = useState(null); // الملف الفعلي للرفع
+
   const [form, setForm] = useState({
-    storeName: "متجر فلسطين",
+    storeName: "",
     storeDescription: "",
-    city: "غزة فلسطين",
-    fullName: "محمد أحمد",
-    email: "seller@gaza-gate.com",
-    phone: "+970599123456",
+    street: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
   });
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [success, setSuccess] = useState("");
+
+  // ── جلب بيانات البروفايل الحقيقية عند فتح الصفحة ──
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfile() {
+      try {
+        const res = await getSellerProfile();
+        const profile = res?.data?.profile;
+        if (!profile || !isMounted) return;
+
+        setForm({
+          storeName: profile.storeName || "",
+          storeDescription: profile.storeDescription || "",
+          street: profile.address || "", // الـ GET بيرجعها address، الـ PUT بياخدها street
+          firstName: profile.firstName || "",
+          lastName: profile.lastName || "",
+          email: profile.email || "",
+          phone: profile.phone || "",
+        });
+
+        if (profile.avatar) setAvatarPreview(profile.avatar);
+      } catch (err) {
+        if (isMounted) setErrors({ general: "تعذر تحميل بيانات المتجر، حاول تحديث الصفحة" });
+      } finally {
+        if (isMounted) setInitialLoading(false);
+      }
+    }
+
+    loadProfile();
+    return () => { isMounted = false; };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -104,19 +151,20 @@ export default function EditStoreProfile() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setStoreImage(URL.createObjectURL(file));
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const validate = () => {
     const errs = {};
     const storeNameErr = validateStoreName(form.storeName);
     const descErr = validateStoreDescription(form.storeDescription);
-    const fullNameErr = validateName(form.fullName, "الاسم الكامل");
-    const cityErr = validateName(form.city, "العنوان");
+    const fullNameErr = validateName(form.firstName, "الاسم الأول");
+    const phoneErr = validatePhone(form.phone);
     if (storeNameErr) errs.storeName = storeNameErr;
     if (descErr) errs.storeDescription = descErr;
-    if (fullNameErr) errs.fullName = fullNameErr;
-    if (cityErr) errs.city = cityErr;
+    if (fullNameErr) errs.firstName = fullNameErr;
+    if (phoneErr) errs.phone = phoneErr;
     return errs;
   };
 
@@ -125,25 +173,30 @@ export default function EditStoreProfile() {
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setLoading(true);
     setSuccess("");
- try {
-      const token = getAuthToken();
-      await updateStoreProfile(
-        {
-          storeName: form.storeName,
-          storeDescription: form.storeDescription,
-          city: form.city,
-          fullName: form.fullName,
-          phone: form.phone,
-        },
-        token
-      );
+    try {
+      await updateSellerProfile({
+        storeName: form.storeName,
+        storeDescription: form.storeDescription,
+        street: form.street,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone,
+        avatarFile,
+      });
       setSuccess("تم حفظ التغييرات بنجاح ✅");
     } catch (err) {
-      setErrors({ general: err.message });
+      const backendMsg = err?.response?.data?.data?.message
+        || err?.response?.data?.data?.errors?.[0]?.message
+        || "حدث خطأ أثناء الحفظ، حاول مرة أخرى";
+      setErrors({ general: backendMsg });
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return <div className="esp-wrapper"><p>جاري تحميل بيانات المتجر...</p></div>;
+  }
 
   return (
     <div className="esp-wrapper">
@@ -172,7 +225,7 @@ export default function EditStoreProfile() {
             تحميل صورة جديدة
           </button>
           <div className="esp-img-box">
-            {storeImage ? <img src={storeImage} alt="store" /> : <ShopIcon />}
+            {avatarPreview ? <img src={avatarPreview} alt="store" /> : <ShopIcon />}
           </div>
           <input type="file" accept="image/*" ref={fileRef} style={{ display: "none" }} onChange={handleImageChange} />
         </div>
@@ -202,8 +255,8 @@ export default function EditStoreProfile() {
             <span>العنوان</span>
             <LocationIcon />
           </div>
-          <input name="city" value={form.city} onChange={handleChange} placeholder="غزة فلسطين" />
-          {errors.city && <span className="esp-error">{errors.city}</span>}
+          <input name="street" value={form.street} onChange={handleChange} placeholder="شارع فلسطين، غزة" />
+          {errors.street && <span className="esp-error">{errors.street}</span>}
         </div>
       </div>
 
@@ -215,9 +268,15 @@ export default function EditStoreProfile() {
         </div>
 
         <div className="esp-field">
-          <label>الاسم الكامل *</label>
-          <input name="fullName" value={form.fullName} onChange={handleChange} placeholder="محمد أحمد" />
-          {errors.fullName && <span className="esp-error">{errors.fullName}</span>}
+          <label>الاسم الأول *</label>
+          <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="محمد" />
+          {errors.firstName && <span className="esp-error">{errors.firstName}</span>}
+        </div>
+
+        <div className="esp-field">
+          <label>الاسم الأخير</label>
+          <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="أحمد" />
+          {errors.lastName && <span className="esp-error">{errors.lastName}</span>}
         </div>
 
         <div className="esp-field">
@@ -234,10 +293,10 @@ export default function EditStoreProfile() {
 
         <div className="esp-field">
           <div className="esp-field-label-icon">
-            <span>رقم الهاتف *</span>
+            <span>رقم الهاتف</span>
             <PhoneIcon />
           </div>
-          <input name="phone" value={form.phone} onChange={handleChange} placeholder="+970599123456" />
+          <input name="phone" value={form.phone} onChange={handleChange} placeholder="0599123456" />
           {errors.phone && <span className="esp-error">{errors.phone}</span>}
         </div>
       </div>

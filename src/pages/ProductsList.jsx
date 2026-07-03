@@ -57,8 +57,8 @@ export default function ProductsList() {
  const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await getProducts(token);
-      setProducts(Array.isArray(data) ? data : data.products ?? []);
+       const data = await getProducts();
+       setProducts(data?.data?.products ?? []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -75,7 +75,7 @@ export default function ProductsList() {
     const newStatus = product.status === "active" ? "hidden" : "active";
     setBusyId(id);
     try {
-      await updateProductStatus(id, newStatus, token);
+      await updateProductStatus(id, newStatus);
       setProducts((prev) =>
         prev.map((p) => ((p._id ?? p.id) === id ? { ...p, status: newStatus } : p))
       );
@@ -88,6 +88,7 @@ export default function ProductsList() {
   const filteredProducts = products.filter((p) =>
     p.name?.toLowerCase().includes(searchText.toLowerCase())
   );
+  console.log({ products, searchText, filteredProducts });
 
 const handleDeleteClick = (product) => {
     setProductToDelete(product);
@@ -99,7 +100,7 @@ const handleDeleteClick = (product) => {
     const id = productToDelete._id ?? productToDelete.id;
     setDeleteLoading(true);
     try {
-      await deleteProduct(id, token);
+      await deleteProduct(id);
       setProducts((prev) => prev.filter((p) => (p._id ?? p.id) !== id));
       setIsConfirmOpen(false);
       setProductToDelete(null);
@@ -155,7 +156,7 @@ const handleDeleteClick = (product) => {
         <div className="pl-grid">
           {filteredProducts.map((product) => {
             const id = product._id ?? product.id;
-            const image = product.images?.[0];
+            const image = product.images?.[0]?.imageUrl;
             const isBusy = busyId === id;
             return (
               <div className="pl-card" key={id}>

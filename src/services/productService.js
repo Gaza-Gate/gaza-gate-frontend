@@ -1,55 +1,40 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "https://gaza-gate-backend.onrender.com";
-
-async function requestJSON(endpoint, body, token, method = "POST") {
-  const headers = {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
-    headers,
-    ...(body && { body: JSON.stringify(body) }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
-  return data;
-}
-
-async function requestFormData(endpoint, formData, token, method = "POST") {
-  const headers = {
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
-    headers,
-    body: formData,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
-  return data;
-}
+import api from "../utils/api";
 
 // جلب كل منتجات البائع
-export async function getProducts(token) {
-  return requestJSON("/api/product/", null, token, "GET");
+export async function getProducts() {
+  const res = await api.get("/api/product/");
+  return res.data;
 }
 
 // إنشاء منتج جديد (FormData لأنه فيها صورة)
-export async function createProduct(formData, token) {
-  return requestFormData("/api/product/", formData, token, "POST");
+export async function createProduct(formData) {
+  const res = await api.post("/api/product/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
 }
 
-// تعديل منتج موجود (FormData لأنه فيها صورة)
-export async function updateProduct(productId, formData, token) {
-  return requestFormData(`/api/product/${productId}`, formData, token, "PUT");
+export async function updateProduct(productId, formData) {
+  const res = await api.put(`/api/product/${productId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
 }
 
-// تبديل حالة المنتج (نشط/مخفي) - بدون body
-export async function updateProductStatus(productId, _newStatus, token) {
-  return requestJSON(`/api/product/${productId}/toggle`, null, token, "PATCH");
+// تبديل حالة المنتج (نشط/مخفي)
+export async function updateProductStatus(productId) {
+  const res = await api.patch(`/api/product/${productId}/toggle`);
+  return res.data;
 }
 
 // حذف منتج
-export async function deleteProduct(productId, token) {
-  return requestJSON(`/api/product/${productId}`, null, token, "DELETE");
+export async function deleteProduct(productId) {
+  const res = await api.delete(`/api/product/${productId}`);
+  return res.data;
+}
+
+// جلب الفئات
+export async function getCategories() {
+  const res = await api.get("/api/category/all");
+  return res.data;
 }

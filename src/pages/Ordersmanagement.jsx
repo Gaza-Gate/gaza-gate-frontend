@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./OrdersManagement.css";
 import logo from "../assets/logo.png";
 import SellerNavbar from "../components/SellerNavbar";
-
+import { getSellerOrders } from "../services/orderService";
+import { getAuthToken } from "../services/authService";
 
 // ── Icons ──
 const EyeIcon = () => (
@@ -37,33 +38,100 @@ const CurrencyIcon = () => (
 );
 
 // ── Status badge ──
+// ✅ هاي القيم مطابقة تماماً لعمود status بقاعدة البيانات (enum):
+// pending_review, accepted, rejected, in_production, ready, completed, cancelled
 const STATUS_MAP = {
-  pending: { label: "قيد التنفيذ", className: "om-badge-blue" },
-  approved: { label: "موافق عليه", className: "om-badge-green" },
-  review: { label: "بانتظار", className: "om-badge-yellow" },
-  delivered: { label: "تم التسليم", className: "om-badge-purple" },
+  pending_review: { label: "بانتظار المراجعة", className: "om-badge-yellow" },
+  accepted: { label: "موافق عليه", className: "om-badge-green" },
+  in_production: { label: "قيد التنفيذ", className: "om-badge-blue" },
+  ready: { label: "جاهز", className: "om-badge-purple" },
   completed: { label: "مكتمل", className: "om-badge-gray" },
+  rejected: { label: "مرفوض", className: "om-badge-red" },
+  cancelled: { label: "ملغي", className: "om-badge-red" },
 };
 
 function StatusBadge({ status }) {
-  const info = STATUS_MAP[status] || STATUS_MAP.pending;
+  const info = STATUS_MAP[status] || { label: status || "غير معروف", className: "om-badge-blue" };
   return <span className={`om-badge ${info.className}`}>{info.label}</span>;
 }
 
-// ── Static data مؤقتة - بتتبدّل لاحقاً بداتا الـ API ──
-const ORDERS_DATA = [
-  { id: "ORD-001", customer: "أحمد محمد علي", date: "2026-06-08", productsCount: 3, total: 150.0, status: "pending" },
-  { id: "ORD-002", customer: "فاطمة حسن", date: "2026-06-09", productsCount: 5, total: 280.5, status: "approved" },
-  { id: "ORD-003", customer: "محمود خالد", date: "2026-06-10", productsCount: 2, total: 95.0, status: "review" },
-  { id: "ORD-004", customer: "سارة يوسف", date: "2026-06-07", productsCount: 4, total: 320.0, status: "delivered" },
+// ── Static data fallback - تُستخدم فقط إذا الـ API فشل (خطأ اتصال مثلاً) ──
+const FALLBACK_ORDERS = [
+  { id: "ORD-001", customer: "أحمد محمد علي", date: "2026-06-08", productsCount: 3, total: 150.0, status: "in_production" },
+  { id: "ORD-002", customer: "فاطمة حسن", date: "2026-06-09", productsCount: 5, total: 280.5, status: "accepted" },
+  { id: "ORD-003", customer: "محمود خالد", date: "2026-06-10", productsCount: 2, total: 95.0, status: "pending_review" },
+  { id: "ORD-004", customer: "سارة يوسف", date: "2026-06-07", productsCount: 4, total: 320.0, status: "ready" },
   { id: "ORD-005", customer: "عمر إبراهيم", date: "2026-06-05", productsCount: 3, total: 180.0, status: "completed" },
 ];
 
 const OrdersManagement = () => {
   const navigate = useNavigate();
-  const [orders] = useState(ORDERS_DATA);
+  const token = getAuthToken();
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    pendingReview: 0,
+    accepted: 0,
+    inProduction: 0,
+    ready: 0,
+    completed: 0,
+    cancelled: 0,
+    rejected: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [usedFallback, setUsedFallback] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await getSellerOrders(token);
+
+        // شكل الريسبونس الحقيقي: { status: "success", data: { orders: [], stats: {...}, pagination: {...} } }
+        const list = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+          ? res.data
+          : res?.data?.orders ?? res?.orders ?? [];
+
+        const backendStats = res?.data?.stats ?? res?.stats ?? null;
+
+        setOrders(
+          list.map((o) => ({
+            id: o.id ?? o._id,
+            orderNumber: o.orderNumber ?? o.order_number ?? o.id,
+            customer: o.buyerName ?? o.buyer?.name ?? o.customer_name ?? "عميل",
+            date: o.date ?? o.createdAt?.slice(0, 10) ?? o.created_at?.slice(0, 10) ?? "",
+            productsCount: o.productsCount ?? o.items?.length ?? 0,
+            total: o.total ?? o.totalPrice ?? o.total_price ?? 0,
+            status: o.status ?? "pending_review",
+          }))
+        );
+
+        if (backendStats) {
+          setStats({
+            total: backendStats.total ?? 0,
+            pendingReview: backendStats.pendingReview ?? 0,
+            accepted: backendStats.accepted ?? 0,
+            inProduction: backendStats.inProduction ?? 0,
+            ready: backendStats.ready ?? 0,
+            completed: backendStats.completed ?? 0,
+            cancelled: backendStats.cancelled ?? 0,
+            rejected: backendStats.rejected ?? 0,
+          });
+        }
+        setUsedFallback(false);
+      } catch {
+        // فشل الاتصال بالـ API فعلياً (مش مجرد بيانات فاضية) → بنستخدم بيانات ثابتة تجريبية
+        setOrders(FALLBACK_ORDERS);
+        setUsedFallback(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [token]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -75,14 +143,15 @@ const OrdersManagement = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const totalOrders = orders.length;
-  const reviewCount = orders.filter((o) => o.status === "review").length;
-  const approvedCount = orders.filter((o) => o.status === "approved").length;
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
+  // لو ماكو stats من الباك إند (أو عم نستخدم fallback)، نحسبها يدوياً من orders المعروضة
+  const totalOrders = usedFallback ? orders.length : stats.total;
+  const reviewCount = usedFallback ? orders.filter((o) => o.status === "pending_review").length : stats.pendingReview;
+  const approvedCount = usedFallback ? orders.filter((o) => o.status === "accepted").length : stats.accepted;
+  const pendingCount = usedFallback ? orders.filter((o) => o.status === "in_production").length : stats.inProduction;
 
   return (
     <div className="om-root" dir="rtl">
-      
+
      <SellerNavbar />
 
       <main className="om-main">
@@ -97,19 +166,19 @@ const OrdersManagement = () => {
         <div className="om-stats">
           <div className="om-stat-card">
             <p className="om-stat-label">اجمالي الطلبات</p>
-            <p className="om-stat-value">{totalOrders}</p>
+            <p className="om-stat-value">{loading ? "—" : totalOrders}</p>
           </div>
           <div className="om-stat-card">
             <p className="om-stat-label">بانتظار المراجعة</p>
-            <p className="om-stat-value">{reviewCount}</p>
+            <p className="om-stat-value">{loading ? "—" : reviewCount}</p>
           </div>
           <div className="om-stat-card">
             <p className="om-stat-label">موافق عليها</p>
-            <p className="om-stat-value">{approvedCount}</p>
+            <p className="om-stat-value">{loading ? "—" : approvedCount}</p>
           </div>
           <div className="om-stat-card">
             <p className="om-stat-label">قيد التنفيذ</p>
-            <p className="om-stat-value">{pendingCount}</p>
+            <p className="om-stat-value">{loading ? "—" : pendingCount}</p>
           </div>
         </div>
 
@@ -131,39 +200,47 @@ const OrdersManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="om-cell-id">{order.id}</td>
-                    <td>
-                      <span className="om-cell-with-icon">
-                        {order.customer}
-                        <UserIcon />
-                      </span>
-                    </td>
-                    <td>
-                      <span className="om-cell-with-icon">
-                        {order.date}
-                        <CalendarIcon />
-                      </span>
-                    </td>
-                    <td>{order.productsCount} منتجات</td>
-                    <td>
-                      <span className="om-cell-with-icon om-cell-price">
-                        {order.total.toFixed(2)}
-                        <CurrencyIcon />
-                      </span>
-                    </td>
-                    <td>
-                      <StatusBadge status={order.status} />
-                    </td>
-                    <td>
-                      <button className="om-btn-view" onClick={() => navigate(`/seller/orders/${order.id}`)}>
-                        <EyeIcon />
-                        عرض التفاصيل
-                      </button>
+                {orders.length === 0 && !loading ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>
+                      لا يوجد طلبات حالياً
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  orders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="om-cell-id">{order.orderNumber}</td>
+                      <td>
+                        <span className="om-cell-with-icon">
+                          {order.customer}
+                          <UserIcon />
+                        </span>
+                      </td>
+                      <td>
+                        <span className="om-cell-with-icon">
+                          {order.date}
+                          <CalendarIcon />
+                        </span>
+                      </td>
+                      <td>{order.productsCount} منتجات</td>
+                      <td>
+                        <span className="om-cell-with-icon om-cell-price">
+                          {Number(order.total).toFixed(2)}
+                          <CurrencyIcon />
+                        </span>
+                      </td>
+                      <td>
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td>
+                        <button className="om-btn-view" onClick={() => navigate(`/seller/orders/${order.id}`)}>
+                          <EyeIcon />
+                          عرض التفاصيل
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

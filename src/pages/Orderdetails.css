@@ -358,3 +358,12 @@
   .od-step-label { font-size: 0.68rem; }
   .od-step-circle { width: 30px; height: 30px; }
 }
+
+.od-btn-reject {
+  background: #ef4444;
+  color: #fff;
+  /* نفس باقي styles الـ od-btn-update */
+}
+.od-btn-reject:hover {
+  background: #dc2626;
+}

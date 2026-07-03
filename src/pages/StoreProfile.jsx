@@ -1,30 +1,107 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StoreProfile.css";
 import logo from "../assets/logo.png";
 import ChangePasswordModal from "./ChangePasswordModal";
 import SellerNavbar from "../components/SellerNavbar";
- 
+import { getSellerProfile } from "../services/profileService";
+import { getAuthToken } from "../services/authService";
+
+// بيانات افتراضية تُستخدم فقط إذا الـ API فشل فعلياً (فشل اتصال حقيقي، مو بيانات فاضية)
+const FALLBACK_STORE_DATA = {
+  storeName: "متجر فلسطين",
+  storeDesc: "متخصص في المنتجات المحلية الفلسطينية عالي الجودة",
+  memberSince: "يناير 2025",
+  memberDuration: "17 شهر",
+  memberStatus: "عضو نشط",
+  rating: 4.5,
+  ratingLabel: "مرك نجوم",
+  totalOrders: 156,
+  ordersLabel: "طلب مكتمل",
+  address: "غير المرا",
+  productDesc: "منتجات محلية فلسطينية عالية الجودة",
+  ownerName: "احمد محمد",
+  phone: "+970999123456",
+  email: "seller@gaza-gate.com",
+  passwordLastChanged: "لم تحديث منذ 3 أشهر",
+};
+
+const STATUS_LABELS = {
+  active: "عضو نشط",
+  inactive: "غير نشط",
+  suspended: "موقوف",
+};
+
+// تحويل تاريخ ISO لصيغة "شهر سنة" بالعربي
+const formatMemberSince = (isoDate) => {
+  if (!isoDate) return null;
+  try {
+    const date = new Date(isoDate);
+    const months = [
+      "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+    ];
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
+  } catch {
+    return null;
+  }
+};
+
+// تحويل شكل الداتا الحقيقية القادمة من الـ API لشكل يفهمه الكومبوننت
+// الـ API بيرجع: { status: "success", data: { profile: {...} } }
+const normalizeProfile = (apiResponseData) => {
+  const profile =
+    apiResponseData?.data?.profile ??
+    apiResponseData?.profile ??
+    apiResponseData ??
+    {};
+
+  const fullName = `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim();
+  const months = profile.membershipMonths ?? 0;
+
+  return {
+    storeName: profile.storeName ?? FALLBACK_STORE_DATA.storeName,
+    storeDesc: profile.storeDescription ?? profile.storeDesc ?? FALLBACK_STORE_DATA.storeDesc,
+    memberSince: formatMemberSince(profile.memberSince) ?? FALLBACK_STORE_DATA.memberSince,
+    memberDuration: `${months} شهر`,
+    memberStatus: STATUS_LABELS[profile.status] ?? FALLBACK_STORE_DATA.memberStatus,
+    rating: profile.rating !== undefined ? Number(profile.rating) : FALLBACK_STORE_DATA.rating,
+    ratingLabel: FALLBACK_STORE_DATA.ratingLabel,
+    totalOrders: profile.totalOrders ?? FALLBACK_STORE_DATA.totalOrders,
+    ordersLabel: FALLBACK_STORE_DATA.ordersLabel,
+    address: profile.address ?? "غير محدد",
+    productDesc: profile.storeDescription ?? FALLBACK_STORE_DATA.productDesc,
+    ownerName: fullName || FALLBACK_STORE_DATA.ownerName,
+    phone: profile.phone ?? "غير متوفر",
+    email: profile.email ?? FALLBACK_STORE_DATA.email,
+    passwordLastChanged: profile.passwordMonthsAgo
+      ? `لم تحديث منذ ${profile.passwordMonthsAgo} أشهر`
+      : "غير معروف",
+  };
+};
+
 const StoreProfile = () => {
   const navigate = useNavigate();
+  const token = getAuthToken();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [storeData, setStoreData] = useState(FALLBACK_STORE_DATA);
+  const [loading, setLoading] = useState(true);
 
-  const storeData = {
-    storeName: "متجر فلسطين",
-    memberSince: "يناير 2025",
-    memberDuration: "17 شهر",
-    memberStatus: "عضو نشط",
-    rating: 4.5,
-    ratingLabel: "مرك نجوم",
-    totalOrders: 156,
-    ordersLabel: "طلب مكتمل",
-    address: "غير المرا",
-    productDesc: "منتجات محلية فلسطينية عالية الجودة",
-    ownerName: "احمد محمد",
-    phone: "+970999123456",
-    email: "seller@gaza-gate.com",
-    passwordLastChanged: "لم تحديث منذ 3 أشهر",
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await getSellerProfile(token);
+        // res.data شكلها: { status: "success", data: { profile: {...} } }
+        setStoreData(normalizeProfile(res.data ?? res));
+      } catch {
+        // فشل الاتصال بالـ API فعلياً → بنستخدم البيانات الثابتة الموجودة فوق
+        setStoreData(FALLBACK_STORE_DATA);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [token]);
 
   return (
     <div className="sp-root" dir="rtl">
@@ -49,8 +126,8 @@ const StoreProfile = () => {
 
         {/* Identity - full width */}
         <div className="sp-identity">
-          <h2 className="sp-store-name">{storeData.storeName}</h2>
-          <p className="sp-store-desc">متخصص في المنتجات المحلية الفلسطينية عالي الجودة</p>
+          <h2 className="sp-store-name">{loading ? "..." : storeData.storeName}</h2>
+          <p className="sp-store-desc">{storeData.storeDesc}</p>
           <span className="sp-member-badge">عضو منذ {storeData.memberSince}</span>
         </div>
 
@@ -59,17 +136,17 @@ const StoreProfile = () => {
           <div className="sp-stats">
             <div className="sp-stat-card">
               <p className="sp-stat-label">إجمالي الطلبات</p>
-              <p className="sp-stat-value">{storeData.totalOrders}</p>
+              <p className="sp-stat-value">{loading ? "—" : storeData.totalOrders}</p>
               <p className="sp-stat-sub">{storeData.ordersLabel}</p>
             </div>
             <div className="sp-stat-card">
               <p className="sp-stat-label">تقييم المتجر</p>
-              <p className="sp-stat-value">{storeData.rating}</p>
+              <p className="sp-stat-value">{loading ? "—" : storeData.rating}</p>
               <p className="sp-stat-sub">{storeData.ratingLabel}</p>
             </div>
             <div className="sp-stat-card">
               <p className="sp-stat-label">مدة العضوية</p>
-              <p className="sp-stat-value">{storeData.memberDuration}</p>
+              <p className="sp-stat-value">{loading ? "—" : storeData.memberDuration}</p>
               <p className="sp-stat-sub">{storeData.memberStatus}</p>
             </div>
           </div>

@@ -1,25 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, useCallback } from "react";
 import "./NotificationsPage.css";
-import logo from "../assets/logo.png";
+import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 
+const IS_API_READY = !!import.meta.env.VITE_API_URL;
+
 // ── Icons ──
-const BellIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-
-const LogoutIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-);
-
 const StarIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1.5">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -69,67 +55,143 @@ const TABS = [
   { key: "alert",   label: "المنتجات" },
 ];
 
-// ── بيانات تجريبية ──
-const NOTIFS_DATA = [
-  { id: 1, type: "order",   title: "طلب جديد",              body: "أحمد محمد أرسل طلباً جديداً بقيمة ₪150",              time: "منذ 5 دقائق",  read: false },
-  { id: 2, type: "rating",  title: "تقييم جديد",            body: "فاطمة علي قيّمت منتج 'زيت زيتون' بـ 4 نجوم",          time: "منذ 20 دقيقة", read: false },
-  { id: 3, type: "message", title: "رسالة جديدة",           body: "محمود حسن: هل يوجد خصم للكميات الكبيرة؟",             time: "منذ ساعة",     read: false },
-  { id: 4, type: "order",   title: "تم تأكيد الطلب",        body: "الطلب ORD-002 تم قبوله من قبل الزبون",                time: "منذ 3 ساعات",  read: true  },
-  { id: 5, type: "alert",   title: "منتج على وشك النفاد",   body: "مخزون 'زيت الزيتون' وصل إلى 3 قطع فقط",              time: "منذ 5 ساعات",  read: true  },
-  { id: 6, type: "rating",  title: "رد على تقييمك",         body: "يوسف أحمد أجمل ردك على تقييمه",                      time: "أمس",          read: true  },
-  { id: 7, type: "order",   title: "طلب بانتظار الشحن",     body: "الطلب ORD-005 جاهز للتسليم، اشركة التوصيل في الطريق", time: "أمس",          read: true  },
-  { id: 8, type: "message", title: "رسالة جديدة",           body: "سارة خالد: متى يصل طلبي؟",                            time: "أول أمس",      read: true  },
+// ── Static fallback ──
+const STATIC_NOTIFS = [
+  { _id: "1", type: "order",   title: "طلب جديد",            body: "أحمد محمد أرسل طلباً جديداً بقيمة ₪150",     time: "منذ 5 دقائق",  isRead: false },
+  { _id: "2", type: "rating",  title: "تقييم جديد",          body: "فاطمة علي قيّمت منتج 'زيت زيتون' بـ 4 نجوم", time: "منذ 20 دقيقة", isRead: false },
+  { _id: "3", type: "message", title: "رسالة جديدة",         body: "محمود حسن: هل يوجد خصم للكميات الكبيرة؟",    time: "منذ ساعة",     isRead: false },
+  { _id: "4", type: "order",   title: "تم تأكيد الطلب",      body: "الطلب ORD-002 تم قبوله من قبل الزبون",       time: "منذ 3 ساعات",  isRead: true  },
+  { _id: "5", type: "alert",   title: "منتج على وشك النفاد", body: "مخزون 'زيت الزيتون' وصل إلى 3 قطع فقط",     time: "منذ 5 ساعات",  isRead: true  },
 ];
 
+// ── API Helpers ──
+// عدّلي المسارات حسب ما يحددها الباك اند
+const fetchNotifications = async () => {
+  const res = await api.get("/api/seller/notification");
+  // شكل الريسبونس الفعلي: { status, data: { notifications: [], stats: {...}, pagination: {...} } }
+  // لازم نلاقي الـ array الصحيح بدل ما ناخد الـ object كامل بالغلط
+  const list =
+    res.data?.data?.notifications ??
+    res.data?.notifications ??
+    [];
+  return Array.isArray(list) ? list : [];
+};
+
+const markOneRead = async (id) => {
+  await api.patch(`/api/seller/notification/${id}/read`);
+};
+
+const markAllReadAPI = async () => {
+  await api.patch("/api/seller/notification/read-all");
+};
+
+const deleteAllAPI = async () => {
+  await api.delete("/api/seller/notification");
+};
+
+// ── Component ──
 export default function NotificationsPage() {
-  const navigate = useNavigate();
-  const [notifs, setNotifs] = useState(NOTIFS_DATA);
+  const [notifs, setNotifs]       = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [activeTab, setActiveTab] = useState("all");
-  const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target)) {}
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const unreadCount = notifs.filter((n) => !n.read).length;
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (IS_API_READY) {
+        const data = await fetchNotifications();
+        setNotifs(Array.isArray(data) ? data : []);
+      } else {
+        setNotifs(STATIC_NOTIFS);
+      }
+    } catch (err) {
+      console.error("فشل جلب الإشعارات:", err);
+      setNotifs(STATIC_NOTIFS);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const visible = notifs.filter((n) => activeTab === "all" || n.type === activeTab);
+  useEffect(() => { loadNotifications(); }, [loadNotifications]);
 
-  const markAllRead = () => setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+  // حماية إضافية: حتى لو صار notifs غير array لأي سبب، ما تكسر الصفحة
+  const safeNotifs = Array.isArray(notifs) ? notifs : [];
 
-  const markRead = (id) => setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+  const unreadCount = safeNotifs.filter((n) => !n.isRead).length;
+  const visible = safeNotifs.filter((n) => activeTab === "all" || n.type === activeTab);
+
+  const markRead = async (id) => {
+    try {
+      if (IS_API_READY) await markOneRead(id);
+      setNotifs((prev) => (Array.isArray(prev) ? prev : []).map((n) => n._id === id ? { ...n, isRead: true } : n));
+    } catch (err) {
+      console.error("فشل تعيين كمقروء:", err);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      if (IS_API_READY) await markAllReadAPI();
+      setNotifs((prev) => (Array.isArray(prev) ? prev : []).map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("فشل تعيين الكل كمقروء:", err);
+    }
+  };
+
+  const deleteAll = async () => {
+    try {
+      if (IS_API_READY) await deleteAllAPI();
+      setNotifs([]);
+    } catch (err) {
+      console.error("فشل حذف الإشعارات:", err);
+    }
+  };
 
   const tabCount = (key) => {
-    const list = key === "all" ? notifs : notifs.filter((n) => n.type === key);
-    return list.filter((n) => !n.read).length;
+    const list = key === "all" ? safeNotifs : safeNotifs.filter((n) => n.type === key);
+    return list.filter((n) => !n.isRead).length;
   };
+
+  if (loading) {
+    return (
+      <div className="np-root" dir="rtl">
+        <SellerNavbar />
+        <main className="np-main">
+          <div className="rm-state-center">
+            <div className="od-spinner" />
+            <p>جاري تحميل الإشعارات…</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="np-root" dir="rtl">
- 
-       <SellerNavbar />
-
+      <SellerNavbar />
       <main className="np-main">
 
-        {/* ── Header ── */}
         <div className="np-header">
           <h1 className="np-page-title">التنبيهات</h1>
           <div className="np-header-actions">
             <button className="np-btn-mark-all" onClick={markAllRead}>
               تعيين الكل كمقروء
             </button>
-            <button className="np-btn-dismiss-all" onClick={() => setNotifs([])}>
+            <button className="np-btn-dismiss-all" onClick={deleteAll}>
               حذف الكل
             </button>
           </div>
         </div>
 
-        {/* ── Tabs ── */}
         <div className="np-tabs">
           {TABS.map((tab) => {
             const count = tabCount(tab.key);
@@ -144,34 +206,33 @@ export default function NotificationsPage() {
               </button>
             );
           })}
-          <div className="np-tabs-filter">
-            <FunnelIcon />
-          </div>
+          <div className="np-tabs-filter"><FunnelIcon /></div>
         </div>
 
-        {/* ── List ── */}
         <div className="np-list">
           {visible.length === 0 && (
             <div className="np-empty">لا توجد إشعارات</div>
           )}
           {visible.map((n) => {
-            const meta = TYPE_META[n.type];
+            const meta = TYPE_META[n.type] ?? TYPE_META.alert;
             return (
               <div
-                key={n.id}
-                className={`np-item ${!n.read ? "np-item-unread" : ""}`}
-                onClick={() => markRead(n.id)}
+                key={n._id}
+                className={`np-item ${!n.isRead ? "np-item-unread" : ""}`}
+                onClick={() => markRead(n._id)}
               >
                 <div className="np-item-icon" style={{ background: meta.bg, color: meta.color }}>
                   {meta.icon}
                 </div>
                 <div className="np-item-body">
+                  {/* عدّلي title وbody حسب أسماء الحقول من الباك اند */}
                   <div className="np-item-title">{n.title}</div>
                   <div className="np-item-desc">{n.body}</div>
                 </div>
                 <div className="np-item-right">
-                  <span className="np-item-time">{n.time}</span>
-                  {!n.read && <span className="np-unread-dot"></span>}
+                  {/* عدّلي time حسب اسم الحقل من الباك اند */}
+                  <span className="np-item-time">{n.time ?? n.createdAt?.slice(0, 10)}</span>
+                  {!n.isRead && <span className="np-unread-dot"></span>}
                 </div>
               </div>
             );
@@ -181,4 +242,4 @@ export default function NotificationsPage() {
       </main>
     </div>
   );
-} 
+}
