@@ -40,6 +40,8 @@ const FunnelIcon = () => (
 );
 
 // ── نوع الإشعار → لون وأيقونة ──
+// ملاحظة: الباك بيرجّع النوع بأحرف كبيرة (مثلاً "ORDER")، وإحنا منطبّعه لأحرف صغيرة
+// عند الجلب (fetchNotifications) حتى يتطابق مع المفاتيح هون
 const TYPE_META = {
   order:   { icon: <CartIcon />,    bg: "#dbeafe", color: "#2563eb", label: "طلبات" },
   rating:  { icon: <StarIcon />,    bg: "#fff7ed", color: "#f97316", label: "تقييمات" },
@@ -74,7 +76,10 @@ const fetchNotifications = async () => {
     res.data?.data?.notifications ??
     res.data?.notifications ??
     [];
-  return Array.isArray(list) ? list : [];
+  const arr = Array.isArray(list) ? list : [];
+  // الباك بيرجّع type بأحرف كبيرة (مثلاً "ORDER") - نطبّعها لأحرف صغيرة
+  // حتى تتطابق مع مفاتيح TYPE_META و TABS
+  return arr.map((n) => ({ ...n, type: (n.type ?? "").toLowerCase() }));
 };
 
 const markOneRead = async (id) => {
@@ -227,11 +232,11 @@ export default function NotificationsPage() {
                 <div className="np-item-body">
                   {/* عدّلي title وbody حسب أسماء الحقول من الباك اند */}
                   <div className="np-item-title">{n.title}</div>
-                  <div className="np-item-desc">{n.body}</div>
+                  <div className="np-item-desc">{n.body ?? n.content}</div>
                 </div>
                 <div className="np-item-right">
                   {/* عدّلي time حسب اسم الحقل من الباك اند */}
-                  <span className="np-item-time">{n.time ?? n.createdAt?.slice(0, 10)}</span>
+                  <span className="np-item-time">{n.time ?? n.sentAt?.slice(0, 10) ?? n.createdAt?.slice(0, 10)}</span>
                   {!n.isRead && <span className="np-unread-dot"></span>}
                 </div>
               </div>

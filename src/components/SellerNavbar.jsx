@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, LogOut, ChevronDown, Menu, X } from "lucide-react";
+import { Bell, LogOut, ChevronDown, Menu, X, ArrowLeftRight } from "lucide-react";
 import logo from "../assets/logo.png";
 import ConvertToBuyerModal from "./ConvertToBuyerModal";
 import "./SellerNavbar.css";
@@ -88,12 +88,19 @@ export default function SellerNavbar({ hasNotification = true }) {
                   {item.label}
                 </Link>
               ))}
-              <button type="button" className="snb-dropdown-item snb-dropdown-item-btn" onClick={handleOpenConvertModal}>
-                التحويل لمشتري
-              </button>
             </div>
           )}
         </div>
+
+        {/* زر التحويل لمشتري - ظاهر مباشرة بجانب "المزيد"، مش جوا القائمة المنسدلة */}
+        <button
+          type="button"
+          className="snb-link snb-link-btn snb-convert-btn"
+          onClick={handleOpenConvertModal}
+        >
+          <ArrowLeftRight size={15} />
+          التحويل لمشتري
+        </button>
       </div>
 
       {/* ── أزرار يمين: الإشعارات + خروج (سطح المكتب) ── */}
@@ -138,6 +145,7 @@ export default function SellerNavbar({ hasNotification = true }) {
           ))}
 
           <button type="button" className="snb-mobile-link snb-mobile-link-btn" onClick={handleOpenConvertModal}>
+            <ArrowLeftRight size={16} />
             التحويل لمشتري
           </button>
 
@@ -163,15 +171,15 @@ export default function SellerNavbar({ hasNotification = true }) {
       )}
 
       {showConvertModal && (
-  <ConvertToBuyerModal
-    isOpen={showConvertModal}
-    onClose={() => setShowConvertModal(false)}
-    onConfirm={() => {
-      setShowConvertModal(false);
-      navigate("/buyer"); // أو أي مسار البائع-> مشتري عندك، مثلاً /buyer/home
-    }}
-  />
-)} 
+        <ConvertToBuyerModal
+          isOpen={showConvertModal}
+          onClose={() => setShowConvertModal(false)}
+          onConfirm={() => {
+            setShowConvertModal(false);
+            navigate("/buyer"); // أو أي مسار البائع-> مشتري عندك، مثلاً /buyer/home
+          }}
+        />
+      )}
     </nav>
   );
 }

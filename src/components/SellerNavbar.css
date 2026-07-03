@@ -216,3 +216,10 @@
   font: inherit; /* ياخد نفس فونت وحجم .snb-link */
   padding: 0;    /* أو نفس padding يلي عند .snb-link إذا موجود */
 }
+
+/* زر "التحويل لمشتري" مع الأيقونة - نفس شكل .snb-link بس مع ترتيب أيقونة+نص جنب بعض */
+.snb-convert-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
