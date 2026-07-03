@@ -31,19 +31,12 @@ const STATUS_CLASS = {
   cancelled: "dsh-tag-cancelled",
 };
 
-// بيانات تقييم افتراضية تُستخدم فقط إذا الـ API الجديد لسا غير شغال (fallback)
-const FALLBACK_REVIEWS = [
-  { name: "أحمد محمد", rating: 5, text: "منتج ممتاز جداً!" },
-  { name: "فاطمة علي", rating: 4, text: "جودة عالية لكن التوصيل تأخر" },
-  { name: "محمود حسن", rating: 5, text: "صابون طبيعي رائع" },
-];
-
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
-  const [reviews, setReviews] = useState(FALLBACK_REVIEWS);
+  const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null); // بيانات جاهزة من /api/seller/dashboard إذا توفرت
   const [loading, setLoading] = useState(true);
 
@@ -52,42 +45,49 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        // المحاولة الأولى: الـ endpoint الجديد المخصص (أسرع وأدق)
+        // المحاولة الأولى: الـ endpoint الجديد المخصص (أسرع وأدق - كل شي دفعة وحدة)
+        let dashboardOk = false;
         try {
           const dashboardRes = await getSellerDashboard();
-          // ⚠️ لما يجهز الباك اند، تأكدي من أسماء الحقول هون وعدليها حسب الـ Response الفعلي
-          const d = dashboardRes.data ?? dashboardRes;
+          const d = dashboardRes?.data?.dashboard ?? {};
+          const s = d.stats ?? {};
+          const r = d.rating ?? {};
+
           setStats({
-            completedCount: d.completedOrders ?? d.completedCount ?? 0,
-            activeProductsCount: d.activeProducts ?? d.activeProductsCount ?? 0,
-            inProgressCount: d.inProgressOrders ?? d.inProgressCount ?? 0,
-            pendingCount: d.pendingOrders ?? d.pendingCount ?? 0,
-            avgRating: d.rating?.average ?? d.avgRating ?? 0,
-            ratingDistribution: d.rating?.distribution ?? null,
-            ratingCount: d.rating?.count ?? d.reviews?.length ?? 0,
+            completedCount: s.completedOrder ?? 0,
+            activeProductsCount: s.activeProduct ?? 0,
+            inProgressCount: s.inProgressOrder ?? 0,
+            pendingCount: s.waitingOrder ?? 0,
+            avgRating: Number(r.average) || 0,
+            ratingDistribution: r.distribution ?? null,
+            ratingCount: r.totalReviews ?? 0,
           });
-          if (Array.isArray(d.reviews) && d.reviews.length > 0) {
-            setReviews(d.reviews);
-          }
-          // لما الـ endpoint يشتغل، ما عاد محتاجين نجيب orders/products يدوياً للإحصائيات
-          // (بس بنخليهم لقسم "الطلبات الأخيرة" تحت)
+
+          setReviews(Array.isArray(r.reviews) ? r.reviews : []);
+          setOrders(Array.isArray(d.recentOrders) ? d.recentOrders : []);
+
+          dashboardOk = true;
         } catch {
-          // الـ endpoint لسا غير جاهز (404) → نكمل بالطريقة القديمة تحت
+          // الـ endpoint لسا غير جاهز أو صار خطأ → نكمل بالطريقة القديمة تحت
           setStats(null);
         }
 
-        const [ordersData, productsData] = await Promise.all([
-          getSellerOrders().catch(() => ({ orders: [] })),
-          getProducts().catch(() => ({ products: [] })),
-        ]);
-        setOrders(
-          Array.isArray(ordersData) ? ordersData : (ordersData.orders ?? []),
-        );
-        setProducts(
-          Array.isArray(productsData)
-            ? productsData
-            : (productsData.products ?? []),
-        );
+        // لو الـ dashboard endpoint فشل، منجيب البيانات القديمة يدوياً كـ fallback
+        // (لو نجح، ما منعيد جلبها حتى ما نكتب فوق بيانات الداشبورد الصحيحة)
+        if (!dashboardOk) {
+          const [ordersData, productsData] = await Promise.all([
+            getSellerOrders().catch(() => ({ orders: [] })),
+            getProducts().catch(() => ({ products: [] })),
+          ]);
+          setOrders(
+            Array.isArray(ordersData) ? ordersData : (ordersData.orders ?? []),
+          );
+          setProducts(
+            Array.isArray(productsData)
+              ? productsData
+              : (productsData.products ?? []),
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -107,7 +107,9 @@ export default function Dashboard() {
 
   const avgRating =
     stats?.avgRating ||
-    reviews.reduce((sum, r) => sum + r.rating, 0) / (reviews.length || 1);
+    (reviews.length
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0);
 
   const recentOrders = orders.slice(0, 3);
 
@@ -182,12 +184,12 @@ export default function Dashboard() {
             <span className="dsh-panel-title">
               <Star size={16} color="#f97316" /> تقييم المتجر
             </span>
-           <button
-            className="dsh-link-btn"
-            onClick={() => navigate("/seller/ratings")}
-          >
-            عرض الكل ←
-          </button>
+            <button
+              className="dsh-link-btn"
+              onClick={() => navigate("/seller/ratings")}
+            >
+              عرض الكل ←
+            </button>
           </div>
 
           <div className="dsh-rating-summary">
@@ -226,21 +228,31 @@ export default function Dashboard() {
           </div>
 
           <div className="dsh-reviews-list">
-            {reviews.map((r, idx) => (
-              <div className="dsh-review-row" key={idx}>
-                <div className="dsh-avatar">{r.name[0]}</div>
-                <div className="dsh-review-body">
-                  <div className="dsh-review-top">
-                    <span className="dsh-review-name">{r.name}</span>
-                    <span className="dsh-review-stars">
-                      {"★".repeat(r.rating)}
-                      {"☆".repeat(5 - r.rating)}
-                    </span>
+            {reviews.length === 0 ? (
+              <p className="dsh-empty-text">لا توجد تقييمات حتى الآن</p>
+            ) : (
+              reviews.map((r, idx) => (
+                <div className="dsh-review-row" key={idx}>
+                  <div className="dsh-avatar">
+                    {r.avatar ? (
+                      <img src={r.avatar} alt={r.customerName ?? ""} />
+                    ) : (
+                      r.customerName?.[0] ?? "؟"
+                    )}
                   </div>
-                  <p className="dsh-review-text">{r.text}</p>
+                  <div className="dsh-review-body">
+                    <div className="dsh-review-top">
+                      <span className="dsh-review-name">{r.customerName}</span>
+                      <span className="dsh-review-stars">
+                        {"★".repeat(r.rating)}
+                        {"☆".repeat(5 - r.rating)}
+                      </span>
+                    </div>
+                    <p className="dsh-review-text">{r.comment}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -266,10 +278,10 @@ export default function Dashboard() {
                   <div className="dsh-order-row" key={id}>
                     <div>
                       <span className="dsh-order-number">
-                        ORD-{order.orderNumber ?? id?.toString().slice(-3)}
+                        {order.orderNumber ?? `ORD-${id?.toString().slice(-3)}`}
                       </span>
                       <p className="dsh-order-buyer">
-                        {order.buyerName ?? order.buyer?.name ?? "مشتري"}
+                        {order.customerName ?? "مشتري"}
                       </p>
                     </div>
                     <span
@@ -289,9 +301,9 @@ export default function Dashboard() {
 
         {/* إجراءات سريعة */}
         <div className="dsh-quick-actions">
-          <button
+                        <button
             className="dsh-quick-btn dsh-quick-dark"
-            onClick={() => navigate("/seller/orders/:id")}
+            onClick={() => navigate("/seller/orders")}
           >
             <ShoppingCart size={26} />
             <span className="dsh-quick-title">متابعة الطلبات</span>
