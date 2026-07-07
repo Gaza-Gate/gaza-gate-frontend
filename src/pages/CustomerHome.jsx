@@ -1,22 +1,22 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ChatbotWidget from "../components/ChatbotWidget";
+
 import {
-  LogOut,
   ShoppingCart,
-  User,
   Package,
   ArrowLeft,
   Search,
   CreditCard,
   PackagePlus,
-  PackageCheck,
+  Monitor,
 } from "lucide-react";
+import CustomerNavbar from "../components/CustomerNavbar";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
+import { getPublicProducts } from "../services/productService";
 import logo from "../assets/logo.png";
-
-// ضع الصور التالية داخل مجلد src/assets/ بهذه الأسماء بالضبط:
 import heroBanner from "../assets/hero-banner.png";
-import productJambari from "../assets/product-jambari.jpg";
-import productShirt from "../assets/product-shirt.jpg";
-import productOliveOil from "../assets/product-oliveoil.jpg";
 import handcraftIconImg from "../assets/icon-park-outline_traditional-chinese-medicine.jpg";
 import foodIconImg from "../assets/ion_fast-food-outline.png";
 import clothesIconImg from "../assets/hugeicons_clothes.jpg";
@@ -25,16 +25,12 @@ import "./CustomerHome.css";
 
 // ── بيانات الأقسام والمنتجات والبانرات ──
 const categories = [
-  { id: 1, label: "الأشغال اليدوية", iconSrc: handcraftIconImg },
-  { id: 2, label: "المأكولات المنزلية", iconSrc: foodIconImg },
-  { id: 3, label: "ملابس", iconSrc: clothesIconImg },
+  { id: "handicraft", label: "الأشغال اليدوية", iconSrc: handcraftIconImg },
+  { id: "food", label: "المأكولات المنزلية", iconSrc: foodIconImg },
+  { id: "clothes", label: "ملابس", iconSrc: clothesIconImg },
+  { id: "electronics", label: "الإلكترونيات", icon: Monitor },
 ];
 
-const featuredProducts = [
-  { id: 1, name: "جمبري", price: 100, qty: 10, status: "نشط", image: productJambari },
-  { id: 2, name: "قميص قطني كاجوال", price: 95, qty: 10, status: "نشط", image: productShirt },
-  { id: 3, name: "زيت زيتون اصلي", price: 45, qty: 20, status: "نشط", image: productOliveOil },
-];
 
 const howItWorks = [
   { Icon: Package, title: "استقبل طلبك", desc: "تتبع طلبك حتى يصل لبابك" },
@@ -45,43 +41,30 @@ const howItWorks = [
 
 export default function CustomerHome() {
   const navigate = useNavigate();
+  const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const userName = "أحمد";
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await getPublicProducts(1);
+      setFeaturedProducts(response.data?.products?.slice(0, 3) || []);
+    } catch (err) {
+      console.error("Error fetching featured products:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="home-wrapper" dir="rtl">
-      {/* ── Navbar ── */}
-      <nav className="home-nav">
-        <img src={logo} alt="Gaza Gate" className="home-nav-logo" style={{ cursor: 'pointer' }} 
-           onClick={() => navigate("/home/customer")}/>
-
-        <div className="home-nav-links">
-          <button className="home-nav-btn" onClick={() => navigate("/home/customer")}>
-            <ShoppingCart size={15} />
-            الرئيسية
-          </button>
-          <a href="#products" className="home-nav-link">
-            <Package size={15} />
-            المنتجات
-          </a>
-          <a href="#orders" className="home-nav-link">
-            <User size={15} />
-            طلباتي
-          </a>
-        </div>
-
-        <div className="home-nav-side">
-          <button className="home-icon-btn home-icon-btn--ghost" aria-label="السلة">
-            <ShoppingCart size={18} />
-          </button>
-          <button className="home-icon-btn home-icon-btn--ghost" aria-label="الحساب">
-            <User size={18} />
-          </button>
-          <button className="home-icon-btn" aria-label="خروج" onClick={() => navigate("/login/customer")}>
-            <span>خروج</span>
-            <LogOut size={18} />
-          </button>
-        </div>
-      </nav>
+      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
 
       {/* ── Hero ── */}
       <section className="home-hero">
@@ -108,22 +91,29 @@ export default function CustomerHome() {
       <section className="home-section">
         <div className="home-section-head">
           <h2>تصفح الأقسام</h2>
-          <button className="home-link-btn">
+          <button className="home-link-btn" onClick={() => navigate("/products")}>
             عرض الكل
             <ArrowLeft size={15} />
           </button>
         </div>
 
        <div className="home-categories">
-    {categories.map(({ id, label, iconSrc }) => (
-      <button key={id} className="home-category-card">
+    {categories.map(({ id, label, iconSrc, icon: Icon }) => (
+      <button 
+        key={id} 
+        className="home-category-card"
+        onClick={() => navigate(`/products?category=${id}`)}
+      >
         <span className="home-category-icon">
-          {/* عرض الصور بدلاً من الـ SVG القديمة */}
-          <img 
-            src={iconSrc} 
-            alt={label} 
-            style={{ width: '28px', height: '28px', objectFit: 'contain' }} 
-          />
+          {iconSrc ? (
+            <img 
+              src={iconSrc} 
+              alt={label} 
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }} 
+            />
+          ) : (
+            Icon && <Icon size={28} />
+          )}
         </span>
         {label}
       </button>
@@ -152,31 +142,49 @@ export default function CustomerHome() {
       </section>
 
       {/* ── منتجات مميزة ── */}
-      <section className="home-section" id="products">
+      <section className="home-section" >
         <div className="home-section-head">
           <h2>منتجات مميزة</h2>
-          <button className="home-link-btn">
+          <button className="home-link-btn" onClick={() => navigate("/products")}>
             عرض الكل
             <ArrowLeft size={15} />
           </button>
         </div>
 
         <div className="home-products">
-          {featuredProducts.map((p) => (
-            <div className="home-product-card" key={p.id}>
-              <div className="home-product-img">
-                <img src={p.image} alt={p.name} />
-              </div>
-              <div className="home-product-info">
-                <span className="home-product-status">{p.status}</span>
-                <h4>{p.name}</h4>
-                <div className="home-product-row">
-                  <span className="home-product-price">{p.price}₪</span>
-                  <span className="home-product-qty">الكمية: {p.qty}</span>
+          {loading ? (
+            <p>جاري التحميل...</p>
+          ) : featuredProducts.length === 0 ? (
+            <p>لا توجد منتجات مميزة</p>
+          ) : (
+            featuredProducts.map((p) => (
+              <div
+                className="home-product-card home-product-card--clickable"
+                key={p.id}
+                onClick={() => navigate(`/product/${p.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/product/${p.id}`);
+                  }
+                }}
+              >
+                <div className="home-product-img">
+                  <img src={p.primaryImage?.imageUrl || logo} alt={p.name} />
+                </div>
+                <div className="home-product-info">
+                  <span className="home-product-status">{p.status || "متوفر"}</span>
+                  <h4>{p.name}</h4>
+                  <div className="home-product-row">
+                    <span className="home-product-price">{p.price}₪</span>
+                    <span className="home-product-qty">الكمية: {p.quantity || 0}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
@@ -195,6 +203,7 @@ export default function CustomerHome() {
           ))}
         </div>
       </section>
+       <ChatbotWidget />
     </div>
   );
 }

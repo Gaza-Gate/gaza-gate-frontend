@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./OrdersManagement.css";
 import logo from "../assets/logo.png";
 import SellerNavbar from "../components/SellerNavbar";
+import { getSellerOrders } from "../services/orderService";
+import { getAuthToken } from "../services/authService";
 
 
 // ── Icons ──
@@ -61,9 +63,27 @@ const ORDERS_DATA = [
 
 const OrdersManagement = () => {
   const navigate = useNavigate();
-  const [orders] = useState(ORDERS_DATA);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
+  const token = getAuthToken();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const data = await getSellerOrders(token);
+        setOrders(Array.isArray(data) ? data : data.orders ?? []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [token]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -117,56 +137,64 @@ const OrdersManagement = () => {
         <div className="om-table-card">
           <h2 className="om-table-title">قائمة الطلبات</h2>
 
-          <div className="om-table-wrap">
-            <table className="om-table">
-              <thead>
-                <tr>
-                  <th>رقم الطلب</th>
-                  <th>العميل</th>
-                  <th>التاريخ</th>
-                  <th>المنتجات</th>
-                  <th>الإجمالي</th>
-                  <th>الحالة</th>
-                  <th>الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="om-cell-id">{order.id}</td>
-                    <td>
-                      <span className="om-cell-with-icon">
-                        {order.customer}
-                        <UserIcon />
-                      </span>
-                    </td>
-                    <td>
-                      <span className="om-cell-with-icon">
-                        {order.date}
-                        <CalendarIcon />
-                      </span>
-                    </td>
-                    <td>{order.productsCount} منتجات</td>
-                    <td>
-                      <span className="om-cell-with-icon om-cell-price">
-                        {order.total.toFixed(2)}
-                        <CurrencyIcon />
-                      </span>
-                    </td>
-                    <td>
-                      <StatusBadge status={order.status} />
-                    </td>
-                    <td>
-                      <button className="om-btn-view" onClick={() => navigate(`/seller/orders/${order.id}`)}>
-                        <EyeIcon />
-                        عرض التفاصيل
-                      </button>
-                    </td>
+          {loading ? (
+            <div className="om-loading">جاري التحميل...</div>
+          ) : error ? (
+            <div className="om-error">{error}</div>
+          ) : orders.length === 0 ? (
+            <div className="om-empty">لا توجد طلبات بعد</div>
+          ) : (
+            <div className="om-table-wrap">
+              <table className="om-table">
+                <thead>
+                  <tr>
+                    <th>رقم الطلب</th>
+                    <th>العميل</th>
+                    <th>التاريخ</th>
+                    <th>المنتجات</th>
+                    <th>الإجمالي</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="om-cell-id">{order.id}</td>
+                      <td>
+                        <span className="om-cell-with-icon">
+                          {order.customer?.name || order.customer}
+                          <UserIcon />
+                        </span>
+                      </td>
+                      <td>
+                        <span className="om-cell-with-icon">
+                          {order.createdAt || order.date}
+                          <CalendarIcon />
+                        </span>
+                      </td>
+                      <td>{order.items?.length || order.productsCount} منتجات</td>
+                      <td>
+                        <span className="om-cell-with-icon om-cell-price">
+                          {(order.totalAmount || order.total).toFixed(2)}
+                          <CurrencyIcon />
+                        </span>
+                      </td>
+                      <td>
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td>
+                        <button className="om-btn-view" onClick={() => navigate(`/seller/orders/${order.id}`)}>
+                          <EyeIcon />
+                          عرض التفاصيل
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </main>

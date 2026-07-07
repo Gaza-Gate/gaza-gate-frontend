@@ -1,6 +1,8 @@
- const BASE_URL = import.meta.env.VITE_API_URL || "https://gaza-gate-backend.onrender.com";
+import { refreshAccessToken, saveRefreshedToken, forceLogoutRedirect } from "./authService";
 
-async function requestJSON(endpoint, body, token, method = "POST") {
+const BASE_URL = import.meta.env.VITE_API_URL || "https://gaza-gate-backend.f9hf.onrender.com";
+
+async function requestJSON(endpoint, body, token, method = "POST", _isRetry = false) {
   const headers = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -10,9 +12,29 @@ async function requestJSON(endpoint, body, token, method = "POST") {
     headers,
     ...(body && { body: JSON.stringify(body) }),
   });
+
+  if (res.status === 401 && !_isRetry && token) {
+    try {
+      const refreshData = await refreshAccessToken();
+      const newToken =
+        refreshData?.data?.accessToken || refreshData?.accessToken || refreshData?.token;
+      if (!newToken) throw new Error("فشل تجديد الجلسة");
+      saveRefreshedToken(newToken);
+      return requestJSON(endpoint, body, newToken, method, true);
+    } catch {
+      forceLogoutRedirect();
+      throw new Error("انتهت جلستك، الرجاء تسجيل الدخول مرة أخرى");
+    }
+  }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
   return data;
+}
+
+// جلب كل طلبات العميل
+export async function getCustomerOrders(token) {
+  return requestJSON("/api/order/customer", null, token, "GET");
 }
 
 // جلب كل طلبات البائع

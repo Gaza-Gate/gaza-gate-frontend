@@ -1,31 +1,49 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
 import { authAPI } from '../utils/api'
-import { sellerGoogleRegister, sellerGoogleRegisterComplete } from '../services/authService'
+import { sellerGoogleRegisterComplete } from '../services/authService'
 import { sellerRegisterSchema, sellerRegisterGoogleSchema } from '../utils/validationSchemas'
+import { prepareSellerGoogleRegistration } from '../utils/googleAuth'
+import { extractToken, extractUser, saveSellerSession } from '../utils/authSession'
 import GoogleBtn from '../components/GoogleBtn'
-
-function parseJwt(token) {
-  const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-  return JSON.parse(atob(base64))
-}
 
 export default function RegisterSeller() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [apiError, setApiError] = useState('')
   const [pendingToken, setPendingToken] = useState(null)
   const [googleInitialValues, setGoogleInitialValues] = useState(null)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const [fromGoogleLogin, setFromGoogleLogin] = useState(false)
 
-  const defaultValues = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', storeName: '', storeDescription: '' }
+  const defaultValues = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    storeName: '',
+    storeDescription: '',
+  }
+
+  useEffect(() => {
+    const state = location.state
+    if (!state?.pendingToken || !state?.initialValues) return
+
+    setPendingToken(state.pendingToken)
+    setGoogleInitialValues(state.initialValues)
+    setFromGoogleLogin(Boolean(state.fromGoogleLogin))
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
       if (pendingToken) {
-        await sellerGoogleRegisterComplete({
+        const data = await sellerGoogleRegisterComplete({
           pendingToken,
           firstName: values.firstName,
           lastName: values.lastName,
@@ -33,6 +51,10 @@ export default function RegisterSeller() {
           storeName: values.storeName,
           storeDescription: values.storeDescription,
         })
+        const token = extractToken(data)
+        const user = extractUser(data)
+        if (!token) throw new Error('لم يتم استلام رمز الدخول بعد إنشاء الحساب')
+        saveSellerSession(token, user, true)
         navigate('/seller/dashboard')
       } else {
         await authAPI.sellerRegister({
@@ -54,31 +76,54 @@ export default function RegisterSeller() {
   }
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    setApiError('')
+    setGoogleLoading(true)
     try {
-      const profile = parseJwt(credentialResponse.credential)
-      const data = await sellerGoogleRegister(credentialResponse.credential)
-      setPendingToken(data.data.pendingToken)
-      setGoogleInitialValues({
-        firstName: profile.given_name || '',
-        lastName: profile.family_name || '',
-        email: profile.email || '',
-        password: 'GOOGLE_AUTH',
-        confirmPassword: 'GOOGLE_AUTH',
-        storeName: '',
-        storeDescription: '',
-      })
+      const registration = await prepareSellerGoogleRegistration(credentialResponse.credential)
+      setPendingToken(registration.pendingToken)
+      setGoogleInitialValues(registration.initialValues)
+      setFromGoogleLogin(false)
     } catch (err) {
       setApiError(err.message || 'فشل التسجيل بجوجل')
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
+  const isGoogleFlow = Boolean(pendingToken)
+
   return (
     <FormCard>
-      <CardHeader icon={<>🏪 أنشئ متجرك الآن 🚀</>} subtitle="عالمك التجاري ينتظر إبداعك اليوم!" />
+      <CardHeader
+        icon={<>🏪 {isGoogleFlow ? 'أكمل إنشاء متجرك 🚀' : 'أنشئ متجرك الآن 🚀'}</>}
+        subtitle={
+          fromGoogleLogin
+            ? 'حسابك غير موجود بعد — أكمل بيانات متجرك باستخدام بريدك من جوجل'
+            : isGoogleFlow
+              ? 'أدخل اسم متجرك وبياناتك لإكمال التسجيل'
+              : 'عالمك التجاري ينتظر إبداعك اليوم!'
+        }
+      />
+
+      {fromGoogleLogin && googleInitialValues?.email && (
+        <div style={{
+          background: '#FFF7ED',
+          border: '1px solid #FED7AA',
+          borderRadius: '10px',
+          padding: '10px 14px',
+          marginBottom: '1rem',
+          fontSize: 13,
+          color: '#9A3412',
+          textAlign: 'right',
+        }}>
+          تم جلب بريدك من Google: <strong>{googleInitialValues.email}</strong>
+        </div>
+      )}
+
       <Formik
         initialValues={googleInitialValues || defaultValues}
-        enableReinitialize={true}
-        validationSchema={pendingToken ? sellerRegisterGoogleSchema : sellerRegisterSchema}
+        enableReinitialize
+        validationSchema={isGoogleFlow ? sellerRegisterGoogleSchema : sellerRegisterSchema}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting }) => (
@@ -88,8 +133,15 @@ export default function RegisterSeller() {
               <InputField name="firstName" type="text" label="الاسم الأول" placeholder="الاسم الأول" icon="user" />
               <InputField name="lastName" type="text" label="الاسم الثاني" placeholder="الاسم الثاني" icon="user" />
             </div>
-            <InputField name="email" type="email" label="البريد الإلكتروني" placeholder="name@gmail.com" icon="email" />
-            {!pendingToken && (
+            <InputField
+              name="email"
+              type="email"
+              label="البريد الإلكتروني"
+              placeholder="name@gmail.com"
+              icon="email"
+              disabled={isGoogleFlow}
+            />
+            {!isGoogleFlow && (
               <>
                 <InputField name="password" type="password" label="كلمة المرور" placeholder="••••••••" icon="password" />
                 <InputField name="confirmPassword" type="password" label="تأكيد كلمة المرور" placeholder="••••••••" icon="password" />
@@ -98,16 +150,17 @@ export default function RegisterSeller() {
             <InputField name="storeName" type="text" label="اسم متجرك" placeholder="مثال: متجر سمير" icon="store" />
             <InputField name="storeDescription" type="text" label="وصف المتجر (اختياري)" placeholder="مثال: منتجات يدوية وتطريز..." textarea />
             <PrimaryBtn loading={isSubmitting}>
-              {pendingToken ? 'إكمال التسجيل' : 'إنشاء حسابي'}
+              {isGoogleFlow ? 'إكمال التسجيل' : 'إنشاء حسابي'}
             </PrimaryBtn>
           </Form>
         )}
       </Formik>
 
-      {!pendingToken && (
+      {!isGoogleFlow && (
         <>
           <Divider />
           <GoogleBtn
+            loading={googleLoading}
             onSuccess={handleGoogleSuccess}
             onError={() => setApiError('فشل التسجيل بجوجل')}
           />

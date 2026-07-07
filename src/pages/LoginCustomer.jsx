@@ -5,22 +5,27 @@ import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, RememberRow, Api
 import InputField from '../components/InputField'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { customerGoogleLogin, customerGoogleRegister } from '../services/authService'
+import { authenticateCustomerWithGoogle } from '../utils/googleAuth'
+import { extractToken, extractUser, saveCustomerSession } from '../utils/authSession'
 import GoogleBtn from '../components/GoogleBtn'
 
 export default function LoginCustomer() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
+  const [remember, setRemember] = useState(true)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
       setApiError('')
       const data = await authAPI.customerLogin({ email: values.email, password: values.password })
-      const token = data.data?.token || data.token
-      if (token) localStorage.setItem('token', token)
+      const token = extractToken(data)
+      const user = extractUser(data)
+      if (!token) throw new Error('لم يتم استلام رمز الدخول')
+      saveCustomerSession(token, user, remember)
       navigate('/home/customer')
     } catch (err) {
-      setApiError(err.response?.data?.data?.message || err.response?.data?.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(err.response?.data?.data?.message || err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
     } finally {
       setSubmitting(false)
     }
@@ -28,23 +33,14 @@ export default function LoginCustomer() {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setApiError('')
-    const googleIdToken = credentialResponse.credential
+    setGoogleLoading(true)
     try {
-      // أول محاولة: تسجيل دخول مباشر
-      const data = await customerGoogleLogin(googleIdToken)
-      const token = data.data?.token || data.token
-      if (token) localStorage.setItem('token', token)
+      await authenticateCustomerWithGoogle(credentialResponse.credential, remember)
       navigate('/home/customer')
-    } catch {
-      try {
-        // لو الحساب غير موجود، ننشئه تلقائياً بدون أي خطوات إضافية
-        const data = await customerGoogleRegister(googleIdToken)
-        const token = data.data?.token || data.token
-        if (token) localStorage.setItem('token', token)
-        navigate('/home/customer')
-      } catch (err) {
-        setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
-      }
+    } catch (err) {
+      setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
@@ -55,15 +51,16 @@ export default function LoginCustomer() {
         {({ isSubmitting }) => (
           <Form noValidate>
             <ApiError message={apiError} />
-            <InputField name="email" type="email" label="البريد الإلكتروني" placeholder="Store@gmail.com" icon="email" />
+            <InputField name="email" type="email" label="البريد الإلكتروني" placeholder="name@gmail.com" icon="email" />
             <InputField name="password" type="password" label="كلمة المرور" placeholder="••••••••" icon="password" />
-            <RememberRow />
+            <RememberRow userType="customer" remember={remember} onRememberChange={setRemember} />
             <PrimaryBtn loading={isSubmitting}>تسجيل دخول</PrimaryBtn>
           </Form>
         )}
       </Formik>
       <Divider />
       <GoogleBtn
+        loading={googleLoading}
         onSuccess={handleGoogleSuccess}
         onError={() => setApiError('فشل تسجيل الدخول بجوجل')}
       />

@@ -5,102 +5,20 @@
   direction: rtl;
 }
 
-/* ════════ Navbar ════════ */
-.home-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-  padding: 14px 32px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-}
-
-.home-nav-side {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.home-icon-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--orange);
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
-.home-icon-btn:hover { opacity: 0.8; }
-.home-icon-btn--ghost { color: var(--text-mid); }
-
-.home-nav-links {
-  display: flex;
-  align-items: center;
-  gap: 26px;
-}
-
-.home-nav-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: var(--text-mid);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-.home-nav-link:hover { color: var(--orange); }
-
-.home-nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--orange);
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 10px 22px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.home-nav-btn:hover { background: var(--orange-dark); }
-
-.home-nav-logo {
-  height: 56px;
-  object-fit: contain;
-}
-
-@media (max-width: 900px) {
-  .home-nav-links { display: none; }
-}
-
 /* ════════ Hero ════════ */
 .home-hero {
   position: relative;
-  min-height: 680px;
+  min-height: 600px; /* يمكنك تعديله حسب الحاجة */
   display: flex;
   align-items: center;
   overflow: hidden;
-  justify-content: flex-start; /* النص جهة اليمين (في اتجاه RTL) */
-  background: linear-gradient(120deg, #0c1c33 0%, #142c4d 50%, #1c3357 100%);
+  background: #0c1c33; /* لون احتياطي */
 }
-
 /* طبقة التدرج اللوني فوق الخلفية */
 .home-hero-overlay {
   position: absolute;
   inset: 0;
-  /* تغيير اللون ليكون أسود شفاف بسيط بدلاً من التدرج القوي */
-  background: rgba(0, 0, 0, 0.6); 
+  background: rgba(0, 0, 0, 0.5); /* غامق قليلاً لتبرز النصوص */
   z-index: 1;
 }
 /* ── صورة اليمين (الموبايل والعربة) ── */
@@ -129,17 +47,11 @@
 .home-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 540px;
-  margin-right: auto;
-  margin-left: 4%;
-  padding: 60px 5% 60px 0;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
   text-align: right;
-  /* هذه الخصائص هي المسؤولة عن محاذاة النص لليمين */
-  margin-right: 8%; /* لضبط المسافة من جهة اليمين */
-  margin-left: auto; /* دفع المحتوى لليسار ليبقى على اليمين */
-  text-align: right; /* محاذاة النص داخل الحاوية لليمين */
-  
-  padding: 60px 0 60px 5%; /* توزيع المساحات */
 }
 
 .home-hero-pill {
@@ -492,19 +404,11 @@ align-self: flex-end;
 
 .home-hero-bg {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-object-fit: contain;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
 }
- 
-.home-nav-side {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
- 
-.home-icon-btn span {
-  font-weight: 600;
-}
- 

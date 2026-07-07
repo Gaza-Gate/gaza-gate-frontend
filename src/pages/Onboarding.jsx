@@ -300,7 +300,6 @@ export default function Onboarding() {
       <div className="onboarding-root">
         {/* Header */}
         <div className="onboarding-header">
-          <span className="onboarding-eyebrow">بوابة غزة 🇵🇸</span>
           <h1 className="onboarding-title">
             أهلاً بك في <span>بوابتك</span>
           </h1>

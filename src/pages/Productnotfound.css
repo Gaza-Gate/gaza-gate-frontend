@@ -1,0 +1,124 @@
+.pnf-wrapper {
+  min-height: 100vh;
+  background: #f7f7f7;
+  font-family: "Tajawal", sans-serif;
+}
+
+.pnf-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Content wrapper — يضيّق ويمركز البانر والسكيلتون ── */
+.pnf-content-wrap {
+  width: 100%;
+  max-width: 940px;
+}
+
+/* ── Warning banner ── */
+.pnf-banner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #fde8e8;
+  border-right: 4px solid #dc2626;
+  border-radius: var(--radius-sm);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.pnf-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #7f1d1d;
+}
+
+.pnf-banner-emoji {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.pnf-banner-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* ── Skeleton card (ghost of the product page behind the error) ── */
+.pnf-skeleton-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  padding: 32px;
+  margin-bottom: 32px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pnf-skel-line {
+  background: #e9e9e9;
+  border-radius: 6px;
+  animation: pnf-pulse 1.6s ease-in-out infinite;
+}
+
+.pnf-skel-title { width: 70%; height: 20px; margin-bottom: 14px; }
+.pnf-skel-sub { width: 45%; height: 14px; margin-bottom: 28px; }
+.pnf-skel-block { width: 100%; height: 90px; }
+
+.pnf-skel-image {
+  background: #ececec;
+  border-radius: 16px;
+  min-height: 260px;
+  animation: pnf-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pnf-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ── Back button ── */
+.pnf-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.pnf-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--orange);
+  color: #111827;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.pnf-back-btn:hover {
+  background: var(--orange-dark);
+  box-shadow: var(--shadow-btn);
+}
+
+@media (max-width: 700px) {
+  .pnf-skeleton-card {
+    grid-template-columns: 1fr;
+  }
+  .pnf-main {
+    padding: 24px 16px 48px;
+  }
+}

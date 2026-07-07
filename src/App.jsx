@@ -19,13 +19,31 @@ import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
-import CustomerHome from "./pages/CustomerHome";   // ✅ إضافة جديدة
+import CustomerCheckoutFailed from "./pages/CustomerCheckoutFailed";
+import ConvertToSeller from "./pages/ConvertToSeller"; // ✅ إضافة جديدة
+import ProductNotFound from "./pages/ProductNotFound";
+import CustomerHome from "./pages/CustomerHome";
+import CustomerProducts from "./pages/CustomerProducts";
+import CustomerProductDetails from "./pages/CustomerProductDetails";
+import CustomerCart from "./pages/CustomerCart";
+import CustomerProfile from "./pages/CustomerProfile";
+import CustomerCheckoutReview from "./pages/CustomerCheckoutReview";
+import CustomerCheckoutPayment from "./pages/CustomerCheckoutPayment";
+import CustomerCheckoutConfirm from "./pages/CustomerCheckoutConfirm";
+import CustomerFavorites from "./pages/CustomerFavorites";
+import CustomerMyOrders from "./pages/CustomerMyOrders";
+import CustomerOrderTracking from "./pages/CustomerOrderTracking";
+import CustomerOrders from "./pages/CustomerOrders";
+import { useAutoRefreshToken } from './hooks/useAutoRefreshToken' // ← جديد
+import CustomerMessages from "./pages/CustomerMessages";
+import CustomerNotifications from "./pages/CustomerNotifications";
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
 import ProductsList from "./pages/ProductsList";
 
 export default function App() {
+   useAutoRefreshToken() 
   return (
     <Routes>
       <Route path="/" element={<SplashScreen />} />
@@ -37,10 +55,25 @@ export default function App() {
       <Route path="/register/seller"      element={<RegisterSeller />} />
       <Route path="/verify-email"         element={<VerifyEmail />} />
       <Route path="/forgot-password"      element={<ForgotPassword />} />
-
-      {/* ✅ راوت المشتري بعد تسجيل الدخول */}
+ {/* ✅ راوت المشتري بعد تسجيل الدخول */}
+   
+      <Route path="/customer/become-seller" element={<ConvertToSeller />} />
+       <Route path="/messages" element={<CustomerMessages />} />
+       <Route path="/notifications" element={<CustomerNotifications />} />
       <Route path="/home/customer" element={<CustomerHome />} />
-
+      <Route path="/products" element={<CustomerProducts />} />
+      <Route path="/product/:id" element={<CustomerProductDetails />} />
+      <Route path="/cart" element={<CustomerCart />} />
+      <Route path="/profile/customer" element={<CustomerProfile />} />
+      <Route path="/favorites" element={<CustomerFavorites />} />
+      <Route path="/orders" element={<CustomerOrders />} />
+      <Route path="/my-orders" element={<CustomerMyOrders />} />
+      <Route path="/my-orders/:id" element={<CustomerOrderTracking />} />
+      <Route path="/checkout/review" element={<CustomerCheckoutReview />} />
+      <Route path="/checkout/payment" element={<CustomerCheckoutPayment />} />
+      <Route path="/checkout/confirm" element={<CustomerCheckoutConfirm />} />
+<Route path="/product-not-found" element={<ProductNotFound />} />
+<Route path="/checkout/failed" element={<CustomerCheckoutFailed />} />
       {/* مسارات البائع */}
       <Route path="/seller/dashboard" element={<Dashboard />} />
       <Route path="/seller/onboarding"      element={<SellerOnboarding />} />

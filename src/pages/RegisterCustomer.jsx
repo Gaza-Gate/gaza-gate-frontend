@@ -5,12 +5,13 @@ import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from 
 import InputField from '../components/InputField'
 import { customerRegisterSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
-import { customerGoogleRegister, customerGoogleLogin } from '../services/authService'
+import { authenticateCustomerWithGoogle } from '../utils/googleAuth'
 import GoogleBtn from '../components/GoogleBtn'
 
 export default function RegisterCustomer() {
   const navigate = useNavigate()
   const [apiError, setApiError] = useState('')
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
@@ -32,23 +33,14 @@ export default function RegisterCustomer() {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setApiError('')
-    const googleIdToken = credentialResponse.credential
+    setGoogleLoading(true)
     try {
-      // ينشئ الحساب تلقائياً عبر جوجل
-      const data = await customerGoogleRegister(googleIdToken)
-      const token = data.data?.token || data.token
-      if (token) localStorage.setItem('token', token)
+      await authenticateCustomerWithGoogle(credentialResponse.credential, true)
       navigate('/home/customer')
-    } catch {
-      try {
-        // إذا كان الحساب موجوداً مسبقاً، نسجّل دخوله مباشرة
-        const data = await customerGoogleLogin(googleIdToken)
-        const token = data.data?.token || data.token
-        if (token) localStorage.setItem('token', token)
-        navigate('/home/customer')
-      } catch (err) {
-        setApiError(err.message || 'فشل التسجيل بجوجل')
-      }
+    } catch (err) {
+      setApiError(err.message || 'فشل التسجيل بجوجل')
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
@@ -76,6 +68,7 @@ export default function RegisterCustomer() {
       </Formik>
       <Divider />
       <GoogleBtn
+        loading={googleLoading}
         onSuccess={handleGoogleSuccess}
         onError={() => setApiError('فشل التسجيل بجوجل')}
       />

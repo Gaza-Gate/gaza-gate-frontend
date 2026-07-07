@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, LogOut, ChevronDown } from "lucide-react";
+import { clearAuthSession } from "../utils/authSession";
 import logo from "../assets/logo.png";
 import "./SellerNavbar.css";
 
@@ -30,8 +31,7 @@ export default function SellerNavbar({ hasNotification = true }) {
   }, [showMore]);
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
+    clearAuthSession();
     navigate("/login/seller");
   }
 

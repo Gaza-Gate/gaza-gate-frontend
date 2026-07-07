@@ -1,0 +1,434 @@
+.cprof-wrapper {
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+
+.cprof-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+}
+
+/* ── Breadcrumb ── */
+.cprof-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cprof-breadcrumb button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.cprof-breadcrumb button:hover {
+  color: var(--orange);
+}
+
+/* ── Profile Banner ── */
+.cprof-banner {
+  background: var(--orange);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.cprof-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cprof-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cprof-info {
+  min-width: 0;
+}
+
+.cprof-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.cprof-email,
+.cprof-phone {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+}
+
+.cprof-edit-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.cprof-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.cprof-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cprof-edit-input {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #fff;
+  outline: none;
+  width: 100%;
+}
+
+.cprof-edit-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cprof-edit-input:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Addresses Section ── */
+.cprof-addresses {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.cprof-addresses-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cprof-addresses-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dark);
+}
+
+.cprof-addresses-title h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cprof-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--orange);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.cprof-add-btn:hover {
+  background: var(--orange-dark);
+}
+
+/* ── Address Form ── */
+.cprof-form {
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.cprof-form-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 16px;
+}
+
+.cprof-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.cprof-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cprof-field--full {
+  grid-column: 1 / -1;
+}
+
+.cprof-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-mid);
+}
+
+.cprof-field input {
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: #fff;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.cprof-field input:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.cprof-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cprof-form-cancel {
+  padding: 9px 20px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--orange);
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+.cprof-form-cancel:hover {
+  border-color: var(--orange);
+}
+
+.cprof-form-submit {
+  padding: 9px 24px;
+  background: var(--orange);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.cprof-form-submit:hover {
+  background: var(--orange-dark);
+}
+
+/* ── Address List ── */
+.cprof-address-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cprof-address-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.cprof-address-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fca5a5;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color var(--transition);
+}
+
+.cprof-address-delete:hover {
+  color: #ef4444;
+}
+
+.cprof-address-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cprof-address-labels {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cprof-address-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.cprof-default-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.cprof-address-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+}
+
+.cprof-address-phone {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.cprof-address-text {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.cprof-set-default {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 6px;
+  text-decoration: underline;
+}
+
+.cprof-set-default:hover {
+  color: #1d4ed8;
+}
+
+.cprof-address-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-page);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cprof-address-pin--active {
+  background: var(--orange-pale);
+  color: var(--orange);
+}
+
+/* ── Logout ── */
+.cprof-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ef4444;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.cprof-logout:hover {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+@media (max-width: 600px) {
+  .cprof-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cprof-banner {
+    padding: 18px;
+  }
+
+  .cprof-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .cprof-name {
+    font-size: 17px;
+  }
+}

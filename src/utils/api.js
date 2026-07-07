@@ -2,8 +2,7 @@ import axios from 'axios'
 
 // ── 1. أنشئ الـ api ──
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://gaza-gate-backend.onrender.com',
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_URL || 'https://gaza-gate-backend.f9hf.onrender.com',
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -48,7 +47,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       // منع الـ infinite loop على refresh نفسه
       if (original.url?.includes('/api/auth/refresh-token')) {
-        const userType = localStorage.getItem('userType') || 'seller'
+        const userType = localStorage.getItem('userType') || 'customer'
         localStorage.clear()
         window.location.href = `/login/${userType}`
         return Promise.reject(error)
@@ -72,7 +71,7 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${newToken}`
         return api(original)
       } catch {
-        const userType = localStorage.getItem('userType') || 'seller'
+        const userType = localStorage.getItem('userType') || 'customer'
         localStorage.clear()
         window.location.href = `/login/${userType}`
       }
