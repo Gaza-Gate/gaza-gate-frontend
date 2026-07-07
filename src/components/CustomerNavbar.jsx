@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Bell } from "lucide-react"; 
 import {
   Home,
   ShoppingBag,
@@ -11,6 +10,9 @@ import {
   Menu,
   X,
   ArrowLeftRight,
+  ChevronDown,
+  Bell,
+  MessageCircle,
 } from "lucide-react";
 import { clearAuthSession } from "../utils/authSession";
 import "./CustomerNavbar.css";
@@ -27,12 +29,30 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const moreRef = useRef(null);
 
   const navItems = [
     { path: "/home/customer", label: "الرئيسية", Icon: Home },
     { path: "/products", label: "المنتجات", Icon: ShoppingBag },
     { path: "/orders", label: "طلباتي", Icon: User },
   ];
+
+  const moreItems = [
+    { path: "/notifications", label: "التنبيهات", Icon: Bell },
+    { path: "/messages", label: "المراسلات", Icon: MessageCircle },
+    { path: "/customer/become-seller", label: "التحول لبائع", Icon: ArrowLeftRight },
+  ];
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (moreRef.current && !moreRef.current.contains(e.target)) {
+        setShowMore(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     setMobileMenuOpen(false);
@@ -46,8 +66,11 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
 
   const goTo = (path) => {
     setMobileMenuOpen(false);
+    setShowMore(false);
     navigate(path);
   };
+
+  const isMoreActive = moreItems.some((item) => pathname === item.path);
 
   return (
     <>
@@ -71,13 +94,34 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
               {label}
             </button>
           ))}
-          <button
-            className={`cn-link ${pathname === "/customer/become-seller" ? "active" : ""}`}
-            onClick={() => navigate("/customer/become-seller")}
-          >
-            <ArrowLeftRight size={15} />
-            التحول لبائع
-          </button>
+
+          <div className="cn-dropdown" ref={moreRef}>
+            <button
+              className={`cn-link cn-dropdown-trigger ${isMoreActive ? "active" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMore((prev) => !prev);
+              }}
+            >
+              <ChevronDown size={15} className={`cn-dropdown-icon ${showMore ? "open" : ""}`} />
+              المزيد
+            </button>
+
+            {showMore && (
+              <div className="cn-dropdown-menu">
+                {moreItems.map(({ path, label, Icon }) => (
+                  <button
+                    key={path}
+                    className={`cn-dropdown-item ${pathname === path ? "cn-dropdown-item-active" : ""}`}
+                    onClick={() => goTo(path)}
+                  >
+                    <Icon size={15} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="cn-actions">
@@ -98,14 +142,8 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
             <ShoppingCart size={18} />
             {cartCount > 0 && <span className="cn-badge">{cartCount}</span>}
           </button>
-           <button
-               className="cn-icon-btn cn-icon-btn--ghost"
-               onClick={() => navigate("/notifications")}
-                aria-label="التنبيهات"
->
-                 <Bell size={18} />
-              </button>
-            <button
+
+          <button
             className="cn-icon-btn cn-icon-btn--ghost"
             onClick={() => navigate("/profile/customer")}
             aria-label="الملف الشخصي"
@@ -140,13 +178,20 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
               {label}
             </button>
           ))}
-          <button
-            className={`cn-mobile-menu-link ${pathname === "/seller/onboarding" ? "active" : ""}`}
-            onClick={() => goTo("/seller/onboarding")}
-          >
-            <ArrowLeftRight size={16} />
-            التحول لبائع
-          </button>
+
+          <div className="cn-mobile-menu-divider" />
+
+          {moreItems.map(({ path, label, Icon }) => (
+            <button
+              key={path}
+              className={`cn-mobile-menu-link ${pathname === path ? "active" : ""}`}
+              onClick={() => goTo(path)}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+
           <div className="cn-mobile-menu-divider" />
           <button
             className="cn-mobile-menu-link cn-mobile-menu-link--logout"
