@@ -19,7 +19,7 @@ import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
-import CustomerCheckoutFailed from "./pages/TempFile";
+import CustomerCheckoutFailed from "./pages/CustomerCheckoutFailed";
 import ConvertToSeller from "./pages/ConvertToSeller"; // ✅ إضافة جديدة
 import ProductNotFound from "./pages/ProductNotFound";
 import CustomerHome from "./pages/CustomerHome";
