@@ -4,13 +4,13 @@ import CustomerNavbar from "../components/CustomerNavbar";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import logo from "../assets/logo.png";
-import "./ProductNotFound.css";
+import "./ProductMissing.css";
 
 /**
  * ProductNotFound — تُعرض عندما يحاول المستخدم فتح منتج محذوف/غير موجود
  * (رقم منتج خاطئ في الرابط، أو منتج تم حذفه من قبل البائع)
  */
-export default function ProductNotFound() {
+export default function ProductMissing() {
   const navigate = useNavigate();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();

@@ -21,7 +21,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
 import CustomerCheckoutFailed from "./pages/CustomerCheckoutFailed";
 import ConvertToSeller from "./pages/ConvertToSeller"; // ✅ إضافة جديدة
-import ProductNotFound from "./pages/ProductNotFound";
+import ProductMissing from "./pages/ProductMissing";
 import CustomerHome from "./pages/CustomerHome";
 import CustomerProducts from "./pages/CustomerProducts";
 import CustomerProductDetails from "./pages/CustomerProductDetails";
@@ -72,7 +72,7 @@ export default function App() {
       <Route path="/checkout/review" element={<CustomerCheckoutReview />} />
       <Route path="/checkout/payment" element={<CustomerCheckoutPayment />} />
       <Route path="/checkout/confirm" element={<CustomerCheckoutConfirm />} />
-<Route path="/product-not-found" element={<ProductNotFound />} />
+<Route path="/product-missing" element={<ProductMissing />} />
 <Route path="/checkout/failed" element={<CustomerCheckoutFailed />} />
       {/* مسارات البائع */}
       <Route path="/seller/dashboard" element={<Dashboard />} />
