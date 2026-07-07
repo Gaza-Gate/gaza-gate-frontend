@@ -1,4 +1,4 @@
- import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 
 // تحديث مسارات الاستيراد لتكون من المجلد الحالي أو المجلدات المباشرة
 import Dashboard from './pages/Dashboard'
@@ -20,57 +20,76 @@ import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
-
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
 import ProductsList from "./pages/ProductsList";
+import AdminSettings from './pages/AdminSettings';
+import AdminProfile from './pages/AdminProfile';
+import AdminNotifications from './pages/AdminNotifications';
+import AdminReports from './pages/AdminReports';
+import AdminCategories from './pages/AdminCategories';
+import AdminUsers from './pages/AdminUsers';
+import AdminDashboard from './pages/AdminDashboard'
+
+// ← 1) ضيف الاستيراد هون
+import FloatingChatWidget from "./components/FloatingChatWidget";
 
 export default function App() {
 
+  // ← 2) اجلب المسار الحالي
+  const location = useLocation();
+
+  // ← 3) شرط: الويدجت يظهر بس إذا المسار الحالي يبلش بـ /seller
+  const isSellerArea = location.pathname.startsWith('/seller');
+
   return (
+    <>
+      <Routes>
 
-    <Routes>
+        {/* الشاشة الترحيبية تظهر أولاً عند فتح التطبيق */}
+        <Route path="/" element={<SplashScreen />} />
 
-      {/* الشاشة الترحيبية تظهر أولاً عند فتح التطبيق */}
-      <Route path="/" element={<SplashScreen />} />
+        {/* بعد انتهاء الـ SplashScreen يتم التوجيه لهذا المسار */}
+        <Route path="/onboarding" element={<Onboarding />} />
 
-      {/* بعد انتهاء الـ SplashScreen يتم التوجيه لهذا المسار */}
-      <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/onboarding/customer"  element={<BuyerOnboarding />} />
+        <Route path="/login/customer"       element={<LoginCustomer />} />
+        <Route path="/login/seller" element={<Login />} />
+        <Route path="/register/customer"    element={<RegisterCustomer />} />
+        <Route path="/register/seller"      element={<RegisterSeller />} />
+        <Route path="/verify-email"         element={<VerifyEmail />} />
+        <Route path="/forgot-password"      element={<ForgotPassword />} />
 
-      <Route path="/onboarding/customer"  element={<BuyerOnboarding />} />
-      <Route path="/login/customer"       element={<LoginCustomer />} />
-       <Route path="/login/seller" element={<Login />} />
-      <Route path="/register/customer"    element={<RegisterCustomer />} />
-      <Route path="/register/seller"      element={<RegisterSeller />} />
-      <Route path="/verify-email"         element={<VerifyEmail />} />
-      <Route path="/forgot-password"      element={<ForgotPassword />} />
-
-      {/* مسارات البائع الإضافية */}
-       <Route path="/seller/dashboard" element={<Dashboard />} />
-      <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
-      <Route path="/seller/profile/edit"    element={<EditStoreProfile />} />
-      <Route path="/seller/account/password" element={<ChangePassword />} />
-      <Route path="/seller/messages"        element={<Messages />} />
-      <Route path="/store-profile" element={<StoreProfile />} />
-      <Route path="/seller/orders" element={<OrdersManagement />} />
-      <Route path="/seller/products" element={<ProductsList />} />
-      <Route path="/seller/orders/:id" element={<OrderDetails />} />
-      <Route path="/seller/ratings" element={<RatingsManagement />} />
-      <Route path="/seller/notifications" element={<NotificationsPage />} />
-      <Route path="/verify-otp" element={<VerifyOTP />} />
-       
-     
+        {/* مسارات البائع الإضافية */}
+        <Route path="/seller/dashboard" element={<Dashboard />} />
+        <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
+        <Route path="/seller/profile/edit"    element={<EditStoreProfile />} />
+        <Route path="/seller/account/password" element={<ChangePassword />} />
+        <Route path="/seller/messages"        element={<Messages />} />
+        <Route path="/store-profile" element={<StoreProfile />} />
+        <Route path="/seller/orders" element={<OrdersManagement />} />
+        <Route path="/seller/products" element={<ProductsList />} />
+        <Route path="/seller/orders/:id" element={<OrderDetails />} />
+        <Route path="/seller/ratings" element={<RatingsManagement />} />
+        <Route path="/seller/notifications" element={<NotificationsPage />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
+        <Route path="/admin/notifications" element={<AdminNotifications />} />
+        <Route path="/admin/reports" element={<AdminReports />} />
+        <Route path="/admin/categories" element={<AdminCategories />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
 
-      {/* أي رابط غير موجود يتم توجيهه للبداية */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-     
 
-    </Routes>
+        {/* أي رابط غير موجود يتم توجيهه للبداية */}
+        <Route path="*" element={<Navigate to="/" replace />} />
 
+      </Routes>
+
+      {/* ← 4) الويدجت هون، برا الـ Routes، وبيظهر بس لما isSellerArea تكون true */}
+      {isSellerArea && <FloatingChatWidget />}
+    </>
   )
-}  
- 
-
- 
- 
+}

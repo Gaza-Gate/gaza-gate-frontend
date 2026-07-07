@@ -331,3 +331,107 @@
   .np-main { padding: 20px 14px 48px; }
   .np-item-desc { max-width: 180px; }
 }
+/* ── أضيفي هاد الجزء بآخر ملف NotificationsPage.css ── */
+
+/* الخلفية المعتّمة/الضبابية وراء الموديل */
+.np-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: np-fade-in 0.15s ease-out;
+}
+
+/* الكارد نفسه (الموديل) اللي بيبرز فوق كل شي */
+.np-modal-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px 28px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: np-pop-in 0.18s ease-out;
+}
+
+.np-modal-close {
+  position: absolute;
+  top: 14px;
+  left: 14px; /* RTL: زر الإغلاق عالشمال */
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s;
+}
+.np-modal-close:hover {
+  background: #e2e8f0;
+}
+
+.np-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.np-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.np-modal-desc {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.np-modal-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.np-modal-time {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.np-modal-read-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+@keyframes np-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes np-pop-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}

@@ -1,0 +1,317 @@
+ * {
+  box-sizing: border-box;
+}
+
+.admin-reports-page {
+  min-height: 100vh;
+  background: #f8f9fb;
+  direction: rtl;
+  font-family: inherit;
+  width: 100%;
+  overflow-x: hidden;
+  padding: 0 24px;
+}
+
+.admin-reports-page__body {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.admin-reports-page__content {
+  flex: 1;
+  padding: 24px 0;
+  text-align: right;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* الهيدر */
+.reports-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-reports-page__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.admin-reports-page__subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 4px 0 0;
+}
+
+.reports-header__filters {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.period-tabs {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 6px;
+  background: #f1f2f4;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.period-tab {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.period-tab.active {
+  background: #f97316;
+  color: #fff;
+}
+
+.reports-loading {
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  padding: 30px 0;
+}
+
+/* بطاقات الإحصائيات */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.stat-card__label {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+.stat-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f97316;
+  margin: 0;
+}
+
+.stat-card__value--green {
+  color: #16a34a;
+}
+
+.stat-card__value--purple {
+  color: #7c3aed;
+}
+
+.stat-card__hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 6px 0 0;
+}
+
+/* بطاقة الرسم البياني */
+.chart-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.chart-card__header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chart-card__header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.chart-legend {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot--revenue {
+  background: #22c55e;
+}
+
+.legend-dot--orders {
+  background: #3b82f6;
+}
+
+.chart-wrapper {
+  direction: ltr; /* حتى المحاور تترتب صح مع recharts */
+}
+
+/* بطاقة أداء التصنيفات */
+.categories-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.categories-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.category-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-row__name {
+  width: 160px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+  text-align: right;
+}
+
+.category-row__bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: #f1f2f4;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.category-row__bar {
+  height: 100%;
+  background: #f97316;
+  border-radius: 999px;
+}
+
+.category-row__count {
+  width: 40px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.category-row__amount {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  text-align: left;
+}
+
+/* الريسبونسف */
+@media (max-width: 900px) {
+  .admin-reports-page__body {
+    flex-direction: column;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .category-row {
+    flex-wrap: wrap;
+  }
+  .category-row__name {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-reports-page {
+    padding: 0 12px;
+  }
+  .admin-reports-page__content {
+    padding: 16px 0;
+  }
+  .reports-header__filters {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .period-tabs {
+    flex-wrap: wrap;
+  }
+  .period-tab {
+    flex: 1;
+    text-align: center;
+  }
+  .chart-card,
+  .categories-card,
+  .stat-card {
+    padding: 14px;
+  }
+}

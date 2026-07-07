@@ -1,5 +1,4 @@
 import api from "../utils/api";
- 
 
 export function getAuthToken() {
   return localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -56,18 +55,32 @@ export async function resetPassword(resetToken, newPassword, confirmPassword) {
   return res.data;
 }
 
-export async function getConversations() {
-  const res = await api.get("/api/seller/conversations");
+// ✅ محدّثة حسب Postman
+
+// جيب هوية البائع الحالي المخزّنة وقت تسجيل الدخول
+export function getCurrentUser() {
+  const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getConversations(page = 1) {
+  const res = await api.get(`/api/conversations/?page=${page}`);
   return res.data;
 }
 
-export async function getMessages(conversationId) {
-  const res = await api.get(`/api/seller/conversations/${conversationId}/messages`);
+export async function getMessages(conversationId, page = 1) {
+  const res = await api.get(`/api/conversations/${conversationId}?page=${page}`);
   return res.data;
 }
 
 export async function sendMessage(conversationId, text) {
-  const res = await api.post(`/api/seller/conversations/${conversationId}/messages`, { text });
+  const res = await api.post(`/api/conversations/${conversationId}/messages`, {
+    content: text,
+  });
   return res.data;
 }
 
@@ -83,5 +96,17 @@ export async function sellerGoogleRegister(googleToken) {
 
 export async function sellerGoogleRegisterComplete(data) {
   const res = await api.post("/api/auth/seller/google/register/complete", data);
+  return res.data;
+}
+
+// تسجيل الخروج من الجهاز الحالي فقط
+export async function logout() {
+  const res = await api.post("/api/auth/logout");
+  return res.data;
+}
+
+// تسجيل الخروج من جميع الأجهزة (إبطال كل التوكنات على السيرفر)
+export async function logoutAll() {
+  const res = await api.post("/api/auth/logout-all");
   return res.data;
 }

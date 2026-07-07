@@ -102,10 +102,10 @@ const OrdersManagement = () => {
           list.map((o) => ({
             id: o.id ?? o._id,
             orderNumber: o.orderNumber ?? o.order_number ?? o.id,
-            customer: o.buyerName ?? o.buyer?.name ?? o.customer_name ?? "عميل",
-            date: o.date ?? o.createdAt?.slice(0, 10) ?? o.created_at?.slice(0, 10) ?? "",
-            productsCount: o.productsCount ?? o.items?.length ?? 0,
-            total: o.total ?? o.totalPrice ?? o.total_price ?? 0,
+            customer: o.customerName ?? o.buyerName ?? o.buyer?.name ?? o.customer_name ?? "عميل",
+            date: (o.date ?? o.createdAt ?? o.created_at ?? "").slice(0, 10),
+            productsCount: o.itemsCount ?? o.productsCount ?? o.items?.length ?? 0,
+            total: o.totalPrice ?? o.total ?? o.total_price ?? 0,
             status: o.status ?? "pending_review",
           }))
         );
@@ -123,7 +123,8 @@ const OrdersManagement = () => {
           });
         }
         setUsedFallback(false);
-      } catch {
+      } catch (err) {
+        console.error("getSellerOrders failed:", err);
         // فشل الاتصال بالـ API فعلياً (مش مجرد بيانات فاضية) → بنستخدم بيانات ثابتة تجريبية
         setOrders(FALLBACK_ORDERS);
         setUsedFallback(true);

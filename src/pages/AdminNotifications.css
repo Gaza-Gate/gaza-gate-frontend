@@ -1,0 +1,269 @@
+ * {
+  box-sizing: border-box;
+}
+
+.admin-notifications-page {
+  min-height: 100vh;
+  background: #f8f9fb;
+  direction: rtl;
+  font-family: inherit;
+  width: 100%;
+  overflow-x: hidden;
+  padding: 0 24px;
+}
+
+.admin-notifications-page__body {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.admin-notifications-page__content {
+  flex: 1;
+  padding: 24px 0;
+  text-align: right;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* الهيدر */
+.notifications-header {
+  margin-bottom: 20px;
+}
+
+.notifications-header__title-row {
+  display: flex;
+  flex-direction: row ;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-notifications-page__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.unread-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.notifications-header__actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-tabs {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 8px;
+  background: #f1f2f4;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.filter-tab {
+  border: none;
+  background: transparent;
+  padding: 6px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.filter-tab.active {
+  background: #f97316;
+  color: #fff;
+}
+
+.mark-all-btn {
+  background: transparent;
+  border: none;
+  color: #f97316;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.mark-all-btn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* قائمة التنبيهات */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notifications-loading,
+.notifications-empty {
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  padding: 30px 0;
+}
+
+.notification-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.notification-item.unread {
+  background: #fff8f2;
+  border-color: #fde3c8;
+}
+
+.notification-item__dismiss {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  line-height: 1;
+}
+
+.notification-item__dismiss:hover {
+  color: #ef4444;
+}
+
+.notification-item__top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left: 20px;/* حتى ما يتلاصق مع زر الـ X */
+}
+
+.notification-item__title-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.notification-item__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.notification-item__title-row {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 6px;
+}
+
+.unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+
+.notification-item__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.notification-item__time {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.notification-item__description {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 8px 0 0;
+  padding-right: 50px; /* عشان يبلش تحت النص مش تحت الأيقونة */
+}
+
+.notification-item__mark-read {
+  background: transparent;
+  border: none;
+  color: #f97316;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+  padding-right: 50px;
+  align-self: flex-start;
+}
+
+/* الريسبونسف */
+@media (max-width: 900px) {
+  .admin-notifications-page__body {
+    flex-direction: column;
+  }
+  .notifications-header__actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-notifications-page {
+    padding: 0 12px;
+  }
+  .admin-notifications-page__content {
+    padding: 16px 0;
+  }
+  .notifications-header__actions {
+    width: 100%;
+    align-items: stretch;
+  }
+  .filter-tabs {
+    width: 100%;
+  }
+  .filter-tab {
+    flex: 1;
+  }
+  .notification-item__top {
+    flex-wrap: wrap;
+  }
+  .notification-item__title {
+    white-space: normal;
+  }
+  .notification-item__description,
+  .notification-item__mark-read {
+    padding-right: 0;
+  }
+}

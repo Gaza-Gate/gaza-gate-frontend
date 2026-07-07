@@ -53,7 +53,7 @@ const CheckIcon = () => (
 );
 
 // ── Password field ──
-function PasswordField({ label, name, value, onChange, showPass, onToggle, error }) {
+function PasswordField({ label, name, value, onChange, showPass, onToggle, error, autoComplete }) {
   return (
     <div className="cp-field">
       <label>{label} *</label>
@@ -65,6 +65,7 @@ function PasswordField({ label, name, value, onChange, showPass, onToggle, error
           onChange={onChange}
           placeholder="••••••••"
           className={error ? "cp-input-error" : ""}
+          autoComplete={autoComplete}
         />
         <button type="button" className="cp-eye" onClick={onToggle}>
           <EyeIcon open={showPass} />
@@ -196,6 +197,15 @@ export default function ChangePasswordModal({ onClose }) {
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
 
+          {/*
+            حقول وهمية مخفية لامتصاص الـ autofill الخاص بالمتصفح.
+            بعض المتصفحات (خصوصاً Chrome) بتتجاهل autoComplete="off"/"new-password"
+            على الفورم نفسه، وبتحاول تعبي أول حقل password تلاقيه بكلمة مرور محفوظة.
+            وجود هالحقول قبل الحقول الحقيقية بيخلي المتصفح "يمتص" الاقتراح فيها بدل حقولنا.
+          */}
+          <input type="text" style={{ display: "none" }} autoComplete="username" tabIndex="-1" aria-hidden="true" />
+          <input type="password" style={{ display: "none" }} autoComplete="new-password" tabIndex="-1" aria-hidden="true" />
+
           <div className="cp-fields-card">
             <PasswordField
               label="كلمة المرور الحالية"
@@ -205,6 +215,7 @@ export default function ChangePasswordModal({ onClose }) {
               showPass={show.currentPassword}
               onToggle={() => toggleShow("currentPassword")}
               error={errors.currentPassword}
+              autoComplete="current-password"
             />
             <PasswordField
               label="كلمة المرور الجديدة"
@@ -214,6 +225,7 @@ export default function ChangePasswordModal({ onClose }) {
               showPass={show.newPassword}
               onToggle={() => toggleShow("newPassword")}
               error={errors.newPassword}
+              autoComplete="new-password"
             />
             <PasswordField
               label="تأكيد كلمة المرور"
@@ -223,6 +235,7 @@ export default function ChangePasswordModal({ onClose }) {
               showPass={show.confirmPassword}
               onToggle={() => toggleShow("confirmPassword")}
               error={errors.confirmPassword}
+              autoComplete="new-password"
             />
           </div>
 

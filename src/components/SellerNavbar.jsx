@@ -3,6 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, LogOut, ChevronDown, Menu, X, ArrowLeftRight } from "lucide-react";
 import logo from "../assets/logo.png";
 import ConvertToBuyerModal from "./ConvertToBuyerModal";
+import { logout } from "../services/authService";
+import api from "../utils/api";
+import { connectSocket, disconnectSocket } from "../utils/socket";
 import "./SellerNavbar.css";
 
 const NAV_LINKS = [
@@ -17,12 +20,29 @@ const MORE_LINKS = [
   { to: "/seller/messages", label: "المراسلات" },
 ];
 
-export default function SellerNavbar({ hasNotification = true }) {
+// جلب عدد الإشعارات غير المقروءة من نفس مسار صفحة الإشعارات
+// شكل الريسبونس: { status, data: { notifications: [], stats: {...}, pagination: {...} } }
+async function fetchUnreadCount() {
+  const res = await api.get("/api/seller/notification");
+  // الباك اند بيرجّع stats.unRead (بحرف R كبير) - لو موجود منستخدمه مباشرة، وإلا منحسبه من القائمة
+  const statsUnread = res.data?.data?.stats?.unRead;
+  if (typeof statsUnread === "number") return statsUnread;
+
+  const list = res.data?.data?.notifications ?? res.data?.notifications ?? [];
+  const arr = Array.isArray(list) ? list : [];
+  return arr.filter((n) => !n.isRead).length;
+}
+
+// hasNotification كـ prop أصبح اختياري: لو الأب مرّره صراحة (true/false) منستخدمه كما هو،
+// وإلا منجيب العدد الحقيقي من الـ API ومنبني عليه ظهور النقطة الحمرا
+export default function SellerNavbar({ hasNotification }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [showMore, setShowMore] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     function handleClick() {
@@ -37,10 +57,76 @@ export default function SellerNavbar({ hasNotification = true }) {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    navigate("/login/seller");
+  // نجيب عدد الإشعارات غير المقروءة أول ما يفتح المستخدم التطبيق (تحميل أولي)
+  // وبعدين منستمع بالـ socket لأي تحديث لحظي (إشعار جديد / تعليم كمقروء) بدون إعادة الجلب
+  useEffect(() => {
+    // لو الأب مرّر hasNotification صراحة، ما في حاجة نجيب العدد أو نفتح اتصال socket
+    if (hasNotification !== undefined) return;
+
+    let isMounted = true;
+
+    async function loadInitialCount() {
+      try {
+        const count = await fetchUnreadCount();
+        if (isMounted) setUnreadCount(count);
+      } catch (err) {
+        console.error("فشل جلب عدد الإشعارات غير المقروءة:", err);
+      }
+    }
+    loadInitialCount();
+
+    const socket = connectSocket();
+
+    // 🔧 أداة تشخيص مؤقتة: بتطبع بالـ Console اسم أي حدث حقيقي يوصل من السيرفر
+    // بعد ما تتأكدي من الاسم الصحيح، احذفي هذا الـ onAny واستبدلي الأسماء تحته بالاسم الحقيقي فقط
+    socket.onAny((eventName, payload) => {
+      console.log("📡 Socket event received:", eventName, payload);
+    });
+
+    // أسماء مقترحة شائعة لحدث "إشعار جديد" - عدّليها للاسم الحقيقي فور معرفته من الباك اند
+    const NEW_NOTIFICATION_EVENTS = ["newNotification", "notification:new", "notification"];
+    const READ_EVENTS = ["notification:read", "notification:readAll", "notificationsUpdated"];
+
+    const handleNewNotification = () => {
+      if (isMounted) setUnreadCount((prev) => prev + 1);
+    };
+    const handleReadUpdate = () => {
+      // أبسط وأضمن حل: نعيد جلب العدد الحقيقي من السيرفر بعد أي تحديث قراءة
+      loadInitialCount();
+    };
+
+    NEW_NOTIFICATION_EVENTS.forEach((evt) => socket.on(evt, handleNewNotification));
+    READ_EVENTS.forEach((evt) => socket.on(evt, handleReadUpdate));
+
+    return () => {
+      isMounted = false;
+      NEW_NOTIFICATION_EVENTS.forEach((evt) => socket.off(evt, handleNewNotification));
+      READ_EVENTS.forEach((evt) => socket.off(evt, handleReadUpdate));
+      socket.offAny();
+      disconnectSocket();
+    };
+  }, [hasNotification]);
+
+  // القيمة النهائية اللي بتحدد ظهور النقطة الحمرا
+  const showDot = hasNotification !== undefined ? hasNotification : unreadCount > 0;
+
+  // ✅ الآن الخروج مربوط فعلياً بالـ API: بنستدعي /api/auth/logout
+  // لإبطال التوكن على السيرفر، وبعدين بنمسحه محلياً ونحول المستخدم لصفحة الدخول.
+  // حتى لو فشل الطلب (مثلاً السيرفر مش متاح) منكمل نسجل الخروج محلياً
+  // عشان ما نأخر أو نعلّق المستخدم بمكانه.
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout API failed:", err);
+    } finally {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      setLoggingOut(false);
+      navigate("/login/seller");
+    }
   }
 
   function handleOpenConvertModal() {
@@ -111,11 +197,11 @@ export default function SellerNavbar({ hasNotification = true }) {
           onClick={() => navigate("/seller/notifications")}
         >
           <Bell size={20} color="#374151" />
-          {hasNotification && <span className="snb-bell-dot" />}
+          {showDot && <span className="snb-bell-dot" />}
         </button>
-        <button className="snb-logout-btn" onClick={handleLogout}>
+        <button className="snb-logout-btn" onClick={handleLogout} disabled={loggingOut}>
           <LogOut size={16} color="#f97316" />
-          خروج
+          {loggingOut ? "جاري الخروج..." : "خروج"}
         </button>
       </div>
 
@@ -160,12 +246,12 @@ export default function SellerNavbar({ hasNotification = true }) {
           >
             <Bell size={18} color="#374151" />
             الإشعارات
-            {hasNotification && <span className="snb-bell-dot" />}
+            {showDot && <span className="snb-bell-dot" />}
           </button>
 
-          <button className="snb-mobile-link snb-mobile-link-btn snb-mobile-logout" onClick={handleLogout}>
+          <button className="snb-mobile-link snb-mobile-link-btn snb-mobile-logout" onClick={handleLogout} disabled={loggingOut}>
             <LogOut size={16} color="#f97316" />
-            خروج
+            {loggingOut ? "جاري الخروج..." : "خروج"}
           </button>
         </div>
       )}

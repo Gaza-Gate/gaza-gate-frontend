@@ -7,7 +7,6 @@ import SellerNavbar from "../components/SellerNavbar";
 import { getSellerProfile } from "../services/profileService";
 import { getAuthToken } from "../services/authService";
 
-// بيانات افتراضية تُستخدم فقط إذا الـ API فشل فعلياً (فشل اتصال حقيقي، مو بيانات فاضية)
 const FALLBACK_STORE_DATA = {
   storeName: "متجر فلسطين",
   storeDesc: "متخصص في المنتجات المحلية الفلسطينية عالي الجودة",
@@ -32,7 +31,7 @@ const STATUS_LABELS = {
   suspended: "موقوف",
 };
 
-// تحويل تاريخ ISO لصيغة "شهر سنة" بالعربي
+ 
 const formatMemberSince = (isoDate) => {
   if (!isoDate) return null;
   try {
@@ -47,8 +46,6 @@ const formatMemberSince = (isoDate) => {
   }
 };
 
-// تحويل شكل الداتا الحقيقية القادمة من الـ API لشكل يفهمه الكومبوننت
-// الـ API بيرجع: { status: "success", data: { profile: {...} } }
 const normalizeProfile = (apiResponseData) => {
   const profile =
     apiResponseData?.data?.profile ??
@@ -69,8 +66,8 @@ const normalizeProfile = (apiResponseData) => {
     ratingLabel: FALLBACK_STORE_DATA.ratingLabel,
     totalOrders: profile.totalOrders ?? FALLBACK_STORE_DATA.totalOrders,
     ordersLabel: FALLBACK_STORE_DATA.ordersLabel,
-    address: profile.address ?? "غير محدد",
-    productDesc: profile.storeDescription ?? FALLBACK_STORE_DATA.productDesc,
+    address: profile.street ?? profile.address ?? "",
+     productDesc: profile.storeDescription ?? FALLBACK_STORE_DATA.productDesc,
     ownerName: fullName || FALLBACK_STORE_DATA.ownerName,
     phone: profile.phone ?? "غير متوفر",
     email: profile.email ?? FALLBACK_STORE_DATA.email,
@@ -92,10 +89,8 @@ const StoreProfile = () => {
       try {
         setLoading(true);
         const res = await getSellerProfile(token);
-        // res.data شكلها: { status: "success", data: { profile: {...} } }
         setStoreData(normalizeProfile(res.data ?? res));
       } catch {
-        // فشل الاتصال بالـ API فعلياً → بنستخدم البيانات الثابتة الموجودة فوق
         setStoreData(FALLBACK_STORE_DATA);
       } finally {
         setLoading(false);
@@ -219,21 +214,19 @@ const StoreProfile = () => {
                 </button>
               </div>
               <div className="sp-info-rows">
-                <div className="sp-info-row">
-                  <span className="sp-info-value">{storeData.storeName}</span>
-                  <span className="sp-info-key">اسم المتجر</span>
-                </div>
-                <div className="sp-info-row">
-                  <span className="sp-info-value">{storeData.address}</span>
-                  <span className="sp-info-key">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    العنوان
-                  </span>
-                </div>
-                <div className="sp-info-row">
+                                    {storeData.address && (
+                          <div className="sp-info-row">
+                            <span className="sp-info-value">{storeData.address}</span>
+                            <span className="sp-info-key">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                              </svg>
+                              العنوان
+                            </span>
+                          </div>
+                        )}
+                     <div className="sp-info-row">
                   <span className="sp-info-value">{storeData.productDesc}</span>
                   <span className="sp-info-key">وصف المنتج</span>
                 </div>

@@ -107,7 +107,6 @@ const STATIC_REVIEWS = [
 // ── API Helpers ──
 const fetchReviews = async () => {
   const res = await api.get("/api/seller/review");
-  // الـ API بيرجع: { status, data: { reviews: [...], averageRating, totalReviews, ... } }
   const payload = res.data?.data ?? res.data ?? {};
   const list = Array.isArray(payload?.reviews)
     ? payload.reviews
@@ -115,7 +114,7 @@ const fetchReviews = async () => {
     ? payload
     : [];
 
-  // اسم العميل موجود جوا customer.user.firstName / lastName مش مباشرة customerName
+  
   return list.map((r) => {
     const firstName = r.customer?.user?.firstName ?? "";
     const lastName = r.customer?.user?.lastName ?? "";
@@ -154,7 +153,6 @@ const RatingsManagement = () => {
     try {
       if (IS_API_READY) {
         const data = await fetchReviews();
-        // حماية إضافية: لو رجع أي شكل غير متوقع، لا تكسري الصفحة - استخدمي array فاضية
         setReviews(Array.isArray(data) ? data : []);
       } else {
         setReviews(STATIC_REVIEWS);
@@ -200,7 +198,7 @@ const RatingsManagement = () => {
     setReplyLoading(true);
     try {
       if (IS_API_READY) {
-        // عدّلي المسار والـ body حسب ما يحدده الباك اند
+       
         await api.post(`/api/seller/review/${id}/reply`, { text: replyDraft.trim() });
       }
       setReviews((prev) =>
@@ -297,7 +295,7 @@ const RatingsManagement = () => {
               <div className="rm-review-top">
                 <div className="rm-review-meta">
                   <StarsDisplay rating={review.rating} />
-                  {/* عدّلي customerName حسب الاسم الحقيقي من الباك اند */}
+                
                   <span className="rm-review-name">{review.customerName}</span>
                   <span className="rm-review-date">{review.createdAt?.slice(0, 10)}</span>
                   {review.sellerReply
@@ -306,12 +304,12 @@ const RatingsManagement = () => {
                   }
                 </div>
                 <div className="rm-avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
-                  {/* عدّلي customerName حسب الاسم الحقيقي من الباك اند */}
+                  
                   {review.customerName?.charAt(0)}
                 </div>
               </div>
 
-              {/* عدّلي comment حسب الاسم الحقيقي من الباك اند */}
+             
               <p className="rm-review-comment">{review.comment}</p>
 
               {review.sellerReply && openReplyId !== reviewId && (
@@ -322,7 +320,7 @@ const RatingsManagement = () => {
                     </button>
                     <span>رد البائع:</span>
                   </div>
-                  {/* عدّلي sellerReply.text حسب الاسم الحقيقي من الباك اند */}
+                 
                   <p className="rm-reply-text">{review.sellerReply.text}</p>
                 </div>
               )}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Sparkles } from "lucide-react";
 import "./ProductFormModal.css";
 import { createProduct, updateProduct, getCategories } from "../services/productService";
 import { getAuthToken } from "../services/authService";
@@ -26,13 +26,23 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
 
+  // --- تحسين الصورة بالذكاء الاصطناعي ---
+  // عند الإضافة: مجرد Checkbox بيترسل مع باقي البيانات بنفس طلب createProduct
+  const [optimizeImage, setOptimizeImage] = useState(false);
+  // عند التعديل: زر منفصل بيستدعي updateProduct فوراً مع optimize=true
+  const [aiEnhancing, setAiEnhancing] = useState(false);
+  const [aiError, setAiError] = useState("");
+  // بيمنع تحسين نفس الصورة أكثر من مرة واحدة
+  const [alreadyEnhanced, setAlreadyEnhanced] = useState(false);
+
   // جلب قائمة الفئات من الباك اند عند فتح المودال
-useEffect(() => {
-  if (!open) return;
-  getCategories()
-    .then((res) => setCategories(res.data?.categories ?? []))
-    .catch(() => setCategories([]));
-}, [open]);
+  useEffect(() => {
+    if (!open) return;
+    getCategories()
+      .then((res) => setCategories(res.data?.categories ?? []))
+      .catch(() => setCategories([]));
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     if (product) {
@@ -45,13 +55,22 @@ useEffect(() => {
         quantity: product.quantity ?? "",
         status: product.status ?? "active",
       });
-      setImagePreview(product.images?.[0] ?? null);
+      const primaryImage =
+        product.images?.find((img) => img.isPrimary) ?? product.images?.[0];
+      setImagePreview(primaryImage?.imageUrl ?? null);
+      // إذا الباك اند بيرجع فلاغ يوضح إنه الصورة الحالية تم تحسينها بالذكاء الاصطناعي مسبقاً
+      // (عدّل اسم الحقل حسب اسمه الفعلي القادم من الـ API، مثلاً product.isImageAiEnhanced)
+      setAlreadyEnhanced(Boolean(product.isImageAiEnhanced));
     } else {
       setForm(emptyForm);
       setImagePreview(null);
+      setAlreadyEnhanced(false);
     }
     setImageFile(null);
     setErrors({});
+    setOptimizeImage(false);
+    setAiEnhancing(false);
+    setAiError("");
   }, [open, product]);
 
   if (!open) return null;
@@ -67,6 +86,58 @@ useEffect(() => {
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    setAiError("");
+    // صورة جديدة = تحسين جديد مسموح
+    setAlreadyEnhanced(false);
+  };
+
+  // تحسين صورة منتج موجود مسبقاً (يُستخدم فقط بوضع التعديل)
+  const handleEnhanceExisting = async () => {
+    // بمنع الطلب لو الصورة الحالية تم تحسينها مسبقاً (حماية جهة العميل، بالإضافة لحماية الباك اند نفسه)
+    if (alreadyEnhanced) {
+      setAiError("لا يمكن تحسين الصورة أكثر من مرة واحدة");
+      return;
+    }
+
+    setAiEnhancing(true);
+    setAiError("");
+    try {
+      const fd = new FormData();
+      // اسم الحقل الصحيح المتوقع من الباك اند هو isOptimized (وليس optimize)
+      fd.append("isOptimized", "true");
+      // إذا البائع رفع صورة جديدة بنفس الجلسة نبعتها هي، وإلا الباك بيحسّن الصورة المخزّنة حالياً
+      if (imageFile) fd.append("image", imageFile);
+
+      const res = await updateProduct(product._id ?? product.id, fd);
+
+      // images هي array من objects شكلها { id, imageUrl, isPrimary, ... }
+      // فبنجيب الصورة الأساسية (isPrimary) وإلا أول وحدة بالمصفوفة
+      const updatedImages = res?.data?.product?.images ?? [];
+      const primaryImage = updatedImages.find((img) => img.isPrimary) ?? updatedImages[0];
+      const updatedImageUrl = primaryImage?.imageUrl ?? null;
+
+      if (updatedImageUrl) {
+        setImagePreview(updatedImageUrl);
+        setImageFile(null);
+      }
+      // نمنع أي تحسين إضافي لهذه الصورة
+      setAlreadyEnhanced(true);
+      onSaved?.();
+    } catch (err) {
+      // الباك اند نفسه بيرجع خطأ 400 برسالة "This image is already optimized."
+      // لو انعملت هذه الحالة، منعرضها بالعربي ومنقفل الزر فوراً بدل رسالة عامة
+      const backendMessage =
+        err?.response?.data?.data?.message || err?.response?.data?.message || "";
+
+      if (/already optimized/i.test(backendMessage)) {
+        setAiError("لا يمكن تحسين الصورة أكثر من مرة واحدة");
+        setAlreadyEnhanced(true);
+      } else {
+        setAiError(backendMessage || err.message || "تعذّر تحسين الصورة، حاول مرة أخرى");
+      }
+    } finally {
+      setAiEnhancing(false);
+    }
   };
 
   const validate = () => {
@@ -102,8 +173,13 @@ useEffect(() => {
       fd.append("status", form.status);
       if (imageFile) fd.append("image", imageFile);
 
+      // فقط بوضع الإضافة: نبعت فلاغ التحسين جنب باقي البيانات بنفس الطلب
+      if (!isEditMode && optimizeImage) {
+        fd.append("isOptimized", "true");
+      }
+
       if (isEditMode) {
-       await updateProduct(product._id ?? product.id, fd);
+        await updateProduct(product._id ?? product.id, fd);
       } else {
         await createProduct(fd);
       }
@@ -135,6 +211,7 @@ useEffect(() => {
                 <Upload size={16} />
                 تحميل صورة
               </button>
+
               <div className="pfm-image-preview">
                 {imagePreview ? (
                   <img src={imagePreview} alt="معاينة" />
@@ -146,8 +223,39 @@ useEffect(() => {
                   </svg>
                 )}
               </div>
+
               <input type="file" accept="image/*" ref={fileRef} style={{ display: "none" }} onChange={handleImageChange} />
             </div>
+
+            {/* وضع الإضافة: مجرد فلاغ بينبعت مع الطلب الأساسي */}
+            {!isEditMode && imagePreview && (
+              <label className="pfm-ai-checkbox">
+                <input
+                  type="checkbox"
+                  checked={optimizeImage}
+                  onChange={(e) => setOptimizeImage(e.target.checked)}
+                />
+                <Sparkles size={14} />
+                تحسين الصورة تلقائياً بالذكاء الاصطناعي
+              </label>
+            )}
+
+            {/* وضع التعديل: منتج موجود مسبقاً، إجراء فوري منفصل */}
+            {isEditMode && imagePreview && (
+              <div className="pfm-ai-row">
+                <button
+                  type="button"
+                  className="pfm-ai-btn"
+                  onClick={handleEnhanceExisting}
+                  disabled={aiEnhancing}
+                >
+                  <Sparkles size={15} />
+                  {aiEnhancing ? "جاري التحسين..." : "تحسين الصورة بالذكاء الاصطناعي"}
+                </button>
+              </div>
+            )}
+
+            {aiError && <p className="pfm-error">{aiError}</p>}
           </div>
 
           <div className="pfm-field">

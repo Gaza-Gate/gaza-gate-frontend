@@ -1,0 +1,269 @@
+.admin-profile-page {
+ min-height: 100vh;
+  background: #f8f9fb;
+  direction: rtl;
+  font-family: inherit;
+  padding: 0 24px;
+  width: 100%;
+  overflow-x: hidden;;
+}
+
+.admin-profile-page__body {
+ display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  /* padding: 0 24px; */
+}
+
+.admin-profile-page__content {
+  flex: 1;
+  padding: 24px 32px;
+  text-align: right;
+  max-width: 900px;
+  margin: 0 auto; /* تحطها بالنص بدل ما تاخد العرض كامل */
+}
+
+.admin-profile-page__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20px;
+}
+
+.profile-loading {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* بطاقة الهيدر */
+.profile-header-card {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end; /* بدل flex-start */
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.profile-header-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.profile-header-card__role {
+  color: #6b7280;
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.profile-header-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #16a34a;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: inline-block;
+}
+
+.profile-header-card__avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* بطاقة معلومات الحساب - نفس أسلوب settings-card */
+.settings-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.settings-card__header {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.settings-card__header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.settings-card__header-icon {
+  color: #f97316;
+  font-size: 18px;
+}
+
+/* الفورم */
+.profile-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.profile-field--full {
+  grid-column: 1 / -1;
+}
+
+.profile-field label {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.profile-field__icon {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.profile-field input,
+.profile-field textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  text-align: right;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-field input:focus,
+.profile-field textarea:focus {
+  border-color: #f97316;
+}
+
+.profile-field input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.profile-field textarea {
+  resize: vertical;
+}
+
+/* رسائل الخطأ / النجاح - نفس أسلوب password-form */
+.password-form__error {
+  color: #dc2626;
+  font-size: 13px;
+  margin: 4px 0 12px;
+}
+
+.password-form__success {
+  color: #16a34a;
+  font-size: 13px;
+  margin: 4px 0 12px;
+}
+
+/* الأزرار */
+.profile-form__actions {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  border: none;
+}
+
+.btn--primary {
+  background: #f97316;
+  color: #fff;
+}
+
+.btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--outline {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+/* الريسبونسف */
+ 
+ @media (max-width: 900px) {
+  .admin-profile-page__body {
+    flex-direction: column;
+  }
+  .profile-form__grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-profile-page {
+    padding: 0 12px;
+  }
+  .admin-profile-page__content {
+    padding: 16px 0;
+  }
+  .admin-profile-page__title {
+    font-size: 18px;
+  }
+  .settings-card,
+  .profile-header-card {
+    padding: 16px;
+  }
+  .profile-form__actions {
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+  }
+}

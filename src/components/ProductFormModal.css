@@ -203,3 +203,141 @@
   .pfm-card { padding: 1.6rem 1.3rem 1.4rem; }
   .pfm-image-row { justify-content: space-between; }
 }
+.pfm-ai-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+
+.pfm-ai-spinner {
+  color: #fff;
+  animation: pfm-spin 1s linear infinite;
+}
+
+@keyframes pfm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pfm-ai-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-inline-start: 8px;
+}
+
+.pfm-ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0a35a;
+  background: #fff3e6;
+  color: #b4611b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pfm-ai-btn:hover {
+  background: #fbe3c8;
+}
+
+.pfm-ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pfm-ai-undo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b6b6b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  width: fit-content;
+}
+
+.pfm-ai-undo:hover {
+  text-decoration: underline;
+}
+
+.pfm-ai-identity-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #fff8ee;
+  border: 1px solid #f0a35a;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #7a4a12;
+}
+
+.pfm-ai-identity-btn {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #f0a35a;
+  background: #fff;
+  color: #b4611b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+/* ---- أضف هذا الجزء بآخر ملف ProductFormModal.css الموجود عندك ---- */
+
+.pfm-ai-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #b4611b;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.pfm-ai-checkbox input[type="checkbox"] {
+  accent-color: #f0a35a;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.pfm-ai-row {
+  margin-top: 10px;
+}
+
+.pfm-ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0a35a;
+  background: #fff3e6;
+  color: #b4611b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pfm-ai-btn:hover {
+  background: #fbe3c8;
+}
+
+.pfm-ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
