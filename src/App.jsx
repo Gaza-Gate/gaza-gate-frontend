@@ -14,7 +14,7 @@ import SellerOnboarding from './pages/SellerOnboarding'
 import EditStoreProfile from './pages/EditStoreProfile'
 import ChangePassword   from './pages/ChangePassword'
 import Messages         from './pages/Messages'
-import OrdersManagement from "./pages/Ordersmanagement";
+import OrdersManagement from "./pages/OrdersManagement";
 import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
