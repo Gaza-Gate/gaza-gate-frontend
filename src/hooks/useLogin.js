@@ -2,9 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginSeller } from "../services/authService";
 
-// ================================================================
-//  useLogin.js — كل منطق تسجيل الدخول هون
-// ================================================================
+ 
 
 export function useLogin() {
   const navigate = useNavigate();

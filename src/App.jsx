@@ -34,7 +34,6 @@ import CustomerFavorites from "./pages/CustomerFavorites";
 import CustomerMyOrders from "./pages/CustomerMyOrders";
 import CustomerOrderTracking from "./pages/CustomerOrderTracking";
 import CustomerOrders from "./pages/CustomerOrders";
-import { useAutoRefreshToken } from './hooks/useAutoRefreshToken' // ← جديد
 import CustomerMessages from "./pages/CustomerMessages";
 import CustomerNotifications from "./pages/CustomerNotifications";
 
@@ -53,8 +52,6 @@ import AdminDashboard from './pages/AdminDashboard'
 import FloatingChatWidget from "./components/FloatingChatWidget";
 
 export default function App() {
-  // تجديد التوكن تلقائياً بالخلفية (إضافة صحبتك)
-  useAutoRefreshToken()
 
   // ← 2) اجلب المسار الحالي
   const location = useLocation();
