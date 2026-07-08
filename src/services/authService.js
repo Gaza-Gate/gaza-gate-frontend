@@ -174,3 +174,17 @@ export async function clearAllCustomerNotifications() {
   const res = await api.delete("/api/customer/notifications");
   return res.data;
 }
+export async function resendVerificationCode(email) {
+  const res = await api.post("/api/auth/resend-verification-code", { email });
+  return res.data;
+}
+
+export async function verifyResetCode(email, code) {
+  const res = await api.post("/api/auth/verify-reset-code", { email, code });
+  return res.data;
+}
+
+export async function resetPassword(resetToken, newPassword, confirmPassword) {
+  const res = await api.post("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
+  return res.data;
+}
