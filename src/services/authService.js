@@ -13,6 +13,9 @@ export async function logout() {
   const res = await api.post("/api/auth/logout");
   return res.data;
 }
+export function getAuthToken() {
+  return localStorage.getItem("token") || sessionStorage.getItem("token");
+}
 export async function sellerGoogleLogin(googleToken) {
   const res = await api.post("/api/auth/seller/google/login", { token: googleToken });
   return res.data;
