@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getCustomerOrderDetails, getAuthToken } from "../services/authService";
+import { askChatbot, getAuthToken } from "../services/authService";
 import "./ChatbotWidget.css";
 
 const WELCOME_MESSAGE = {
@@ -12,32 +12,27 @@ const WELCOME_MESSAGE = {
 
 const QUICK_REPLIES = [
   { id: "track", label: "أين طلبي؟" },
-  { id: "delivery", label: "مدة التوصيل" },
-  { id: "return", label: "سياسة الإرجاع" },
+  { id: "delivery", label: "مناطق التوصيل" },
+  { id: "payment", label: "طرق الدفع" },
   { id: "contact", label: "تواصل مع الدعم" },
 ];
-
-function extractOrderNumber(text) {
-  const match = text.match(/ORD-\d+/i);
-  return match ? match[0].toUpperCase() : null;
-}
 
 export default function ChatbotWidget() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
+  const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages, loading]);
 
-  const pushBotMessage = (text, extra = {}) => {
+  const pushBotMessage = (text) => {
     setMessages((prev) => [
       ...prev,
-      { id: Date.now() + Math.random(), from: "bot", text, ...extra },
+      { id: Date.now() + Math.random(), from: "bot", text },
     ]);
   };
 
@@ -48,80 +43,45 @@ export default function ChatbotWidget() {
     ]);
   };
 
-  const simulateTyping = (callback, delay = 700) => {
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      callback();
-    }, delay);
-  };
-
-  async function handleOrderLookup(orderNumber) {
-    const token = getAuthToken();
-    if (!token) {
-      pushBotMessage("تحتاج/ي تسجيل الدخول أولاً حتى أقدر أتابع طلبك 🙏");
-      return;
-    }
+  async function sendQuestion(question) {
+    pushUserMessage(question);
+    setLoading(true);
     try {
-      const order = await getCustomerOrderDetails(orderNumber, token);
-      const status = order?.status || "غير معروف";
-      pushBotMessage(
-        `طلبك رقم ${orderNumber} حالته حالياً: "${status}". تقدر/ي تتابعي كل التفاصيل من صفحة طلباتي.`
-      );
+      const token = getAuthToken();
+      const res = await askChatbot(question, token);
+      const answer = res?.data?.answer || res?.answer;
+
+      if (answer) {
+        pushBotMessage(answer);
+      } else {
+        pushBotMessage("ما قدرت ألاقي جواب على سؤالك، جرب تصيغيه بطريقة تانية أو تواصلي مع الدعم.");
+      }
     } catch (err) {
-      pushBotMessage(
-        `ما قدرت ألاقي طلب بهذا الرقم. تأكدي من الرقم أو راجعي صفحة "طلباتي" مباشرة.`
-      );
+      console.error("Chatbot error:", err);
+      pushBotMessage("صار خطأ بالاتصال، حاولي مرة ثانية بعد شوي 🙏");
+    } finally {
+      setLoading(false);
     }
   }
 
   function handleQuickReply(id, label) {
-    pushUserMessage(label);
-    simulateTyping(() => {
-      switch (id) {
-        case "track":
-          pushBotMessage("تمام، ابعتيلي رقم الطلب (مثال: ORD-241220) وبتابعلك حالته 📦");
-          break;
-        case "delivery":
-          pushBotMessage("مدة التوصيل عادة بين 1-2 يوم عمل حسب موقعك والمتجر.");
-          break;
-        case "return":
-          pushBotMessage("تقدر/ي ترجعي أي منتج خلال 14 يوم من الاستلام إذا كان بحالته الأصلية.");
-          break;
-        case "contact":
-          pushBotMessage("جاري تحويلك لصفحة المراسلات مع فريق الدعم...");
-          setTimeout(() => {
-            setOpen(false);
-            navigate("/messages");
-          }, 900);
-          break;
-        default:
-          break;
-      }
-    });
+    if (id === "contact") {
+      pushUserMessage(label);
+      pushBotMessage("جاري تحويلك لصفحة المراسلات مع فريق الدعم...");
+      setTimeout(() => {
+        setOpen(false);
+        navigate("/messages");
+      }, 900);
+      return;
+    }
+    sendQuestion(label);
   }
 
   function handleSend() {
     const text = input.trim();
-    if (!text) return;
-    pushUserMessage(text);
+    if (!text || loading) return;
     setInput("");
-
-    const orderNumber = extractOrderNumber(text);
-
-    simulateTyping(() => {
-      if (orderNumber) {
-        handleOrderLookup(orderNumber);
-      } else if (text.includes("توصيل") || text.includes("شحن")) {
-        pushBotMessage("مدة التوصيل عادة بين 1-2 يوم عمل حسب موقعك والمتجر.");
-      } else if (text.includes("ارجاع") || text.includes("إرجاع") || text.includes("استرجاع")) {
-        pushBotMessage("تقدر/ي ترجعي أي منتج خلال 14 يوم من الاستلام إذا كان بحالته الأصلية.");
-      } else {
-        pushBotMessage(
-          "ما قدرت أفهم سؤالك تماماً 🙏 تقدر/ي تختاري أحد الخيارات تحت، أو تتواصلي مباشرة مع فريق الدعم."
-        );
-      }
-    });
+    sendQuestion(text);
   }
 
   return (
@@ -164,7 +124,7 @@ export default function ChatbotWidget() {
               )
             )}
 
-            {typing && (
+            {loading && (
               <div className="chatbot-bubble-wrap-bot">
                 <div className="chatbot-bubble-bot chatbot-typing">
                   <span /><span /><span />
@@ -181,6 +141,7 @@ export default function ChatbotWidget() {
                 key={q.id}
                 className="chatbot-quick-btn"
                 onClick={() => handleQuickReply(q.id, q.label)}
+                disabled={loading}
               >
                 {q.label}
               </button>
@@ -193,10 +154,11 @@ export default function ChatbotWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="اكتب رسالتك..."
+              placeholder="اكتب سؤالك..."
               className="chatbot-text-input"
+              disabled={loading}
             />
-            <button className="chatbot-send-btn" onClick={handleSend} disabled={!input.trim()}>
+            <button className="chatbot-send-btn" onClick={handleSend} disabled={!input.trim() || loading}>
               <Send size={16} style={{ transform: "scaleX(-1)" }} />
             </button>
           </div>

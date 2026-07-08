@@ -134,16 +134,30 @@ export default function CustomerOrderTracking() {
 
 {items.map((item) => (
   <div className="ot-item-card" key={item.id}>
-    <img src={item.primaryImage || logo} alt={item.productName} className="ot-item-img" />
+    <img
+      src={item.primaryImage || logo}
+      alt={item.productName}
+      className="ot-item-img"
+    />
     <div className="ot-item-info">
       <h3>{item.productName}</h3>
       <p>الكمية: {item.quantity}</p>
       {order.status === "completed" && (
         <button
           onClick={() =>
-            setReviewTarget({ productId: item.productId || item.id, productName: item.productName })
+            setReviewTarget({ productId: item.productId, productName: item.productName })
           }
-          style={{ marginTop: 6, background: "none", border: "1px solid #f97316", color: "#f97316", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer" }}
+          style={{
+            marginTop: 6,
+            background: "none",
+            border: "1px solid #f97316",
+            color: "#f97316",
+            borderRadius: 8,
+            padding: "6px 12px",
+            fontSize: 13,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
         >
           قيّم المنتج
         </button>

@@ -58,8 +58,16 @@ export function forceLogoutRedirect() {
   window.location.href = `/login/${userType}`;
 }
 
+export function getAuthToken() {
+  return localStorage.getItem("token") || sessionStorage.getItem("token");
+}
 
-async function request(endpoint, body, token = null, method = "POST") {
+// ══════════════════════════════════════════════════
+// ✅ دالة الطلبات الموحّدة (JSON) — فيها تجديد تلقائي للتوكن عند 401
+// كل دالة بهذا الملف (وبأي ملف تاني) لما تستخدم هاي الدالة
+// بتصير محمية تلقائياً بدون أي كود إضافي
+// ══════════════════════════════════════════════════
+async function request(endpoint, body, token = null, method = "POST", _isRetry = false) {
   const headers = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -75,6 +83,19 @@ async function request(endpoint, body, token = null, method = "POST") {
   } catch (err) {
     console.error("Network error:", err);
     throw new Error("تعذر الاتصال بالسيرفر، تحقق من اتصالك بالإنترنت");
+  }
+
+  // 401: التوكن منتهي — حاول تجديده مرة وحدة بس، وبعدين أعيدي نفس الطلب
+  if (res.status === 401 && !_isRetry && token && !endpoint.includes("/api/auth/refresh-token")) {
+    try {
+      const newToken = await refreshAccessToken();
+      const remember = Boolean(localStorage.getItem("token"));
+      saveRefreshedToken(newToken, remember);
+      return request(endpoint, body, newToken, method, true);
+    } catch {
+      forceLogoutRedirect();
+      throw new Error("انتهت جلستك، الرجاء تسجيل الدخول مرة أخرى");
+    }
   }
 
   // 429: تجاوزت عدد المحاولات المسموح
@@ -106,8 +127,51 @@ async function request(endpoint, body, token = null, method = "POST") {
   return data;
 }
 
-export function getAuthToken() {
-  return localStorage.getItem("token") || sessionStorage.getItem("token");
+// نصدّرها باسم واضح حتى تقدر ملفات تانية (orderService, productService) تستخدمها
+export const apiRequest = request;
+
+// ══════════════════════════════════════════════════
+// ✅ دالة الطلبات الموحّدة (FormData) — لما يكون فيها رفع صور/ملفات
+// نفس منطق التجديد التلقائي بالضبط
+// ══════════════════════════════════════════════════
+export async function requestFormData(endpoint, formData, token = null, method = "POST", _isRetry = false) {
+  const headers = {
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${endpoint}`, {
+      method,
+      headers,
+      body: formData,
+    });
+  } catch (err) {
+    console.error("Network error:", err);
+    throw new Error("تعذر الاتصال بالسيرفر، تحقق من اتصالك بالإنترنت");
+  }
+
+  if (res.status === 401 && !_isRetry && token) {
+    try {
+      const newToken = await refreshAccessToken();
+      const remember = Boolean(localStorage.getItem("token"));
+      saveRefreshedToken(newToken, remember);
+      return requestFormData(endpoint, formData, newToken, method, true);
+    } catch {
+      forceLogoutRedirect();
+      throw new Error("انتهت جلستك، الرجاء تسجيل الدخول مرة أخرى");
+    }
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+
+  if (!res.ok) throw new Error(data.message || "حدث خطأ، حاول مرة ثانية");
+  return data;
 }
 
 export async function loginSeller(email, password) {
@@ -150,16 +214,37 @@ export async function resetPassword(resetToken, newPassword, confirmPassword) {
   return request("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
 }
 
-export async function getConversations(token) {
-  return request("/api/seller/conversations", undefined, token, "GET");
+export async function getConversations(page = 1, token) {
+  return request(`/api/conversations/?page=${page}`, undefined, token, "GET");
 }
 
-export async function getMessages(conversationId, token) {
-  return request(`/api/seller/conversations/${conversationId}/messages`, undefined, token, "GET");
+export async function getOrCreateConversation(payload, token) {
+  return request("/api/conversations/", payload, token, "POST");
 }
 
-export async function sendMessage(conversationId, text, token) {
-  return request(`/api/seller/conversations/${conversationId}/messages`, { text }, token);
+export async function getConversationDetails(conversationId, token, page = 1) {
+  return request(`/api/conversations/${conversationId}?page=${page}`, undefined, token, "GET");
+}
+
+export async function sendConversationMessage(conversationId, content, token, extra = {}) {
+  return request(
+    `/api/conversations/${conversationId}/messages`,
+    { content, messageType: "text", ...extra },
+    token,
+    "POST"
+  );
+}
+
+export async function markConversationRead(conversationId, token) {
+  return request(`/api/conversations/${conversationId}/read`, undefined, token, "POST");
+}
+
+export async function editConversationMessage(conversationId, messageId, content, token) {
+  return request(`/api/conversations/${conversationId}/messages/${messageId}`, { content }, token, "PUT");
+}
+
+export async function deleteConversationMessage(conversationId, messageId, token) {
+  return request(`/api/conversations/${conversationId}/messages/${messageId}`, undefined, token, "DELETE");
 }
 
 export async function verifyEmail(email, code) {
@@ -259,55 +344,29 @@ export async function cancelCustomerOrder(orderId, token) {
 }
 
 export async function createOrder(orderData, token) {
-  console.log("Creating order with data:", orderData);
   const response = await request("/api/customer/order", orderData, token, "POST");
-  console.log("Order response:", response);
   return response.data?.order || response.order || response;
 }
 
-// تحويل حساب مشتري حالي إلى بائع (إنشاء متجر جديد لنفس الحساب)
-// ⚠️ المسار "/api/seller/convert" افتراضي - تأكدي من نور (Backend) شو المسار الصحيح بالضبط
 export async function convertCustomerToSeller(storeData, token) {
   return request("/api/seller/convert", storeData, token, "POST");
 }
-// إرسال تقييم لمنتج ضمن طلب معين
-export async function submitProductReview({ productId, orderId, rating, comment }, token) {
-  const response = await request(
-    "/api/customer/review",
-    { productId, orderId, rating, comment },
-    token,
-    "POST"
-  );
+  export async function getCustomerNotifications(token, page = 1) {
+  const response = await request(`/api/customer/notification?page=${page}`, undefined, token, "GET");
   return response.data || response;
 }
 
-
-// ── مراسلات العميل ──
-export async function getCustomerConversations(token) {
-  return request("/api/customer/conversations", undefined, token, "GET");
+export async function markNotificationRead(notificationId, token) {
+  return request(`/api/customer/notification/${notificationId}/read`, undefined, token, "PUT");
 }
 
-export async function getCustomerMessages(conversationId, token) {
-  return request(`/api/customer/conversations/${conversationId}/messages`, undefined, token, "GET");
+export async function markAllNotificationsRead(token) {
+  return request("/api/customer/notification/read-all", undefined, token, "PUT");
 }
 
-export async function sendCustomerMessage(conversationId, text, token) {
-  return request(`/api/customer/conversations/${conversationId}/messages`, { text }, token);
+export async function deleteAllNotifications(token) {
+  return request("/api/customer/notification", undefined, token, "DELETE");
 }
-
-// ── تنبيهات العميل ──
-export async function getCustomerNotifications(token) {
-  return request("/api/customer/notifications", undefined, token, "GET");
-}
-
-export async function markCustomerNotificationRead(id, token) {
-  return request(`/api/customer/notifications/${id}/read`, undefined, token, "PATCH");
-}
-
-export async function markAllCustomerNotificationsRead(token) {
-  return request("/api/customer/notifications/read-all", undefined, token, "PATCH");
-}
-
-export async function clearAllCustomerNotifications(token) {
-  return request("/api/customer/notifications", undefined, token, "DELETE");
+export async function askChatbot(question, token) {
+  return request("/api/customer/chatbot/ask", { question }, token, "POST");
 }

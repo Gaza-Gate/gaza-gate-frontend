@@ -1,0 +1,239 @@
+.rvm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.rvm-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 1.8rem;
+  max-width: 460px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  font-family: "Tajawal", sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.rvm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.rvm-header h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.rvm-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+}
+
+.rvm-product-name {
+  font-size: 0.9rem;
+  color: var(--orange, #f97316);
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  text-align: center;
+}
+
+.rvm-stars-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 1.4rem;
+}
+
+.rvm-star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  transition: transform 0.1s;
+}
+
+.rvm-star-btn:hover {
+  transform: scale(1.15);
+}
+
+.rvm-field {
+  margin-bottom: 1.1rem;
+}
+
+.rvm-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  text-align: right;
+}
+
+.rvm-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #111827;
+  direction: rtl;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.rvm-field textarea:focus {
+  border-color: var(--orange, #f97316);
+}
+
+.rvm-image-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.rvm-image-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1.5px dashed #d1d5db;
+  border-radius: 10px;
+  background: #fafafa;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.rvm-image-btn:hover {
+  border-color: var(--orange, #f97316);
+  color: var(--orange, #f97316);
+}
+
+.rvm-image-preview-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rvm-image-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+
+.rvm-remove-image {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rvm-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.rvm-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.rvm-success-icon {
+  font-size: 2.5rem;
+}
+
+.rvm-success p {
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.rvm-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 0.6rem;
+}
+
+.rvm-btn-cancel {
+  flex: 1;
+  padding: 13px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rvm-btn-cancel:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.rvm-btn-submit {
+  flex: 2;
+  padding: 13px;
+  background: var(--orange, #f97316);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rvm-btn-submit:hover:not(:disabled) {
+  background: var(--orange-dark, #ea6c0a);
+}
+
+.rvm-btn-cancel:disabled,
+.rvm-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

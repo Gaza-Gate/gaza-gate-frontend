@@ -8,7 +8,8 @@ import { getCustomerOrders } from "../services/authService";
 import { ORDER_STEPS, getStepIndex, isCancelledStatus, getStatusLabel, getStatusClass } from "../utils/orderStatus";
 import logo from "../assets/logo.png";
 import "./CustomerMyOrders.css";
-
+import { Star } from "lucide-react"; // ← جديد ضيفي Star للأيقونة
+import ReviewModal from "../components/ReviewModal"; // ← جديد
 function OrderTimeline({ status }) {
   if (isCancelledStatus(status)) {
     return (
@@ -61,7 +62,7 @@ export default function CustomerMyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [reviewTarget, setReviewTarget] = useState(null); // { product, orderId }
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -188,6 +189,24 @@ export default function CustomerMyOrders() {
 
                     <OrderTimeline status={order.status} />
                   </button>
+                  {order.status === "completed" && order.items?.length > 0 && (
+  <div className="co-review-actions">
+    {order.items.map((item) => (
+      <button
+        key={item.id}
+        type="button"
+        className="co-review-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          setReviewTarget({ product: item, orderId: order.id });
+        }}
+      >
+        <Star size={14} fill="currentColor" />
+        قيّم {item.productName}
+      </button>
+    ))}
+  </div>
+)}
                 </li>
               );
             })}

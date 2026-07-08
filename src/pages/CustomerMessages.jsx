@@ -1,11 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, Search, Info, Loader2 } from "lucide-react";
 import {
   getAuthToken,
-  getCustomerConversations,
-  getCustomerMessages,
-  sendCustomerMessage,
+  getConversations,
+  getConversationDetails,
+  markConversationRead,
 } from "../services/authService";
+import {
+  connectSocket,
+  disconnectSocket,
+  getSocket,
+  joinConversation,
+  leaveConversation,
+  emitSendMessage,
+  SOCKET_EVENTS,
+} from "../services/socket";
 import CustomerNavbar from "../components/CustomerNavbar";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
@@ -20,99 +29,177 @@ function formatTime(dateStr) {
   const d = new Date(dateStr);
   return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
+function getCurrentUserId() {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return user?.id || user?._id || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function CustomerMessages() {
   const token = getAuthToken();
+  const currentUserId = getCurrentUserId();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedConv, setSelectedConv] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [searchText, setSearchText] = useState("");
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
+  const selectedIdRef = useRef(null);
+
+  // ── اتصال Socket مرة واحدة عند فتح الصفحة ──
+  useEffect(() => {
+    const socket = connectSocket();
+
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
+
+    // ⚠️ استقبال رسالة جديدة بث حي — عدّلي شكل الـ payload حسب الباك إند
+    socket.on(SOCKET_EVENTS.NEW_MESSAGE, (payload) => {
+      const msg = payload?.message ?? payload;
+      const conversationId = payload?.conversationId ?? msg?.conversationId;
+
+      // إذا الرسالة لنفس المحادثة المفتوحة حالياً، ضيفيها فوراً
+      if (conversationId === selectedIdRef.current) {
+        setMessages((prev) => [...prev, msg]);
+      }
+
+      // حدّثي آخر رسالة بقائمة المحادثات بكل الأحوال
+      setConversations((prev) =>
+        prev.map((c) =>
+          (c.id ?? c._id) === conversationId
+            ? { ...c, lastMessage: { content: msg.content } }
+            : c
+        )
+      );
+    });
+
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
 
   useEffect(() => {
-    async function fetchConversations() {
-      try {
-        setLoadingConvs(true);
-        const data = await getCustomerConversations(token);
-        const list = Array.isArray(data) ? data : data.conversations ?? [];
-        setConversations(list);
-        if (list.length > 0) setSelectedId(list[0]._id ?? list[0].id);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingConvs(false);
-      }
-    }
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  useEffect(() => {
     fetchConversations();
-  }, [token]);
+  }, []);
+
+  const fetchConversations = async () => {
+    try {
+      setLoadingConvs(true);
+      const res = await getConversations(1, token);
+      const list = res?.data?.conversations ?? [];
+      setConversations(list);
+      if (list.length > 0) {
+        setSelectedId(list[0].id ?? list[0]._id);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingConvs(false);
+    }
+  };
 
   useEffect(() => {
     if (!selectedId) return;
-    async function fetchMessages() {
-      try {
-        setLoadingMsgs(true);
-        const data = await getCustomerMessages(selectedId, token);
-        const list = Array.isArray(data) ? data : data.messages ?? [];
-        setMessages(list);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingMsgs(false);
-      }
+
+    // اتركي الغرفة القديمة وانضمي للجديدة
+    joinConversation(selectedId);
+    fetchConversationDetails(selectedId);
+    markConversationRead(selectedId, token).catch(() => {});
+
+    return () => {
+      leaveConversation(selectedId);
+    };
+  }, [selectedId]);
+
+  const fetchConversationDetails = async (id) => {
+    try {
+      setLoadingMsgs(true);
+      const res = await getConversationDetails(id, token);
+      setSelectedConv(res?.data?.conversation ?? null);
+      setMessages(res?.data?.messages ?? []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingMsgs(false);
     }
-    fetchMessages();
-  }, [selectedId, token]);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const selectedConv = conversations.find((c) => (c._id ?? c.id) === selectedId);
-
   const filtered = conversations.filter((c) => {
-    const name = c.sellerName ?? c.seller?.storeName ?? "";
-    const last = c.lastMessage ?? "";
-    return name.includes(searchText) || last.includes(searchText);
+    const name =
+      c.otherParty?.storeName ||
+      `${c.otherParty?.firstName ?? ""} ${c.otherParty?.lastName ?? ""}`.trim();
+    const last = c.lastMessage?.content ?? c.lastMessage ?? "";
+    return (name || "").includes(searchText) || last.includes(searchText);
   });
 
-  async function handleSend() {
+  const handleSend = useCallback(async () => {
     if (!messageText.trim() || !selectedId) return;
     const text = messageText;
     setMessageText("");
-    setSending(true);
+
+    // إضافة تفاؤلية (optimistic) للواجهة، لحد ما يوصل تأكيد من السيرفر
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg = {
+      id: tempId,
+      senderId: currentUserId,
+      content: text,
+      createdAt: new Date().toISOString(),
+      _pending: true,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setConversations((prev) =>
+      prev.map((c) =>
+        (c.id ?? c._id) === selectedId
+          ? { ...c, lastMessage: { content: text } }
+          : c
+      )
+    );
+
     try {
-      const sent = await sendCustomerMessage(selectedId, text, token);
-      const newMsg = sent.message ?? sent ?? {
-        _id: Date.now(),
-        text,
-        createdAt: new Date().toISOString(),
-        fromCustomer: true,
-      };
-      setMessages((prev) => [...prev, newMsg]);
-      setConversations((prev) =>
-        prev.map((c) => (c._id ?? c.id) === selectedId ? { ...c, lastMessage: text } : c)
+      // إرسال عبر Socket وانتظار تأكيد فعلي من السيرفر
+      await emitSendMessage(selectedId, text);
+      // بعد التأكيد، نشيل علامة "قيد الإرسال"
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, _pending: false } : m))
       );
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setSending(false);
+      // فشل الإرسال — نشيل الرسالة التفاؤلية ونظهر خطأ واضح للمستخدم
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setError(err.message || "فشل إرسال الرسالة، حاول مرة أخرى");
+      setMessageText(text); // نعيد النص للحقل حتى ما يضيع كلام المستخدم
     }
-  }
+  }, [messageText, selectedId, currentUserId]);
 
   return (
     <div className="messages-wrapper" dir="rtl">
       <CustomerNavbar cartCount={cartCount} wishlistCount={wishlistCount} />
 
       <div className="messages-title-area">
-        <h1>المراسلات</h1>
+        <h1>
+          المراسلات
+          {connected && <span className="messages-live-dot" title="متصل مباشرة" />}
+        </h1>
         <p>تواصل مع البائعين مباشرة</p>
       </div>
 
@@ -148,9 +235,12 @@ export default function CustomerMessages() {
                 <p className="messages-empty">لا توجد محادثات</p>
               ) : (
                 filtered.map((conv) => {
-                  const id = conv._id ?? conv.id;
-                  const name = conv.sellerName ?? conv.seller?.storeName ?? "بائع";
-                  const last = conv.lastMessage ?? "";
+                  const id = conv.id ?? conv._id;
+                  const name =
+                    conv.otherParty?.storeName ||
+                    `${conv.otherParty?.firstName ?? ""} ${conv.otherParty?.lastName ?? ""}`.trim() ||
+                    "بائع";
+                  const last = conv.lastMessage?.content ?? conv.lastMessage ?? "";
                   return (
                     <button
                       key={id}
@@ -158,11 +248,19 @@ export default function CustomerMessages() {
                       className={`messages-conv-item ${selectedId === id ? "selected" : ""}`}
                     >
                       <div className="messages-avatar" style={{ backgroundColor: avatarColor(name) }}>
-                        {name[0]}
+                        {conv.otherParty?.avatar ? (
+                          <img
+                            src={conv.otherParty.avatar}
+                            alt={name}
+                            style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                          />
+                        ) : (
+                          name[0]
+                        )}
                       </div>
                       <div className="messages-conv-info">
                         <div className="messages-conv-row">
-                          <span className="messages-conv-time">{formatTime(conv.updatedAt)}</span>
+                          <span className="messages-conv-time">{formatTime(conv.updatedAt ?? conv.updated_at)}</span>
                           <span className="messages-conv-name">{name}</span>
                         </div>
                         <p className="messages-conv-last">{last}</p>
@@ -183,15 +281,25 @@ export default function CustomerMessages() {
                 <div className="messages-chat-user">
                   <div className="messages-chat-user-info">
                     <p className="messages-chat-user-name">
-                      {selectedConv.sellerName ?? selectedConv.seller?.storeName ?? "بائع"}
+                      {selectedConv.otherParty?.storeName ||
+                        `${selectedConv.otherParty?.firstName ?? ""} ${selectedConv.otherParty?.lastName ?? ""}`.trim() ||
+                        "بائع"}
                     </p>
                     <p className="messages-chat-user-role">بائع</p>
                   </div>
                   <div
                     className="messages-chat-avatar"
-                    style={{ backgroundColor: avatarColor(selectedConv.sellerName ?? selectedConv.seller?.storeName ?? "") }}
+                    style={{ backgroundColor: avatarColor(selectedConv.otherParty?.firstName ?? "") }}
                   >
-                    {(selectedConv.sellerName ?? selectedConv.seller?.storeName ?? "ب")[0]}
+                    {selectedConv.otherParty?.avatar ? (
+                      <img
+                        src={selectedConv.otherParty.avatar}
+                        alt=""
+                        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      (selectedConv.otherParty?.firstName ?? "ب")[0]
+                    )}
                   </div>
                 </div>
               </div>
@@ -208,20 +316,19 @@ export default function CustomerMessages() {
                 <p className="messages-empty">لا توجد رسائل بعد</p>
               ) : (
                 messages.map((msg) => {
-                  const isMe = msg.fromCustomer ?? msg.senderType === "customer";
-                  const text = msg.text ?? msg.content ?? msg.body ?? "";
-                  const time = formatTime(msg.createdAt);
+                  const isMe = msg.senderId === currentUserId;
+                  const time = formatTime(msg.createdAt ?? msg.created_at);
                   return isMe ? (
-                    <div key={msg._id ?? msg.id} className="messages-bubble-wrap-me">
+                    <div key={msg.id} className="messages-bubble-wrap-me">
                       <div className="messages-bubble-me">
-                        <p className="messages-bubble-text">{text}</p>
+                        <p className="messages-bubble-text">{msg.content}</p>
                         <p className="messages-bubble-time-me">{time}</p>
                       </div>
                     </div>
                   ) : (
-                    <div key={msg._id ?? msg.id} className="messages-bubble-wrap-other">
+                    <div key={msg.id} className="messages-bubble-wrap-other">
                       <div className="messages-bubble-other">
-                        <p className="messages-bubble-text">{text}</p>
+                        <p className="messages-bubble-text">{msg.content}</p>
                         <p className="messages-bubble-time-other">{time}</p>
                       </div>
                     </div>
@@ -234,14 +341,10 @@ export default function CustomerMessages() {
             <div className="messages-input-area">
               <button
                 onClick={handleSend}
-                disabled={sending || !messageText.trim()}
                 className="messages-send-btn"
-                style={{ background: sending || !messageText.trim() ? "#fed7aa" : "#f97316" }}
+                style={{ background: !messageText.trim() ? "#fed7aa" : "#f97316" }}
               >
-                {sending
-                  ? <Loader2 size={15} color="#fff" className="spin" />
-                  : <Send size={15} color="#fff" style={{ transform: "scaleX(-1)" }} />
-                }
+                <Send size={15} color="#fff" style={{ transform: "scaleX(-1)" }} />
               </button>
               <input
                 type="text"

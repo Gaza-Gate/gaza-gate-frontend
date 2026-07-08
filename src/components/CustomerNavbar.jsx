@@ -35,7 +35,7 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
   const navItems = [
     { path: "/home/customer", label: "الرئيسية", Icon: Home },
     { path: "/products", label: "المنتجات", Icon: ShoppingBag },
-    { path: "/orders", label: "طلباتي", Icon: User },
+    { path: "/my-orders", label: "طلباتي", Icon: User },
   ];
 
   const moreItems = [
@@ -87,7 +87,8 @@ export default function CustomerNavbar({ logo, cartCount = 0, wishlistCount = 0,
           {navItems.map(({ path, label, Icon }) => (
             <button
               key={path}
-              className={`cn-link ${pathname === path || (path === "/orders" && pathname.startsWith("/orders")) || (path === "/products" && pathname.startsWith("/products")) ? "active" : ""}`}
+              className={`cn-link ${pathname === path || (path === "/my-orders" && pathname.startsWith("/my-orders")) || (path === "/products" && pathname.startsWith("/products")) ? "active" : ""}`}
+              
               onClick={() => navigate(path)}
             >
               <Icon size={15} />

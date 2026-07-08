@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Search, Info, Loader2, Bell, LogOut, Home, Package, User, ChevronDown } from "lucide-react";
-import { getAuthToken, getConversations, getMessages, sendMessage } from "../services/authService";
-import logo from "../assets/logo.png";
+import { Send, Search, Info, Loader2 } from "lucide-react";
+import {
+  getAuthToken,
+  getConversations,
+  getConversationDetails,
+  sendConversationMessage,
+  markConversationRead,
+} from "../services/authService";
 import "./Messages.css";
 import SellerNavbar from "../components/SellerNavbar";
 
@@ -14,11 +19,24 @@ function formatTime(dateStr) {
   const d = new Date(dateStr);
   return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
+function getCurrentUserId() {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return user?.id || user?._id || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Messages() {
   const token = getAuthToken();
+  const currentUserId = getCurrentUserId();
+
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedConv, setSelectedConv] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -26,59 +44,56 @@ export default function Messages() {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
-  const [showMore, setShowMore] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    async function fetchConversations() {
-      try {
-        setLoadingConvs(true);
-        const data = await getConversations(token);
-        const list = Array.isArray(data) ? data : data.conversations ?? [];
-        setConversations(list);
-        if (list.length > 0) setSelectedId(list[0]._id ?? list[0].id);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingConvs(false);
-      }
-    }
     fetchConversations();
-  }, [token]);
+  }, []);
+
+  const fetchConversations = async () => {
+    try {
+      setLoadingConvs(true);
+      const res = await getConversations(1, token);
+      const list = res?.data?.conversations ?? [];
+      setConversations(list);
+      if (list.length > 0) {
+        setSelectedId(list[0].id ?? list[0]._id);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingConvs(false);
+    }
+  };
 
   useEffect(() => {
     if (!selectedId) return;
-    async function fetchMessages() {
-      try {
-        setLoadingMsgs(true);
-        const data = await getMessages(selectedId, token);
-        const list = Array.isArray(data) ? data : data.messages ?? [];
-        setMessages(list);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingMsgs(false);
-      }
+    fetchConversationDetails(selectedId);
+    markConversationRead(selectedId, token).catch(() => {});
+  }, [selectedId]);
+
+  const fetchConversationDetails = async (id) => {
+    try {
+      setLoadingMsgs(true);
+      const res = await getConversationDetails(id, token);
+      setSelectedConv(res?.data?.conversation ?? null);
+      setMessages(res?.data?.messages ?? []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingMsgs(false);
     }
-    fetchMessages();
-  }, [selectedId, token]);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    function handleClick() { setShowMore(false); }
-    if (showMore) document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [showMore]);
-
-  const selectedConv = conversations.find((c) => (c._id ?? c.id) === selectedId);
-
   const filtered = conversations.filter((c) => {
-    const name = c.buyerName ?? c.buyer?.name ?? "";
-    const last = c.lastMessage ?? "";
-    return name.includes(searchText) || last.includes(searchText);
+    const name =
+      `${c.otherParty?.firstName ?? ""} ${c.otherParty?.lastName ?? ""}`.trim();
+    const last = c.lastMessage?.content ?? c.lastMessage ?? "";
+    return (name || "").includes(searchText) || last.includes(searchText);
   });
 
   async function handleSend() {
@@ -87,16 +102,19 @@ export default function Messages() {
     setMessageText("");
     setSending(true);
     try {
-      const sent = await sendMessage(selectedId, text, token);
-      const newMsg = sent.message ?? sent ?? {
-        _id: Date.now(),
-        text,
-        createdAt: new Date().toISOString(),
-        fromSeller: true,
+      const res = await sendConversationMessage(selectedId, text, token);
+      const sentMsg = res?.data?.message;
+      const newMsg = {
+        ...sentMsg,
+        createdAt: sentMsg?.createdAt || new Date().toISOString(),
       };
       setMessages((prev) => [...prev, newMsg]);
       setConversations((prev) =>
-        prev.map((c) => (c._id ?? c.id) === selectedId ? { ...c, lastMessage: text } : c)
+        prev.map((c) =>
+          (c.id ?? c._id) === selectedId
+            ? { ...c, lastMessage: { content: text } }
+            : c
+        )
       );
     } catch (err) {
       setError(err.message);
@@ -152,9 +170,11 @@ export default function Messages() {
                 <p className="messages-empty">لا توجد محادثات</p>
               ) : (
                 filtered.map((conv) => {
-                  const id = conv._id ?? conv.id;
-                  const name = conv.buyerName ?? conv.buyer?.name ?? "مشتري";
-                  const last = conv.lastMessage ?? "";
+                  const id = conv.id ?? conv._id;
+                  const name =
+                    `${conv.otherParty?.firstName ?? ""} ${conv.otherParty?.lastName ?? ""}`.trim() ||
+                    "مشتري";
+                  const last = conv.lastMessage?.content ?? conv.lastMessage ?? "";
                   return (
                     <button
                       key={id}
@@ -165,11 +185,19 @@ export default function Messages() {
                         className="messages-avatar"
                         style={{ backgroundColor: avatarColor(name) }}
                       >
-                        {name[0]}
+                        {conv.otherParty?.avatar ? (
+                          <img
+                            src={conv.otherParty.avatar}
+                            alt={name}
+                            style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                          />
+                        ) : (
+                          name[0]
+                        )}
                       </div>
                       <div className="messages-conv-info">
                         <div className="messages-conv-row">
-                          <span className="messages-conv-time">{formatTime(conv.updatedAt)}</span>
+                          <span className="messages-conv-time">{formatTime(conv.updatedAt ?? conv.updated_at)}</span>
                           <span className="messages-conv-name">{name}</span>
                         </div>
                         <p className="messages-conv-last">{last}</p>
@@ -191,15 +219,23 @@ export default function Messages() {
                 <div className="messages-chat-user">
                   <div className="messages-chat-user-info">
                     <p className="messages-chat-user-name">
-                      {selectedConv.buyerName ?? selectedConv.buyer?.name ?? "مشتري"}
+                      {`${selectedConv.otherParty?.firstName ?? ""} ${selectedConv.otherParty?.lastName ?? ""}`.trim() || "مشتري"}
                     </p>
                     <p className="messages-chat-user-role">مشتري</p>
                   </div>
                   <div
                     className="messages-chat-avatar"
-                    style={{ backgroundColor: avatarColor(selectedConv.buyerName ?? selectedConv.buyer?.name ?? "") }}
+                    style={{ backgroundColor: avatarColor(selectedConv.otherParty?.firstName ?? "") }}
                   >
-                    {(selectedConv.buyerName ?? selectedConv.buyer?.name ?? "م")[0]}
+                    {selectedConv.otherParty?.avatar ? (
+                      <img
+                        src={selectedConv.otherParty.avatar}
+                        alt=""
+                        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      (selectedConv.otherParty?.firstName ?? "م")[0]
+                    )}
                   </div>
                 </div>
               </div>
@@ -217,20 +253,19 @@ export default function Messages() {
                 <p className="messages-empty">لا توجد رسائل بعد</p>
               ) : (
                 messages.map((msg) => {
-                  const isMe = msg.fromSeller ?? msg.senderType === "seller";
-                  const text = msg.text ?? msg.content ?? msg.body ?? "";
-                  const time = formatTime(msg.createdAt);
+                  const isMe = msg.senderId === currentUserId;
+                  const time = formatTime(msg.createdAt ?? msg.created_at);
                   return isMe ? (
-                    <div key={msg._id ?? msg.id} className="messages-bubble-wrap-me">
+                    <div key={msg.id} className="messages-bubble-wrap-me">
                       <div className="messages-bubble-me">
-                        <p className="messages-bubble-text">{text}</p>
+                        <p className="messages-bubble-text">{msg.content}</p>
                         <p className="messages-bubble-time-me">{time}</p>
                       </div>
                     </div>
                   ) : (
-                    <div key={msg._id ?? msg.id} className="messages-bubble-wrap-other">
+                    <div key={msg.id} className="messages-bubble-wrap-other">
                       <div className="messages-bubble-other">
-                        <p className="messages-bubble-text">{text}</p>
+                        <p className="messages-bubble-text">{msg.content}</p>
                         <p className="messages-bubble-time-other">{time}</p>
                       </div>
                     </div>
@@ -244,7 +279,7 @@ export default function Messages() {
             <div className="messages-input-area">
               <button
                 onClick={handleSend}
-                disabled={sending || !messageText.trim()}
+                disabled={sending || !messageText.trim() || !selectedId}
                 className="messages-send-btn"
                 style={{ background: sending || !messageText.trim() ? "#fed7aa" : "#f97316" }}
               >
@@ -260,6 +295,7 @@ export default function Messages() {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="اكتب رسالتك..."
                 className="messages-text-input"
+                disabled={!selectedId}
               />
             </div>
           </div>

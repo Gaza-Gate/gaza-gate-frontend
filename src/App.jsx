@@ -17,7 +17,6 @@ import Messages         from './pages/Messages'
 import OrdersManagement from "./pages/OrdersManagement";
 import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
-import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
 import CustomerCheckoutFailed from "./pages/CustomerCheckoutFailed";
 import ConvertToSeller from "./pages/ConvertToSeller"; // ✅ إضافة جديدة
@@ -33,7 +32,6 @@ import CustomerCheckoutConfirm from "./pages/CustomerCheckoutConfirm";
 import CustomerFavorites from "./pages/CustomerFavorites";
 import CustomerMyOrders from "./pages/CustomerMyOrders";
 import CustomerOrderTracking from "./pages/CustomerOrderTracking";
-import CustomerOrders from "./pages/CustomerOrders";
 import { useAutoRefreshToken } from './hooks/useAutoRefreshToken' // ← جديد
 import CustomerMessages from "./pages/CustomerMessages";
 import CustomerNotifications from "./pages/CustomerNotifications";
@@ -59,14 +57,13 @@ export default function App() {
    
       <Route path="/customer/become-seller" element={<ConvertToSeller />} />
        <Route path="/messages" element={<CustomerMessages />} />
-       <Route path="/notifications" element={<CustomerNotifications />} />
+<Route path="/notifications" element={<CustomerNotifications />} />
       <Route path="/home/customer" element={<CustomerHome />} />
       <Route path="/products" element={<CustomerProducts />} />
       <Route path="/product/:id" element={<CustomerProductDetails />} />
       <Route path="/cart" element={<CustomerCart />} />
       <Route path="/profile/customer" element={<CustomerProfile />} />
       <Route path="/favorites" element={<CustomerFavorites />} />
-      <Route path="/orders" element={<CustomerOrders />} />
       <Route path="/my-orders" element={<CustomerMyOrders />} />
       <Route path="/my-orders/:id" element={<CustomerOrderTracking />} />
       <Route path="/checkout/review" element={<CustomerCheckoutReview />} />
@@ -85,9 +82,7 @@ export default function App() {
       <Route path="/seller/products" element={<ProductsList />} />
       <Route path="/seller/orders/:id" element={<OrderDetails />} />
       <Route path="/seller/ratings" element={<RatingsManagement />} />
-      <Route path="/seller/notifications" element={<NotificationsPage />} />
       <Route path="/verify-otp" element={<VerifyOTP />} />
-
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
