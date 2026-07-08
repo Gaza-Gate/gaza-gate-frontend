@@ -1,0 +1,284 @@
+ * {
+  box-sizing: border-box;
+}
+
+.admin-users-page {
+  min-height: 100vh;
+  background: #f8f9fb;
+  direction: rtl;
+  font-family: inherit;
+  width: 100%;
+  overflow-x: hidden;
+  padding: 0 24px;
+}
+
+.admin-users-page__body {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.admin-users-page__content {
+  flex: 1;
+  padding: 24px 0;
+  text-align: right;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* الهيدر */
+.users-header {
+  margin-bottom: 16px;
+}
+
+.admin-users-page__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.admin-users-page__subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 4px 0 0;
+}
+
+/* شريط البحث والفلتر */
+.users-toolbar {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.search-box {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box__icon {
+  position: absolute;
+  right: 14px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.search-box input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 9px 38px 9px 14px;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  text-align: right;
+}
+
+.search-box input:focus {
+  border-color: #f97316;
+}
+
+.filter-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-box__icon {
+  position: absolute;
+  right: 12px;
+  color: #9ca3af;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.filter-box select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 9px 14px 9px 32px;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+  color: #374151;
+}
+
+/* بطاقة الجدول */
+.users-table-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 8px 20px;
+  overflow-x: auto;
+}
+
+.users-loading,
+.users-empty {
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  padding: 30px 0;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.users-table th {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 600;
+  padding: 14px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.users-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: #6b7280;
+}
+
+/* خلية المستخدم */
+.user-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-cell__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-cell__name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 13px;
+}
+
+.user-cell__email {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* شارة الدور */
+.role-badge {
+  font-size: 12px;
+  color: #374151;
+}
+
+.role-badge--admin {
+  color: #a855f7;
+  font-weight: 600;
+}
+
+/* شارة الحالة */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.status-badge--active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge--disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* زر التفعيل/التعطيل */
+.toggle-status-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle-status-btn--disable {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.toggle-status-btn--enable {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.toggle-status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* الريسبونسف */
+@media (max-width: 900px) {
+  .admin-users-page__body {
+    flex-direction: column;
+  }
+  .users-toolbar {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-users-page {
+    padding: 0 12px;
+  }
+  .admin-users-page__content {
+    padding: 16px 0;
+  }
+  .users-table-card {
+    padding: 8px 12px;
+  }
+}

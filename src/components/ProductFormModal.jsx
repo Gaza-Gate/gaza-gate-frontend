@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Sparkles } from "lucide-react";
 import "./ProductFormModal.css";
-import { createProduct, updateProduct } from "../services/productService";
+import { createProduct, updateProduct, getCategories } from "../services/productService";
 import { getAuthToken } from "../services/authService";
-
-const CATEGORIES = ["الاطعمة", "ملابس", "أدوات منزلية", "إلكترونيات", "أخرى"];
 
 const emptyForm = {
   name: "",
+  description: "",
   price: "",
-  category: CATEGORIES[0],
+  categoryId: "",
   stockType: "unlimited", // "limited" | "unlimited"
   quantity: "",
   status: "active", // "active" | "hidden"
@@ -25,25 +24,53 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  // --- تحسين الصورة بالذكاء الاصطناعي ---
+  // عند الإضافة: مجرد Checkbox بيترسل مع باقي البيانات بنفس طلب createProduct
+  const [optimizeImage, setOptimizeImage] = useState(false);
+  // عند التعديل: زر منفصل بيستدعي updateProduct فوراً مع optimize=true
+  const [aiEnhancing, setAiEnhancing] = useState(false);
+  const [aiError, setAiError] = useState("");
+  // بيمنع تحسين نفس الصورة أكثر من مرة واحدة
+  const [alreadyEnhanced, setAlreadyEnhanced] = useState(false);
+
+  // جلب قائمة الفئات من الباك اند عند فتح المودال
+  useEffect(() => {
+    if (!open) return;
+    getCategories()
+      .then((res) => setCategories(res.data?.categories ?? []))
+      .catch(() => setCategories([]));
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     if (product) {
       setForm({
         name: product.name ?? "",
+        description: product.description ?? "",
         price: product.price ?? "",
-        category: product.category ?? CATEGORIES[0],
+        categoryId: product.categoryId ?? "",
         stockType: product.stockType ?? (product.quantity != null ? "limited" : "unlimited"),
         quantity: product.quantity ?? "",
         status: product.status ?? "active",
       });
-      setImagePreview(product.images?.[0] ?? null);
+      const primaryImage =
+        product.images?.find((img) => img.isPrimary) ?? product.images?.[0];
+      setImagePreview(primaryImage?.imageUrl ?? null);
+      // إذا الباك اند بيرجع فلاغ يوضح إنه الصورة الحالية تم تحسينها بالذكاء الاصطناعي مسبقاً
+      // (عدّل اسم الحقل حسب اسمه الفعلي القادم من الـ API، مثلاً product.isImageAiEnhanced)
+      setAlreadyEnhanced(Boolean(product.isImageAiEnhanced));
     } else {
       setForm(emptyForm);
       setImagePreview(null);
+      setAlreadyEnhanced(false);
     }
     setImageFile(null);
     setErrors({});
+    setOptimizeImage(false);
+    setAiEnhancing(false);
+    setAiError("");
   }, [open, product]);
 
   if (!open) return null;
@@ -59,6 +86,58 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    setAiError("");
+    // صورة جديدة = تحسين جديد مسموح
+    setAlreadyEnhanced(false);
+  };
+
+  // تحسين صورة منتج موجود مسبقاً (يُستخدم فقط بوضع التعديل)
+  const handleEnhanceExisting = async () => {
+    // بمنع الطلب لو الصورة الحالية تم تحسينها مسبقاً (حماية جهة العميل، بالإضافة لحماية الباك اند نفسه)
+    if (alreadyEnhanced) {
+      setAiError("لا يمكن تحسين الصورة أكثر من مرة واحدة");
+      return;
+    }
+
+    setAiEnhancing(true);
+    setAiError("");
+    try {
+      const fd = new FormData();
+      // اسم الحقل الصحيح المتوقع من الباك اند هو isOptimized (وليس optimize)
+      fd.append("isOptimized", "true");
+      // إذا البائع رفع صورة جديدة بنفس الجلسة نبعتها هي، وإلا الباك بيحسّن الصورة المخزّنة حالياً
+      if (imageFile) fd.append("image", imageFile);
+
+      const res = await updateProduct(product._id ?? product.id, fd);
+
+      // images هي array من objects شكلها { id, imageUrl, isPrimary, ... }
+      // فبنجيب الصورة الأساسية (isPrimary) وإلا أول وحدة بالمصفوفة
+      const updatedImages = res?.data?.product?.images ?? [];
+      const primaryImage = updatedImages.find((img) => img.isPrimary) ?? updatedImages[0];
+      const updatedImageUrl = primaryImage?.imageUrl ?? null;
+
+      if (updatedImageUrl) {
+        setImagePreview(updatedImageUrl);
+        setImageFile(null);
+      }
+      // نمنع أي تحسين إضافي لهذه الصورة
+      setAlreadyEnhanced(true);
+      onSaved?.();
+    } catch (err) {
+      // الباك اند نفسه بيرجع خطأ 400 برسالة "This image is already optimized."
+      // لو انعملت هذه الحالة، منعرضها بالعربي ومنقفل الزر فوراً بدل رسالة عامة
+      const backendMessage =
+        err?.response?.data?.data?.message || err?.response?.data?.message || "";
+
+      if (/already optimized/i.test(backendMessage)) {
+        setAiError("لا يمكن تحسين الصورة أكثر من مرة واحدة");
+        setAlreadyEnhanced(true);
+      } else {
+        setAiError(backendMessage || err.message || "تعذّر تحسين الصورة، حاول مرة أخرى");
+      }
+    } finally {
+      setAiEnhancing(false);
+    }
   };
 
   const validate = () => {
@@ -66,7 +145,7 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
     if (!form.name.trim()) errs.name = "اسم المنتج مطلوب";
     if (!form.price) errs.price = "السعر مطلوب";
     else if (Number(form.price) <= 0) errs.price = "السعر غير صحيح";
-    if (!form.category) errs.category = "الفئة مطلوبة";
+    if (!form.categoryId) errs.categoryId = "الفئة مطلوبة";
     if (form.stockType === "limited") {
       if (form.quantity === "" || Number(form.quantity) < 0) {
         errs.quantity = "الكمية مطلوبة";
@@ -86,17 +165,23 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
     try {
       const fd = new FormData();
       fd.append("name", form.name.trim());
+      fd.append("description", form.description.trim());
       fd.append("price", form.price);
-      fd.append("category", form.category);
+      fd.append("categoryId", form.categoryId);
       fd.append("stockType", form.stockType);
       fd.append("quantity", form.stockType === "limited" ? form.quantity : "");
       fd.append("status", form.status);
       if (imageFile) fd.append("image", imageFile);
 
+      // فقط بوضع الإضافة: نبعت فلاغ التحسين جنب باقي البيانات بنفس الطلب
+      if (!isEditMode && optimizeImage) {
+        fd.append("isOptimized", "true");
+      }
+
       if (isEditMode) {
-        await updateProduct(product._id ?? product.id, fd, token);
+        await updateProduct(product._id ?? product.id, fd);
       } else {
-        await createProduct(fd, token);
+        await createProduct(fd);
       }
       onSaved?.();
       onClose();
@@ -126,6 +211,7 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
                 <Upload size={16} />
                 تحميل صورة
               </button>
+
               <div className="pfm-image-preview">
                 {imagePreview ? (
                   <img src={imagePreview} alt="معاينة" />
@@ -137,14 +223,57 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
                   </svg>
                 )}
               </div>
+
               <input type="file" accept="image/*" ref={fileRef} style={{ display: "none" }} onChange={handleImageChange} />
             </div>
+
+            {/* وضع الإضافة: مجرد فلاغ بينبعت مع الطلب الأساسي */}
+            {!isEditMode && imagePreview && (
+              <label className="pfm-ai-checkbox">
+                <input
+                  type="checkbox"
+                  checked={optimizeImage}
+                  onChange={(e) => setOptimizeImage(e.target.checked)}
+                />
+                <Sparkles size={14} />
+                تحسين الصورة تلقائياً بالذكاء الاصطناعي
+              </label>
+            )}
+
+            {/* وضع التعديل: منتج موجود مسبقاً، إجراء فوري منفصل */}
+            {isEditMode && imagePreview && (
+              <div className="pfm-ai-row">
+                <button
+                  type="button"
+                  className="pfm-ai-btn"
+                  onClick={handleEnhanceExisting}
+                  disabled={aiEnhancing}
+                >
+                  <Sparkles size={15} />
+                  {aiEnhancing ? "جاري التحسين..." : "تحسين الصورة بالذكاء الاصطناعي"}
+                </button>
+              </div>
+            )}
+
+            {aiError && <p className="pfm-error">{aiError}</p>}
           </div>
 
           <div className="pfm-field">
             <label>اسم المنتج *</label>
             <input name="name" value={form.name} onChange={handleChange} placeholder="مثال: زيت زيتون فلسطيني" />
             {errors.name && <p className="pfm-error">{errors.name}</p>}
+          </div>
+
+          <div className="pfm-field">
+            <label>وصف المنتج</label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="وصف مختصر للمنتج..."
+              rows={3}
+            />
+            {errors.description && <p className="pfm-error">{errors.description}</p>}
           </div>
 
           <div className="pfm-field">
@@ -155,12 +284,15 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
 
           <div className="pfm-field">
             <label>الفئة *</label>
-            <select name="category" value={form.category} onChange={handleChange}>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+            <select name="categoryId" value={form.categoryId} onChange={handleChange}>
+              <option value="" disabled>
+                اختر الفئة
+              </option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            {errors.category && <p className="pfm-error">{errors.category}</p>}
+            {errors.categoryId && <p className="pfm-error">{errors.categoryId}</p>}
           </div>
 
           <div className="pfm-field">

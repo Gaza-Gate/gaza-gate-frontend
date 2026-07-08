@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 
 import Dashboard from './pages/Dashboard'
 import SplashScreen     from './pages/SplashScreen'
@@ -39,9 +39,25 @@ import CustomerNotifications from "./pages/CustomerNotifications";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
 import ProductsList from "./pages/ProductsList";
+import AdminSettings from './pages/AdminSettings';
+import AdminProfile from './pages/AdminProfile';
+import AdminNotifications from './pages/AdminNotifications';
+import AdminReports from './pages/AdminReports';
+import AdminCategories from './pages/AdminCategories';
+import AdminUsers from './pages/AdminUsers';
+import AdminDashboard from './pages/AdminDashboard'
+
+// ← 1) ضيف الاستيراد هون
+import FloatingChatWidget from "./components/FloatingChatWidget";
 
 export default function App() {
-   useAutoRefreshToken() 
+
+  // ← 2) اجلب المسار الحالي
+  const location = useLocation();
+
+  // ← 3) شرط: الويدجت يظهر بس إذا المسار الحالي يبلش بـ /seller
+  const isSellerArea = location.pathname.startsWith('/seller');
+
   return (
     <Routes>
       <Route path="/" element={<SplashScreen />} />

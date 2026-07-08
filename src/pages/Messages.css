@@ -1,4 +1,4 @@
- .messages-wrapper {
+.messages-wrapper {
   min-height: 100vh;
   background: #f9fafb;
   font-family: inherit;
@@ -385,6 +385,8 @@
 .messages-bubble-wrap-me {
   display: flex;
   justify-content: flex-start;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .messages-bubble-wrap-other {
@@ -467,22 +469,109 @@
 .spin {
   animation: spin 1s linear infinite;
 }
-.messages-title-area h1 {
+
+/* Message actions: edit / delete */
+.messages-bubble-actions-wrap {
+  position: relative;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.messages-bubble-menu-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.messages-bubble-menu-btn:focus {
+  outline: none;
+}
+
+.messages-bubble-wrap-me:hover .messages-bubble-menu-btn {
+  opacity: 1;
+}
+
+.messages-bubble-menu-btn:hover {
+  background: #f3f4f6;
+}
+
+/* ✅ القائمة صارت ترتكز عالضبط تحت زر النقاط الثلاث (right بدل left، لأن الصفحة RTL) */
+.messages-bubble-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  min-width: 120px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.messages-bubble-menu button {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  outline: none;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  text-align: right;
+  white-space: nowrap;
 }
 
-.messages-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-  display: inline-block;
-  animation: messages-pulse 2s infinite;
+.messages-bubble-menu button:hover {
+  background: #f9fafb;
 }
 
-@keyframes messages-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+.messages-bubble-menu button.danger {
+  color: #ef4444;
+}
+
+.messages-edit-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.messages-edit-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.messages-edit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.messages-edit-actions button {
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  color: #fff;
+  padding: 2px;
 }

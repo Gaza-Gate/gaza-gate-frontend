@@ -1,8 +1,34 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./RatingsManagement.css";
-import logo from "../assets/logo.png";
+import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
+
+// ══════════════════════════════════════════════════
+//  ⚙️  أسماء الحقول — عدّليها حسب ما يرجع من الباك اند
+// ══════════════════════════════════════════════════
+// الـ response الحقيقي:
+// {
+//   status: "success",
+//   data: {
+//     averageRating: "0.00",
+//     totalReviews: 0,
+//     distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+//     reviews: [
+//       {
+//         _id / id: "...",
+//         customerName: "أحمد محمد",
+//         createdAt: "2026-06-08T...",
+//         rating: 5,
+//         comment: "...",
+//         sellerReply: { text: "...", createdAt: "..." } | null
+//       }
+//     ],
+//     pagination: { totalItems: 0, totalPages: 0, currentPage: 1 }
+//   }
+// }
+
+const IS_API_READY = !!import.meta.env.VITE_API_URL;
 
 // ── Icons ──
 const StarIcon = ({ filled }) => (
@@ -30,22 +56,6 @@ const ReplyIcon = () => (
   </svg>
 );
 
-const BellIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-
-const LogoutIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-);
-
-// ── عرض نجوم تقييم ──
 function StarsDisplay({ rating }) {
   return (
     <span className="rm-stars-display">
@@ -56,143 +66,189 @@ function StarsDisplay({ rating }) {
   );
 }
 
-// ── Static demo data مؤقتة - بتتبدّل لاحقاً بداتا التقييمات الحقيقية من الـ API ──
-const REVIEWS_DATA = [
+const AVATAR_COLORS = ["#f97316", "#16a34a", "#2563eb", "#9333ea", "#e11d48"];
+
+// ── Static fallback ──
+const STATIC_REVIEWS = [
   {
-    id: 1,
-    customer: "أحمد محمد",
-    avatarColor: "#f97316",
-    date: "2026-06-08",
+    _id: "1",
+    customerName: "أحمد محمد",
+    createdAt: "2026-06-08",
     rating: 5,
-    comment: "منتج ممتاز جداً، الجودة عالية والتوصيل سريع. شكراً لكم على الخدمة الرائعة!",
-    reply: { text: "شكراً لتقييمك الرائع! نسعى دائماً لتقديم أفضل خدمة لعملائنا الكرام.", date: "2026-06-09" },
+    comment: "منتج ممتاز جداً، الجودة عالية والتوصيل سريع.",
+    sellerReply: { text: "شكراً لتقييمك الرائع!", createdAt: "2026-06-09" },
   },
   {
-    id: 2,
-    customer: "فاطمة علي",
-    avatarColor: "#16a34a",
-    date: "2026-06-05",
+    _id: "2",
+    customerName: "فاطمة علي",
+    createdAt: "2026-06-05",
     rating: 4,
-    comment: "جودة المنتج جيدة جداً لكن وقت التوصيل كان أطول من المتوقع شوي.",
-    reply: null,
+    comment: "جودة المنتج جيدة جداً لكن وقت التوصيل كان أطول من المتوقع.",
+    sellerReply: null,
   },
   {
-    id: 3,
-    customer: "محمود حسن",
-    avatarColor: "#2563eb",
-    date: "2026-06-03",
+    _id: "3",
+    customerName: "محمود حسن",
+    createdAt: "2026-06-03",
     rating: 5,
-    comment: "منتج رائع ويستحق التقييم بـ5 نجوم، تجربة شراء ممتازة جداً من أول مرة.",
-    reply: null,
+    comment: "منتج رائع ويستحق التقييم بـ5 نجوم.",
+    sellerReply: null,
   },
   {
-    id: 4,
-    customer: "سارة خالد",
-    avatarColor: "#9333ea",
-    date: "2026-05-31",
+    _id: "4",
+    customerName: "سارة خالد",
+    createdAt: "2026-05-31",
     rating: 2,
-    comment: "لم يكن المنتج كما توقعت، وصل متأخراً عن الوقت المحدد المتفق عليه.",
-    reply: null,
-  },
-  {
-    id: 5,
-    customer: "يوسف أحمد",
-    avatarColor: "#f97316",
-    date: "2026-05-29",
-    rating: 5,
-    comment: "تجربة رائعة بكل المقاييس، سأكرر الطلب بكل تأكيد مع هذا المتجر.",
-    reply: null,
+    comment: "لم يكن المنتج كما توقعت، وصل متأخراً.",
+    sellerReply: null,
   },
 ];
 
+// ── API Helpers ──
+const fetchReviews = async () => {
+  const res = await api.get("/api/seller/review");
+  const payload = res.data?.data ?? res.data ?? {};
+  const list = Array.isArray(payload?.reviews)
+    ? payload.reviews
+    : Array.isArray(payload)
+    ? payload
+    : [];
+
+  
+  return list.map((r) => {
+    const firstName = r.customer?.user?.firstName ?? "";
+    const lastName = r.customer?.user?.lastName ?? "";
+    const fullName = `${firstName} ${lastName}`.trim();
+    return {
+      ...r,
+      customerName: r.customerName ?? (fullName || "عميل"),
+    };
+  });
+};
+
 const RatingsManagement = () => {
-  const navigate = useNavigate();
-  const [reviews, setReviews] = useState(REVIEWS_DATA);
+  const [reviews, setReviews]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [sortOrder, setSortOrder] = useState("newest");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [sortOrder, setSortOrder]     = useState("newest");
+  const [sortOpen, setSortOpen]       = useState(false);
   const [openReplyId, setOpenReplyId] = useState(null);
-  const [replyDraft, setReplyDraft] = useState("");
+  const [replyDraft, setReplyDraft]   = useState("");
+  const [replyLoading, setReplyLoading] = useState(false);
 
   const sortRef = useRef(null);
-  const moreRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
-      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ── حسابات الملخص (بتتحدث تلقائياً حسب الداتا) ──
-  const totalReviews = reviews.length;
+  const loadReviews = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (IS_API_READY) {
+        const data = await fetchReviews();
+        setReviews(Array.isArray(data) ? data : []);
+      } else {
+        setReviews(STATIC_REVIEWS);
+      }
+    } catch (err) {
+      console.error("فشل جلب التقييمات:", err);
+      setError("تعذّر تحميل التقييمات.");
+      setReviews(STATIC_REVIEWS);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadReviews(); }, [loadReviews]);
+
+  // ── حسابات الملخص ──
+  const totalReviews  = reviews.length;
   const averageRating = totalReviews
-    ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+    ? reviews.reduce((sum, r) => sum + Number(r.rating ?? 0), 0) / totalReviews
     : 0;
 
   const distribution = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: reviews.filter((r) => r.rating === star).length,
+    count: reviews.filter((r) => Number(r.rating) === star).length,
   }));
   const maxCount = Math.max(...distribution.map((d) => d.count), 1);
 
   // ── فلترة وفرز ──
   const visibleReviews = reviews
-    .filter((r) => activeFilter === "all" || r.rating === activeFilter)
+    .filter((r) => activeFilter === "all" || Number(r.rating) === activeFilter)
     .sort((a, b) =>
-      sortOrder === "newest" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date)
+      sortOrder === "newest"
+        ? new Date(b.createdAt) - new Date(a.createdAt)
+        : new Date(a.createdAt) - new Date(b.createdAt)
     );
 
-  // ── منطق الرد على التقييم ──
-  const handleOpenReply = (id) => {
-    setOpenReplyId(id);
-    setReplyDraft("");
-  };
+  // ── الرد على التقييم ──
+  const handleOpenReply = (id) => { setOpenReplyId(id); setReplyDraft(""); };
+  const handleEditReply = (review) => { setOpenReplyId(review._id ?? review.id); setReplyDraft(review.sellerReply.text); };
 
-  const handleEditReply = (review) => {
-    setOpenReplyId(review.id);
-    setReplyDraft(review.reply.text);
-  };
-
-  const handleSubmitReply = (id) => {
+  const handleSubmitReply = async (id) => {
     if (!replyDraft.trim()) return;
-    // مؤقتاً بنحدّث الستيت محلياً
-    // لاحقاً: await submitReviewReply(id, replyDraft, getAuthToken());
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, reply: { text: replyDraft.trim(), date: new Date().toISOString().slice(0, 10) } }
-          : r
-      )
-    );
-    setOpenReplyId(null);
-    setReplyDraft("");
+    setReplyLoading(true);
+    try {
+      if (IS_API_READY) {
+       
+        await api.post(`/api/seller/review/${id}/reply`, { text: replyDraft.trim() });
+      }
+      setReviews((prev) =>
+        prev.map((r) =>
+          (r._id ?? r.id) === id
+            ? { ...r, sellerReply: { text: replyDraft.trim(), createdAt: new Date().toISOString() } }
+            : r
+        )
+      );
+      setOpenReplyId(null);
+      setReplyDraft("");
+    } catch (err) {
+      console.error("فشل إرسال الرد:", err);
+    } finally {
+      setReplyLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="rm-root" dir="rtl">
+        <SellerNavbar />
+        <main className="rm-main">
+          <div className="rm-state-center">
+            <div className="od-spinner" />
+            <p>جاري تحميل التقييمات…</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="rm-root" dir="rtl">
-      
-       <SellerNavbar />
-
+      <SellerNavbar />
       <main className="rm-main">
 
-        {/* Header */}
         <div className="rm-header">
-          <h1 className="rm-page-title">ادارة التقييمات</h1>
+          <h1 className="rm-page-title">إدارة التقييمات</h1>
           <p className="rm-page-subtitle">إدارة وعرض تقييمات الزبائن على متجرك</p>
         </div>
+
+        {error && <div className="od-error-inline">{error}</div>}
 
         {/* Summary card */}
         <div className="rm-summary-card">
           <div className="rm-distribution">
             {distribution.map((d) => (
               <div className="rm-dist-row" key={d.star}>
-                <span className="rm-dist-star">
-                  {d.star} <StarIcon filled />
-                </span>
+                <span className="rm-dist-star">{d.star} <StarIcon filled /></span>
                 <div className="rm-dist-bar-track">
                   <div className="rm-dist-bar-fill" style={{ width: `${(d.count / maxCount) * 100}%` }} />
                 </div>
@@ -200,7 +256,6 @@ const RatingsManagement = () => {
               </div>
             ))}
           </div>
-
           <div className="rm-average">
             <span className="rm-average-value">{averageRating.toFixed(1)}</span>
             <StarsDisplay rating={Math.round(averageRating)} />
@@ -211,43 +266,21 @@ const RatingsManagement = () => {
         {/* Filter row */}
         <div className="rm-filter-row">
           <div className="rm-stars-filter">
-            <button
-              className={`rm-filter-btn ${activeFilter === "all" ? "rm-filter-active" : ""}`}
-              onClick={() => setActiveFilter("all")}
-            >
-              الكل
-            </button>
+            <button className={`rm-filter-btn ${activeFilter === "all" ? "rm-filter-active" : ""}`} onClick={() => setActiveFilter("all")}>الكل</button>
             {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                className={`rm-filter-btn ${activeFilter === star ? "rm-filter-active" : ""}`}
-                onClick={() => setActiveFilter(star)}
-              >
+              <button key={star} className={`rm-filter-btn ${activeFilter === star ? "rm-filter-active" : ""}`} onClick={() => setActiveFilter(star)}>
                 {star} <StarIcon filled />
               </button>
             ))}
           </div>
-
           <div className="rm-sort-dropdown" ref={sortRef}>
             <button type="button" className="rm-btn-sort" onClick={() => setSortOpen((p) => !p)}>
               تصفية <FunnelIcon />
             </button>
             {sortOpen && (
               <div className="rm-sort-menu">
-                <button
-                  type="button"
-                  className={`rm-sort-item ${sortOrder === "newest" ? "rm-sort-item-active" : ""}`}
-                  onClick={() => { setSortOrder("newest"); setSortOpen(false); }}
-                >
-                  الأحدث أولاً
-                </button>
-                <button
-                  type="button"
-                  className={`rm-sort-item ${sortOrder === "oldest" ? "rm-sort-item-active" : ""}`}
-                  onClick={() => { setSortOrder("oldest"); setSortOpen(false); }}
-                >
-                  الأقدم أولاً
-                </button>
+                <button type="button" className={`rm-sort-item ${sortOrder === "newest" ? "rm-sort-item-active" : ""}`} onClick={() => { setSortOrder("newest"); setSortOpen(false); }}>الأحدث أولاً</button>
+                <button type="button" className={`rm-sort-item ${sortOrder === "oldest" ? "rm-sort-item-active" : ""}`} onClick={() => { setSortOrder("oldest"); setSortOpen(false); }}>الأقدم أولاً</button>
               </div>
             )}
           </div>
@@ -255,27 +288,31 @@ const RatingsManagement = () => {
 
         {/* Reviews list */}
         <div className="rm-reviews-list">
-          {visibleReviews.map((review) => (
-            <div className="rm-review-card" key={review.id}>
+          {visibleReviews.map((review, i) => {
+            const reviewId = review._id ?? review.id;
+            return (
+            <div className="rm-review-card" key={reviewId}>
               <div className="rm-review-top">
                 <div className="rm-review-meta">
                   <StarsDisplay rating={review.rating} />
-                  <span className="rm-review-name">{review.customer}</span>
-                  <span className="rm-review-date">{review.date}</span>
-                  {review.reply ? (
-                    <span className="rm-badge rm-badge-green">تم الرد عليه</span>
-                  ) : (
-                    <span className="rm-badge rm-badge-yellow">بانتظار الرد</span>
-                  )}
+                
+                  <span className="rm-review-name">{review.customerName}</span>
+                  <span className="rm-review-date">{review.createdAt?.slice(0, 10)}</span>
+                  {review.sellerReply
+                    ? <span className="rm-badge rm-badge-green">تم الرد عليه</span>
+                    : <span className="rm-badge rm-badge-yellow">بانتظار الرد</span>
+                  }
                 </div>
-                <div className="rm-avatar" style={{ background: review.avatarColor }}>
-                  {review.customer.charAt(0)}
+                <div className="rm-avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                  
+                  {review.customerName?.charAt(0)}
                 </div>
               </div>
 
+             
               <p className="rm-review-comment">{review.comment}</p>
 
-              {review.reply && openReplyId !== review.id && (
+              {review.sellerReply && openReplyId !== reviewId && (
                 <div className="rm-reply-box">
                   <div className="rm-reply-header">
                     <button type="button" className="rm-edit-reply" onClick={() => handleEditReply(review)}>
@@ -283,11 +320,12 @@ const RatingsManagement = () => {
                     </button>
                     <span>رد البائع:</span>
                   </div>
-                  <p className="rm-reply-text">{review.reply.text}</p>
+                 
+                  <p className="rm-reply-text">{review.sellerReply.text}</p>
                 </div>
               )}
 
-              {openReplyId === review.id ? (
+              {openReplyId === reviewId ? (
                 <div className="rm-reply-form">
                   <textarea
                     className="rm-reply-textarea"
@@ -297,23 +335,22 @@ const RatingsManagement = () => {
                     rows={3}
                   />
                   <div className="rm-reply-form-actions">
-                    <button type="button" className="rm-btn-submit-reply" onClick={() => handleSubmitReply(review.id)}>
-                      إرسال الرد
+                    <button type="button" className="rm-btn-submit-reply" onClick={() => handleSubmitReply(reviewId)} disabled={replyLoading}>
+                      {replyLoading ? "جاري الإرسال…" : "إرسال الرد"}
                     </button>
-                    <button type="button" className="rm-btn-cancel-reply" onClick={() => setOpenReplyId(null)}>
-                      إلغاء
-                    </button>
+                    <button type="button" className="rm-btn-cancel-reply" onClick={() => setOpenReplyId(null)}>إلغاء</button>
                   </div>
                 </div>
               ) : (
-                !review.reply && (
-                  <button type="button" className="rm-btn-reply" onClick={() => handleOpenReply(review.id)}>
+                !review.sellerReply && (
+                  <button type="button" className="rm-btn-reply" onClick={() => handleOpenReply(reviewId)}>
                     <ReplyIcon /> رد على التقييم
                   </button>
                 )
               )}
             </div>
-          ))}
+            );
+          })}
 
           {visibleReviews.length === 0 && (
             <div className="rm-empty">لا توجد تقييمات مطابقة لهذا الفلتر</div>

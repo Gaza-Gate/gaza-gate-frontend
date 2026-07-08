@@ -1,131 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "https://gaza-gate-backend.f9hf.onrender.com";
-
-// ── منطق تجديد التوكن (Refresh Token) — يمنع التكرار المتزامن ──
-let refreshPromise = null;
-
-export async function refreshAccessToken() {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      let res;
-      try {
-        res = await fetch(`${BASE_URL}/api/auth/refresh-token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-      } catch (err) {
-        throw new Error("تعذر الاتصال بالسيرفر لتجديد الجلسة");
-      }
-
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-
-      if (!res.ok || data?.status === "fail" || data?.success === false) {
-        throw new Error(data?.message || "انتهت صلاحية الجلسة");
-      }
-
-      const newToken = data?.data?.accessToken || data?.accessToken || data?.data?.token || data?.token;
-      if (!newToken) throw new Error("لم يتم استلام رمز الدخول الجديد");
-      return newToken;
-    })().finally(() => {
-      refreshPromise = null;
-    });
-  }
-  return refreshPromise;
-}
-
-export function saveRefreshedToken(token, remember = true) {
-  if (!token) return;
-  if (remember) {
-    localStorage.setItem("token", token);
-    sessionStorage.removeItem("token");
-  } else {
-    sessionStorage.setItem("token", token);
-    localStorage.removeItem("token");
-  }
-}
-
-export function forceLogoutRedirect() {
-  const userType = localStorage.getItem("userType") || sessionStorage.getItem("userType") || "customer";
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("userType");
-  sessionStorage.removeItem("token");
-  window.location.href = `/login/${userType}`;
-}
-
-export function getAuthToken() {
-  return localStorage.getItem("token") || sessionStorage.getItem("token");
-}
-
-// ══════════════════════════════════════════════════
-// ✅ دالة الطلبات الموحّدة (JSON) — فيها تجديد تلقائي للتوكن عند 401
-// كل دالة بهذا الملف (وبأي ملف تاني) لما تستخدم هاي الدالة
-// بتصير محمية تلقائياً بدون أي كود إضافي
-// ══════════════════════════════════════════════════
-async function request(endpoint, body, token = null, method = "POST", _isRetry = false) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-
-  let res;
-  try {
-    res = await fetch(`${BASE_URL}${endpoint}`, {
-      method,
-      headers,
-      ...(body && { body: JSON.stringify(body) }),
-    });
-  } catch (err) {
-    console.error("Network error:", err);
-    throw new Error("تعذر الاتصال بالسيرفر، تحقق من اتصالك بالإنترنت");
-  }
-
-  // 401: التوكن منتهي — حاول تجديده مرة وحدة بس، وبعدين أعيدي نفس الطلب
-  if (res.status === 401 && !_isRetry && token && !endpoint.includes("/api/auth/refresh-token")) {
-    try {
-      const newToken = await refreshAccessToken();
-      const remember = Boolean(localStorage.getItem("token"));
-      saveRefreshedToken(newToken, remember);
-      return request(endpoint, body, newToken, method, true);
-    } catch {
-      forceLogoutRedirect();
-      throw new Error("انتهت جلستك، الرجاء تسجيل الدخول مرة أخرى");
-    }
-  }
-
-  // 429: تجاوزت عدد المحاولات المسموح
-  if (res.status === 429) {
-    throw new Error("عدد المحاولات كبير جداً، الرجاء الانتظار دقيقة وإعادة المحاولة");
-  }
-
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    data = {};
-  }
-
-  // بعض نقاط النهاية بترجع 200 OK لكن مع status: "fail" بالـ body
-  if (!res.ok || data?.status === "fail" || data?.success === false) {
-    const message =
-      data?.message ||
-      data?.data?.message ||
-      data?.error ||
-      "حدث خطأ، حاول مرة ثانية";
-    const err = new Error(message);
-    err.code = data?.code || data?.data?.code;
-    err.status = res.status;
-    err.response = data;
-    throw err;
-  }
-
-  return data;
-}
+import api from "../utils/api";
 
 // نصدّرها باسم واضح حتى تقدر ملفات تانية (orderService, productService) تستخدمها
 export const apiRequest = request;
@@ -175,198 +48,251 @@ export async function requestFormData(endpoint, formData, token = null, method =
 }
 
 export async function loginSeller(email, password) {
-  return request("/api/auth/seller/local/login", { email, password });
+  const res = await api.post("/api/auth/seller/local/login", { email, password });
+  return res.data;
 }
 
 export async function registerSeller(formData) {
-  return request("/api/auth/seller/local/register", formData);
+  const res = await api.post("/api/auth/seller/local/register", formData);
+  return res.data;
 }
 
 export async function forgotPassword(email) {
-  return request("/api/auth/forgot-password", { email });
+  const res = await api.post("/api/auth/forgot-password", { email });
+  return res.data;
 }
 
-export async function changePassword(passwordData, token) {
-  return request("/api/seller/change-password", passwordData, token, "PUT");
+// ✅ المسار الصحيح حسب Postman: PUT /api/seller/profile/changePassword
+export async function changePassword(passwordData) {
+  const res = await api.put("/api/seller/profile/changePassword", passwordData);
+  return res.data;
 }
 
-export async function updateStoreProfile(profileData, token) {
-  return request("/api/seller/profile", profileData, token, "PUT");
+export async function updateStoreProfile(profileData) {
+  const res = await api.put("/api/seller/profile", profileData);
+  return res.data;
 }
 
 export async function sellerGoogleLogin(googleToken) {
-  return request("/api/auth/seller/google/login", { token: googleToken }, null, "POST");
+  const res = await api.post("/api/auth/seller/google/login", { token: googleToken });
+  return res.data;
 }
 
 export async function customerGoogleLogin(googleToken) {
-  return request("/api/auth/customer/google/login", { token: googleToken }, null, "POST");
+  const res = await api.post("/api/auth/customer/google/login", { token: googleToken });
+  return res.data;
 }
 
 export async function resendVerificationCode(email) {
-  return request("/api/auth/resend-verification-code", { email });
+  const res = await api.post("/api/auth/resend-verification-code", { email });
+  return res.data;
 }
 
 export async function verifyResetCode(email, code) {
-  return request("/api/auth/verify-reset-code", { email, code });
+  const res = await api.post("/api/auth/verify-reset-code", { email, code });
+  return res.data;
 }
 
 export async function resetPassword(resetToken, newPassword, confirmPassword) {
-  return request("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
+  const res = await api.post("/api/auth/reset-password", { resetToken, newPassword, confirmPassword });
+  return res.data;
 }
 
-export async function getConversations(page = 1, token) {
-  return request(`/api/conversations/?page=${page}`, undefined, token, "GET");
+// ✅ محدّثة حسب Postman
+
+// جيب هوية البائع الحالي المخزّنة وقت تسجيل الدخول
+export function getCurrentUser() {
+  const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
-export async function getOrCreateConversation(payload, token) {
-  return request("/api/conversations/", payload, token, "POST");
+export async function getConversations(page = 1) {
+  const res = await api.get(`/api/conversations/?page=${page}`);
+  return res.data;
 }
 
-export async function getConversationDetails(conversationId, token, page = 1) {
-  return request(`/api/conversations/${conversationId}?page=${page}`, undefined, token, "GET");
+export async function getMessages(conversationId, page = 1) {
+  const res = await api.get(`/api/conversations/${conversationId}?page=${page}`);
+  return res.data;
 }
 
-export async function sendConversationMessage(conversationId, content, token, extra = {}) {
-  return request(
-    `/api/conversations/${conversationId}/messages`,
-    { content, messageType: "text", ...extra },
-    token,
-    "POST"
-  );
-}
-
-export async function markConversationRead(conversationId, token) {
-  return request(`/api/conversations/${conversationId}/read`, undefined, token, "POST");
-}
-
-export async function editConversationMessage(conversationId, messageId, content, token) {
-  return request(`/api/conversations/${conversationId}/messages/${messageId}`, { content }, token, "PUT");
-}
-
-export async function deleteConversationMessage(conversationId, messageId, token) {
-  return request(`/api/conversations/${conversationId}/messages/${messageId}`, undefined, token, "DELETE");
+export async function sendMessage(conversationId, text) {
+  const res = await api.post(`/api/conversations/${conversationId}/messages`, {
+    content: text,
+  });
+  return res.data;
 }
 
 export async function verifyEmail(email, code) {
-  return request("/api/auth/verify-email", { email, code });
+  const res = await api.post("/api/auth/verify-email", { email, code });
+  return res.data;
 }
 
 export async function sellerGoogleRegister(googleToken) {
-  return request("/api/auth/seller/google/register/init", { token: googleToken });
+  const res = await api.post("/api/auth/seller/google/register/init", { token: googleToken });
+  return res.data;
 }
 
 export async function sellerGoogleRegisterComplete(data) {
-  return request("/api/auth/seller/google/register/complete", data);
+  const res = await api.post("/api/auth/seller/google/register/complete", data);
+  return res.data;
+}
+
+// تسجيل الخروج من الجهاز الحالي فقط
+export async function logout() {
+  const res = await api.post("/api/auth/logout");
+  return res.data;
+}
+
+// تسجيل الخروج من جميع الأجهزة (إبطال كل التوكنات على السيرفر)
+export async function logoutAll() {
+  const res = await api.post("/api/auth/logout-all");
+  return res.data;
 }
 
 export async function customerGoogleRegister(googleIdToken) {
-  return request("/api/auth/customer/google/register", { token: googleIdToken });
+  const res = await api.post("/api/auth/customer/google/register", { token: googleIdToken });
+  return res.data;
 }
 
-export async function getCustomerProfile(token) {
-  const response = await request("/api/profile/customer", undefined, token, "GET");
-  return response.data?.profile || response.profile || response;
+export async function getCustomerProfile() {
+  const res = await api.get("/api/profile/customer");
+  return res.data?.data?.profile || res.data?.profile || res.data;
 }
 
-export async function updateCustomerProfile(profileData, token) {
-  return request("/api/profile/customer", profileData, token, "PUT");
+export async function updateCustomerProfile(profileData) {
+  const res = await api.put("/api/profile/customer", profileData);
+  return res.data;
 }
 
-export async function addCustomerAddress(addressData, token) {
-  const response = await request("/api/profile/customer/address", addressData, token, "POST");
-  return response.data?.address || response.address || response;
+export async function addCustomerAddress(addressData) {
+  const res = await api.post("/api/profile/customer/address", addressData);
+  return res.data?.data?.address || res.data?.address || res.data;
 }
 
-export async function updateCustomerAddress(addressId, addressData, token) {
-  const response = await request(`/api/profile/customer/address/${addressId}`, addressData, token, "PUT");
-  return response.data?.address || response.address || response;
+export async function updateCustomerAddress(addressId, addressData) {
+  const res = await api.put(`/api/profile/customer/address/${addressId}`, addressData);
+  return res.data?.data?.address || res.data?.address || res.data;
 }
 
-export async function deleteCustomerAddress(addressId, token) {
-  return request(`/api/profile/customer/address/${addressId}`, undefined, token, "DELETE");
+export async function deleteCustomerAddress(addressId) {
+  const res = await api.delete(`/api/profile/customer/address/${addressId}`);
+  return res.data;
 }
 
-export async function getCustomerHomeData(token, page = 1) {
-  const response = await request(`/api/customer/home/?page=${page}`, undefined, token, "GET");
-  return response.data?.home || response.home || response;
+export async function getCustomerHomeData(page = 1) {
+  const res = await api.get(`/api/customer/home/?page=${page}`);
+  return res.data?.data?.home || res.data?.home || res.data;
 }
 
-export async function getCustomerWishlist(token, page = 1) {
-  const response = await request(`/api/customer/wishlist/?page=${page}`, undefined, token, "GET");
-  return response.data || response;
+export async function getCustomerWishlist(page = 1) {
+  const res = await api.get(`/api/customer/wishlist/?page=${page}`);
+  return res.data?.data || res.data;
 }
 
-export async function addToWishlist(productId, token) {
-  const response = await request("/api/customer/wishlist/", { productId }, token, "POST");
-  return response.data?.item || response.item || response;
+export async function addToWishlist(productId) {
+  const res = await api.post("/api/customer/wishlist/", { productId });
+  return res.data?.data?.item || res.data?.item || res.data;
 }
 
-export async function removeFromWishlist(productId, token) {
-  return request(`/api/customer/wishlist/${productId}`, undefined, token, "DELETE");
+export async function removeFromWishlist(productId) {
+  const res = await api.delete(`/api/customer/wishlist/${productId}`);
+  return res.data;
 }
 
-export async function getCustomerCart(token, page = 1) {
-  const response = await request(`/api/customer/cart/?page=${page}`, undefined, token, "GET");
-  return response.data || response;
+export async function getCustomerCart(page = 1) {
+  const res = await api.get(`/api/customer/cart/?page=${page}`);
+  return res.data?.data || res.data;
 }
 
-export async function addToCart(productId, quantity, token) {
-  const response = await request("/api/customer/cart/", { productId, quantity }, token, "POST");
-  return response.data?.item || response.item || response;
+export async function addToCart(productId, quantity) {
+  const res = await api.post("/api/customer/cart/", { productId, quantity });
+  return res.data?.data?.item || res.data?.item || res.data;
 }
 
-export async function updateCartItem(cartItemId, quantity, token) {
-  const response = await request(`/api/customer/cart/${cartItemId}`, { quantity }, token, "PUT");
-  return response.data?.item || response.item || response;
+export async function updateCartItem(cartItemId, quantity) {
+  const res = await api.put(`/api/customer/cart/${cartItemId}`, { quantity });
+  return res.data?.data?.item || res.data?.item || res.data;
 }
 
-export async function removeCartItem(cartItemId, token) {
-  return request(`/api/customer/cart/${cartItemId}`, undefined, token, "DELETE");
+export async function removeCartItem(cartItemId) {
+  const res = await api.delete(`/api/customer/cart/${cartItemId}`);
+  return res.data;
 }
 
-export async function clearCart(token) {
-  return request("/api/customer/cart/", undefined, token, "DELETE");
+export async function clearCart() {
+  const res = await api.delete("/api/customer/cart/");
+  return res.data;
 }
 
-export async function getCustomerOrders(token) {
-  const response = await request("/api/customer/order", undefined, token, "GET");
-  return response.data?.orders || response.orders || response;
+export async function getCustomerOrders() {
+  const res = await api.get("/api/customer/order");
+  return res.data?.data?.orders || res.data?.orders || res.data;
 }
 
-export async function getCustomerOrderDetails(orderId, token) {
-  const response = await request(`/api/customer/order/${orderId}`, undefined, token, "GET");
-  return response.data?.order || response.order || response;
+export async function getCustomerOrderDetails(orderId) {
+  const res = await api.get(`/api/customer/order/${orderId}`);
+  return res.data?.data?.order || res.data?.order || res.data;
 }
 
-export async function cancelCustomerOrder(orderId, token) {
-  const response = await request(`/api/customer/order/${orderId}/cancel`, undefined, token, "POST");
-  return response.data?.order || response.order || response;
+export async function cancelCustomerOrder(orderId) {
+  const res = await api.post(`/api/customer/order/${orderId}/cancel`);
+  return res.data?.data?.order || res.data?.order || res.data;
 }
 
-export async function createOrder(orderData, token) {
-  const response = await request("/api/customer/order", orderData, token, "POST");
-  return response.data?.order || response.order || response;
+export async function createOrder(orderData) {
+  const res = await api.post("/api/customer/order", orderData);
+  return res.data?.data?.order || res.data?.order || res.data;
 }
 
-export async function convertCustomerToSeller(storeData, token) {
-  return request("/api/seller/convert", storeData, token, "POST");
-}
-  export async function getCustomerNotifications(token, page = 1) {
-  const response = await request(`/api/customer/notification?page=${page}`, undefined, token, "GET");
-  return response.data || response;
+// ⚠️ المسار "/api/seller/convert" افتراضي - تأكدي من نور (Backend) شو المسار الصحيح بالضبط
+export async function convertCustomerToSeller(storeData) {
+  const res = await api.post("/api/seller/convert", storeData);
+  return res.data;
 }
 
-export async function markNotificationRead(notificationId, token) {
-  return request(`/api/customer/notification/${notificationId}/read`, undefined, token, "PUT");
+export async function submitProductReview({ productId, orderId, rating, comment }) {
+  const res = await api.post("/api/customer/review", { productId, orderId, rating, comment });
+  return res.data?.data || res.data;
 }
 
-export async function markAllNotificationsRead(token) {
-  return request("/api/customer/notification/read-all", undefined, token, "PUT");
+// ── مراسلات العميل ──
+export async function getCustomerConversations() {
+  const res = await api.get("/api/customer/conversations");
+  return res.data;
 }
 
-export async function deleteAllNotifications(token) {
-  return request("/api/customer/notification", undefined, token, "DELETE");
+export async function getCustomerMessages(conversationId) {
+  const res = await api.get(`/api/customer/conversations/${conversationId}/messages`);
+  return res.data;
 }
-export async function askChatbot(question, token) {
-  return request("/api/customer/chatbot/ask", { question }, token, "POST");
+
+export async function sendCustomerMessage(conversationId, text) {
+  const res = await api.post(`/api/customer/conversations/${conversationId}/messages`, { text });
+  return res.data;
+}
+
+// ── تنبيهات العميل ──
+export async function getCustomerNotifications() {
+  const res = await api.get("/api/customer/notifications");
+  return res.data;
+}
+
+export async function markCustomerNotificationRead(id) {
+  const res = await api.patch(`/api/customer/notifications/${id}/read`);
+  return res.data;
+}
+
+export async function markAllCustomerNotificationsRead() {
+  const res = await api.patch("/api/customer/notifications/read-all");
+  return res.data;
+}
+
+export async function clearAllCustomerNotifications() {
+  const res = await api.delete("/api/customer/notifications");
+  return res.data;
 }

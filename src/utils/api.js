@@ -1,8 +1,8 @@
 import axios from 'axios'
-
-// ── 1. أنشئ الـ api ──
+ 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://gaza-gate-backend.f9hf.onrender.com',
+  baseURL: import.meta.env.VITE_API_URL || 'https://gaza-gate-backend-f9hf.onrender.com',
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 

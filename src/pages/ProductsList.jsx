@@ -4,6 +4,7 @@ import { getProducts, deleteProduct, updateProductStatus } from "../services/pro
 import { getAuthToken } from "../services/authService";
 import ProductFormModal from "../components/ProductFormModal";
 import ConfirmModal from "../components/ConfirmModal";
+import ProductDetailsModal from "../components/ProductDetailsModal";
 import SellerNavbar from "../components/SellerNavbar";
 
 const PlusIcon = () => (
@@ -54,11 +55,15 @@ export default function ProductsList() {
   const [productToDelete, setProductToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // حالة مودال تفاصيل المنتج (يفتح عند الضغط على الكارد)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
  const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await getProducts(token);
-      setProducts(Array.isArray(data) ? data : data.products ?? []);
+       const data = await getProducts();
+       setProducts(data?.data?.products ?? []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -75,7 +80,7 @@ export default function ProductsList() {
     const newStatus = product.status === "active" ? "hidden" : "active";
     setBusyId(id);
     try {
-      await updateProductStatus(id, newStatus, token);
+      await updateProductStatus(id, newStatus);
       setProducts((prev) =>
         prev.map((p) => ((p._id ?? p.id) === id ? { ...p, status: newStatus } : p))
       );
@@ -99,7 +104,7 @@ const handleDeleteClick = (product) => {
     const id = productToDelete._id ?? productToDelete.id;
     setDeleteLoading(true);
     try {
-      await deleteProduct(id, token);
+      await deleteProduct(id);
       setProducts((prev) => prev.filter((p) => (p._id ?? p.id) !== id));
       setIsConfirmOpen(false);
       setProductToDelete(null);
@@ -108,6 +113,12 @@ const handleDeleteClick = (product) => {
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  // فتح مودال تفاصيل المنتج عند الضغط على الكارد
+  const handleCardClick = (product) => {
+    setSelectedProduct(product);
+    setIsDetailsOpen(true);
   };
 
   return (
@@ -155,11 +166,16 @@ const handleDeleteClick = (product) => {
         <div className="pl-grid">
           {filteredProducts.map((product) => {
             const id = product._id ?? product.id;
-            const image = product.primaryImage?.imageUrl || product.images?.[0];
+            const image = product.primaryImage?.imageUrl || product.images?.[0]?.imageUrl;
+ 
             const isBusy = busyId === id;
             return (
               <div className="pl-card" key={id}>
-                <div className="pl-card-img">
+                <div
+                  className="pl-card-img"
+                  onClick={() => handleCardClick(product)}
+                  style={{ cursor: "pointer" }}
+                >
                   {image ? <img src={image} alt={product.name} /> : <PackageEmptyIcon />}
                   <span className={`pl-badge ${product.status === "active" ? "active" : "hidden"}`}>
                     {product.status === "active" ? "ظاهر" : "مخفي"}
@@ -177,21 +193,21 @@ const handleDeleteClick = (product) => {
                 <div className="pl-card-actions">
                   <button
                     className="pl-action-btn"
-                    onClick={() => { setEditingProduct(product); setIsFormOpen(true); }}
+                    onClick={(e) => { e.stopPropagation(); setEditingProduct(product); setIsFormOpen(true); }}
                     disabled={isBusy}
                   >
                     <EditIcon /> تعديل
                   </button>
                   <button
                     className="pl-action-btn"
-                    onClick={() => handleToggleStatus(product)}
+                    onClick={(e) => { e.stopPropagation(); handleToggleStatus(product); }}
                     disabled={isBusy}
                   >
                     {product.status === "active" ? "إخفاء" : "إظهار"}
                   </button>
                   <button
                     className="pl-action-btn pl-action-danger"
-                    onClick={() => handleDeleteClick(product)}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(product); }}
                     disabled={isBusy}
                   >
                     <TrashIcon />
@@ -217,6 +233,12 @@ const handleDeleteClick = (product) => {
         onConfirm={handleConfirmDelete}
         onCancel={() => setIsConfirmOpen(false)}
         loading={deleteLoading}
+      />
+
+      <ProductDetailsModal
+        open={isDetailsOpen}
+        product={selectedProduct}
+        onClose={() => setIsDetailsOpen(false)}
       />
     </div>
   );

@@ -117,3 +117,109 @@
 @media (max-width: 900px) {
   .snb-links { display: none; }
 }
+
+/* ══════════════════════════════════════
+   إضافات القائمة المتجاوبة (موبايل)
+   الصقي هاد المحتوى بآخر ملف SellerNavbar.css الحالي
+   ══════════════════════════════════════ */
+
+.snb-hamburger-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  color: #374151;
+  align-items: center;
+  justify-content: center;
+}
+
+.snb-mobile-menu {
+  display: none;
+}
+
+/* تحت هاد العرض (تابلت وموبايل) نخفي الروابط العادية ونظهر الهامبرغر */
+@media (max-width: 768px) {
+  .snb-links-desktop,
+  .snb-actions-desktop {
+    display: none;
+  }
+
+  .snb-hamburger-btn {
+    display: flex;
+  }
+
+  .snb-nav {
+    position: relative;
+  }
+
+  .snb-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    background: #ffffff;
+    border-top: 1px solid #f3f4f6;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    padding: 8px;
+    gap: 2px;
+    z-index: 999;
+  }
+
+  .snb-mobile-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    color: #374151;
+    text-decoration: none;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: right;
+    width: 100%;
+  }
+
+  .snb-mobile-link:hover {
+    background: #f9fafb;
+  }
+
+  .snb-mobile-link.snb-link-active {
+    color: #f97316;
+    background: #fff7ed;
+    font-weight: 600;
+  }
+
+  .snb-mobile-link-btn {
+    justify-content: flex-start;
+  }
+
+  .snb-mobile-divider {
+    height: 1px;
+    background: #f3f4f6;
+    margin: 6px 4px;
+  }
+
+  .snb-mobile-logout {
+    color: #f97316;
+    font-weight: 600;
+  }
+}
+.snb-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit; /* ياخد نفس فونت وحجم .snb-link */
+  padding: 0;    /* أو نفس padding يلي عند .snb-link إذا موجود */
+}
+
+/* زر "التحويل لمشتري" مع الأيقونة - نفس شكل .snb-link بس مع ترتيب أيقونة+نص جنب بعض */
+.snb-convert-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

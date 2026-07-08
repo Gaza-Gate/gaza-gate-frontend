@@ -1,19 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./ChangePassword.css";
 import { validatePassword, validateConfirmPassword } from "../utils/validators";
-import { changePassword, getAuthToken } from "../services/authService";
+import { changePassword } from "../services/authService";
 
 // ── Icons ──
-const ShieldIcon = () => (
-  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+const CloseIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
-const BackArrowIcon = () => (
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
+const ShieldIcon = () => (
+  <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#9ca3af" strokeWidth="1.8">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 
@@ -21,6 +21,12 @@ const LockIcon = () => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
     <path d="M7 11V7a5 5 0 0110 0v4" />
+  </svg>
+);
+
+const TipsIcon = () => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#f97316" strokeWidth="2">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 
@@ -47,7 +53,7 @@ const CheckIcon = () => (
 );
 
 // ── Password field ──
-function PasswordField({ label, name, value, onChange, showPass, onToggle, error }) {
+function PasswordField({ label, name, value, onChange, showPass, onToggle, error, autoComplete }) {
   return (
     <div className="cp-field">
       <label>{label} *</label>
@@ -59,6 +65,7 @@ function PasswordField({ label, name, value, onChange, showPass, onToggle, error
           onChange={onChange}
           placeholder="••••••••"
           className={error ? "cp-input-error" : ""}
+          autoComplete={autoComplete}
         />
         <button type="button" className="cp-eye" onClick={onToggle}>
           <EyeIcon open={showPass} />
@@ -69,7 +76,7 @@ function PasswordField({ label, name, value, onChange, showPass, onToggle, error
   );
 }
 
-// ── Main Page ──
+// ── Main Modal ──
 export default function ChangePasswordModal({ onClose }) {
   const [form, setForm] = useState({
     currentPassword: "",
@@ -86,6 +93,17 @@ export default function ChangePasswordModal({ onClose }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+
+  // مراجع للـ timeouts عشان ننضفهم لما الكومبوننت يتفكك (يمنع أخطاء "setState on unmounted component")
+  const hideTimeoutRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -115,19 +133,30 @@ export default function ChangePasswordModal({ onClose }) {
     setLoading(true);
     setSuccess("");
     try {
-      const token = getAuthToken();
-      await changePassword(
-        {
-          currentPassword: form.currentPassword,
-          newPassword: form.newPassword,
-          confirmPassword: form.confirmPassword,
-        },
-        token
-      );
+      await changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+        confirmPassword: form.confirmPassword,
+      });
+
       setSuccess("تم تحديث كلمة المرور بنجاح");
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+      // إخفاء رسالة النجاح بعد 3 ثواني (لو المودال ضل مفتوح لأي سبب)
+      hideTimeoutRef.current = setTimeout(() => {
+        setSuccess("");
+      }, 3000);
+
+      // إغلاق المودال تلقائياً بعد ظهور رسالة النجاح
+      closeTimeoutRef.current = setTimeout(() => {
+        onClose();
+      }, 1800);
+
     } catch (err) {
-      setErrors({ general: err.message });
+      const backendMsg = err?.response?.data?.data?.message
+        || err?.response?.data?.message
+        || "حدث خطأ أثناء تحديث كلمة المرور";
+      setErrors({ general: backendMsg });
     } finally {
       setLoading(false);
     }
@@ -137,13 +166,12 @@ export default function ChangePasswordModal({ onClose }) {
     <div className="cp-modal-overlay" onClick={onClose}>
       <div className="cp-modal-box" onClick={(e) => e.stopPropagation()}>
 
-        {/* رابط العودة / إغلاق */}
-        <button type="button" className="cp-breadcrumb" onClick={onClose}>
-          العودة للملف الشخصي
-          <BackArrowIcon />
+        {/* زر الإغلاق */}
+        <button type="button" className="cp-modal-close" onClick={onClose} aria-label="إغلاق">
+          <CloseIcon />
         </button>
 
-        {/* رأس الصفحة */}
+        {/* Header */}
         <div className="cp-page-header">
           <div className="cp-shield-icon">
             <ShieldIcon />
@@ -152,10 +180,10 @@ export default function ChangePasswordModal({ onClose }) {
           <p>قم بتحديث كلمة المرور الخاصة بك بشكل آمن</p>
         </div>
 
-        {/* نصائح */}
+        {/* Tips */}
         <div className="cp-tips">
           <div className="cp-tips-title">
-            <LockIcon />
+            <TipsIcon />
             نصائح لكلمة مرور قوية:
           </div>
           <ul>
@@ -166,8 +194,18 @@ export default function ChangePasswordModal({ onClose }) {
           </ul>
         </div>
 
-        {/* الفورم */}
+        {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
+
+          {/*
+            حقول وهمية مخفية لامتصاص الـ autofill الخاص بالمتصفح.
+            بعض المتصفحات (خصوصاً Chrome) بتتجاهل autoComplete="off"/"new-password"
+            على الفورم نفسه، وبتحاول تعبي أول حقل password تلاقيه بكلمة مرور محفوظة.
+            وجود هالحقول قبل الحقول الحقيقية بيخلي المتصفح "يمتص" الاقتراح فيها بدل حقولنا.
+          */}
+          <input type="text" style={{ display: "none" }} autoComplete="username" tabIndex="-1" aria-hidden="true" />
+          <input type="password" style={{ display: "none" }} autoComplete="new-password" tabIndex="-1" aria-hidden="true" />
+
           <div className="cp-fields-card">
             <PasswordField
               label="كلمة المرور الحالية"
@@ -177,6 +215,7 @@ export default function ChangePasswordModal({ onClose }) {
               showPass={show.currentPassword}
               onToggle={() => toggleShow("currentPassword")}
               error={errors.currentPassword}
+              autoComplete="current-password"
             />
             <PasswordField
               label="كلمة المرور الجديدة"
@@ -186,6 +225,7 @@ export default function ChangePasswordModal({ onClose }) {
               showPass={show.newPassword}
               onToggle={() => toggleShow("newPassword")}
               error={errors.newPassword}
+              autoComplete="new-password"
             />
             <PasswordField
               label="تأكيد كلمة المرور"
@@ -195,6 +235,7 @@ export default function ChangePasswordModal({ onClose }) {
               showPass={show.confirmPassword}
               onToggle={() => toggleShow("confirmPassword")}
               error={errors.confirmPassword}
+              autoComplete="new-password"
             />
           </div>
 
@@ -215,6 +256,7 @@ export default function ChangePasswordModal({ onClose }) {
               إلغاء
             </button>
           </div>
+
         </form>
       </div>
     </div>
