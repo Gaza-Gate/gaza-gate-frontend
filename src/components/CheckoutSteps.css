@@ -1,0 +1,98 @@
+.ck-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 32px;
+  padding: 0 16px;
+}
+
+.ck-step-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 220px;
+}
+
+.ck-step-wrap:last-child {
+  flex: 0;
+  max-width: none;
+}
+
+.ck-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ck-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: #e5e7eb;
+  color: #9ca3af;
+  transition: background var(--transition), color var(--transition);
+}
+
+.ck-step-circle.active {
+  background: var(--orange);
+  color: #fff;
+}
+
+.ck-step-circle.done {
+  background: #22c55e;
+  color: #fff;
+}
+
+.ck-step-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.ck-step-label.active {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.ck-step-label.done {
+  color: #22c55e;
+}
+
+.ck-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 8px;
+  margin-top: 17px;
+  min-width: 40px;
+}
+
+.ck-step-line.done {
+  background: #22c55e;
+}
+
+@media (max-width: 600px) {
+  .ck-step-label {
+    font-size: 10px;
+  }
+
+  .ck-step-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .ck-step-line {
+    margin-top: 14px;
+    min-width: 20px;
+  }
+}

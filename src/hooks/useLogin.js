@@ -39,7 +39,7 @@ export function useLogin() {
     const result = await loginSeller(email, password);
       (remember ? localStorage : sessionStorage).setItem("token", result.data.accessToken);
       setSuccess(`أهلاً ${result.data.user.name}! جاري تحويلك... ✅`);
-      setTimeout(() => navigate("/dashboard"), 1000);
+      setTimeout(() => navigate("/seller/dashboard"), 1000);
     } catch (err) {
       setError(err.message);
     } finally {

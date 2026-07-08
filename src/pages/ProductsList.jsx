@@ -166,7 +166,8 @@ const handleDeleteClick = (product) => {
         <div className="pl-grid">
           {filteredProducts.map((product) => {
             const id = product._id ?? product.id;
-            const image = product.images?.[0]?.imageUrl;
+            const image = product.primaryImage?.imageUrl || product.images?.[0]?.imageUrl;
+ 
             const isBusy = busyId === id;
             return (
               <div className="pl-card" key={id}>

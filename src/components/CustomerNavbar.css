@@ -1,0 +1,300 @@
+/* ── CustomerNavbar — تصميم موحد لكل صفحات المشتري ── */
+
+.cn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  font-family: "Tajawal", sans-serif;
+}
+
+/* ── Logo ── */
+.cn-logo {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.cn-logo-img {
+  height: 56px;
+  object-fit: contain;
+}
+
+.cn-logo-text {
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--orange);
+  letter-spacing: -0.5px;
+}
+
+/* ── Links ── */
+.cn-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.cn-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-mid);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s;
+  padding: 0;
+}
+
+.cn-link:hover {
+  color: var(--orange);
+}
+
+.cn-link.active {
+  background: var(--orange);
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-weight: 700;
+}
+
+.cn-link.active:hover {
+  background: var(--orange-dark);
+  color: #fff;
+}
+
+/* ── Actions ── */
+.cn-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cn-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--orange);
+  font-weight: 600;
+  transition: opacity 0.2s;
+  position: relative;
+  padding: 0;
+}
+
+.cn-icon-btn:hover {
+  opacity: 0.8;
+}
+
+.cn-icon-btn--ghost {
+  color: var(--text-mid);
+}
+
+.cn-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--orange);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cn-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--orange);
+  font-weight: 600;
+  transition: opacity 0.2s;
+  padding: 0;
+}
+
+.cn-logout:hover {
+  opacity: 0.8;
+}
+
+.cn-logout span {
+  font-weight: 600;
+}
+
+/* ── زر القائمة (همبرغر) للجوال ── */
+.cn-mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+/* ── القائمة المنسدلة للجوال ── */
+.cn-mobile-menu {
+  display: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .cn-links {
+    display: none;
+  }
+
+  .cn-actions .cn-logout {
+    display: none;
+  }
+
+  .cn-mobile-menu-btn {
+    display: flex;
+  }
+
+  .cn-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px 14px;
+    position: sticky;
+    top: 72px;
+    z-index: 99;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  }
+
+  .cn-mobile-menu-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-mid);
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: right;
+  }
+
+  .cn-mobile-menu-link:hover {
+    background: var(--orange-pale);
+    color: var(--orange);
+  }
+
+  .cn-mobile-menu-link.active {
+    background: var(--orange);
+    color: #fff;
+  }
+
+  .cn-mobile-menu-link.active:hover {
+    background: var(--orange-dark);
+    color: #fff;
+  }
+
+  .cn-mobile-menu-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 4px;
+  }
+
+  .cn-mobile-menu-link--logout {
+    color: var(--orange);
+  }
+
+  .cn-mobile-menu-link--logout:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+}
+/* ── Dropdown "المزيد" ── */
+.cn-dropdown {
+  position: relative;
+}
+
+.cn-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cn-dropdown-icon {
+  transition: transform 0.2s;
+}
+
+.cn-dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+.cn-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  min-width: 190px;
+  padding: 6px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cn-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-mid);
+  cursor: pointer;
+  text-align: right;
+  transition: background 0.15s, color 0.15s;
+  width: 100%;
+}
+
+.cn-dropdown-item:hover {
+  background: var(--orange-pale);
+  color: var(--orange);
+}
+
+.cn-dropdown-item-active {
+  background: var(--orange-pale);
+  color: var(--orange);
+  font-weight: 700;
+}

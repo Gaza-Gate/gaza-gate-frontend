@@ -1,4 +1,10 @@
-import api from '../utils/api';// ⚠️ عدّلي هاد المسار حسب مكان ملف الـ axios (api.js) عندك بالضبط
+import api from '../utils/api';
+
+// جلب كل طلبات العميل
+export async function getCustomerOrders() {
+  const res = await api.get('/api/order/customer');
+  return res.data;
+}
 
 // جلب كل طلبات البائع
 export async function getSellerOrders() {

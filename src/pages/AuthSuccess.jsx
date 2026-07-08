@@ -10,9 +10,9 @@ export default function AuthSuccess() {
     const token = params.get('token')
     if (token) {
       localStorage.setItem('token', token)
-      navigate('/dashboard/customer')
+      navigate('/seller/dashboard')
     } else {
-      navigate('/')
+      navigate('/home/customer')
     }
   }, [])
 

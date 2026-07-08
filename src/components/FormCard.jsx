@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export function FormCard({ children }) {
   return (
     <div style={{ background: 'var(--orange-light)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
@@ -49,18 +51,26 @@ export function FooterLink({ text, linkText, to }) {
   return (
     <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
       {text}{' '}
-      <a href={to} style={{ color: 'var(--orange)', fontWeight: 600, textDecoration: 'none' }}>{linkText}</a>
+      <Link to={to} style={{ color: 'var(--orange)', fontWeight: 600, textDecoration: 'none' }}>{linkText}</Link>
     </div>
   )
 }
 
-export function RememberRow() {
+export function RememberRow({ userType = 'seller', remember = false, onRememberChange }) {
+  const forgotPath = userType === 'customer' ? '/forgot-password?role=customer' : '/forgot-password'
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', fontSize: 13 }}>
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--text-mid)', userSelect: 'none' }}>
-        <input type="checkbox" style={{ accentColor: 'var(--orange)', width: 15, height: 15 }} /> تذكرني
+        <input
+          type="checkbox"
+          checked={remember}
+          onChange={(e) => onRememberChange?.(e.target.checked)}
+          style={{ accentColor: 'var(--orange)', width: 15, height: 15 }}
+        />
+        تذكرني
       </label>
-      <a href="/forgot-password" style={{ color: 'var(--orange)', textDecoration: 'none', fontWeight: 500 }}>نسيت كلمة المرور؟</a>
+      <Link to={forgotPath} style={{ color: 'var(--orange)', textDecoration: 'none', fontWeight: 500 }}>نسيت كلمة المرور؟</Link>
     </div>
   )
 }

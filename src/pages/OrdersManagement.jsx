@@ -187,28 +187,26 @@ const OrdersManagement = () => {
         <div className="om-table-card">
           <h2 className="om-table-title">قائمة الطلبات</h2>
 
-          <div className="om-table-wrap">
-            <table className="om-table">
-              <thead>
-                <tr>
-                  <th>رقم الطلب</th>
-                  <th>العميل</th>
-                  <th>التاريخ</th>
-                  <th>المنتجات</th>
-                  <th>الإجمالي</th>
-                  <th>الحالة</th>
-                  <th>الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.length === 0 && !loading ? (
+          {loading ? (
+            <div className="om-loading">جاري التحميل...</div>
+          ) : orders.length === 0 ? (
+            <div className="om-empty">لا توجد طلبات بعد</div>
+          ) : (
+            <div className="om-table-wrap">
+              <table className="om-table">
+                <thead>
                   <tr>
-                    <td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>
-                      لا يوجد طلبات حالياً
-                    </td>
+                    <th>رقم الطلب</th>
+                    <th>العميل</th>
+                    <th>التاريخ</th>
+                    <th>المنتجات</th>
+                    <th>الإجمالي</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
                   </tr>
-                ) : (
-                  orders.map((order) => (
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
                     <tr key={order.id}>
                       <td className="om-cell-id">{order.orderNumber}</td>
                       <td>
@@ -240,11 +238,11 @@ const OrdersManagement = () => {
                         </button>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </main>

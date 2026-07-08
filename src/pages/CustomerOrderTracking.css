@@ -1,0 +1,336 @@
+.ot-wrapper {
+  min-height: 100vh;
+  background: var(--bg-page);
+  font-family: "Tajawal", sans-serif;
+}
+
+.ot-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 24px 48px;
+}
+
+.ot-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.ot-back:hover {
+  color: var(--orange);
+}
+
+.ot-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.ot-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ot-order-id {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.ot-order-date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ot-summary-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ot-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--orange);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ot-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ot-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--orange);
+}
+
+.ot-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.ot-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ot-store-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.ot-store-card svg {
+  color: var(--orange);
+}
+
+.ot-item-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+
+.ot-item-img {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--bg-page);
+  flex-shrink: 0;
+}
+
+.ot-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ot-item-info h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.ot-item-info p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ot-item-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--orange);
+  flex-shrink: 0;
+}
+
+.ot-subtotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.ot-grand-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--orange-pale);
+  border-right: 4px solid var(--orange);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.ot-grand-total span:last-child {
+  font-size: 18px;
+  color: var(--orange);
+}
+
+.ot-timeline-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.ot-timeline-card h2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 24px;
+}
+
+.ot-timeline {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ot-step {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 28px;
+}
+
+.ot-step:last-child {
+  padding-bottom: 0;
+}
+
+.ot-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  right: 17px;
+  top: 36px;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.ot-step--done:not(:last-child)::before {
+  background: #22c55e;
+}
+
+.ot-step--current:not(:last-child)::before {
+  background: linear-gradient(to bottom, #22c55e 0%, #e5e7eb 100%);
+}
+
+.ot-step-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #e5e7eb;
+  color: #9ca3af;
+  z-index: 1;
+}
+
+.ot-step--done .ot-step-icon {
+  background: #22c55e;
+  color: #fff;
+}
+
+.ot-step--current .ot-step-icon {
+  background: var(--orange);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
+}
+
+.ot-step--pending .ot-step-icon {
+  background: #f3f4f6;
+  color: #d1d5db;
+}
+
+.ot-step--alt .ot-step-icon {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.ot-step-check {
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  background: #fff;
+  border-radius: 50%;
+  color: #22c55e;
+  display: flex;
+}
+
+.ot-step-content {
+  flex: 1;
+  padding-top: 4px;
+}
+
+.ot-current-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #ede9fe;
+  color: #7c3aed;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.ot-step-content h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.ot-step-content p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.ot-step--pending .ot-step-content h4,
+.ot-step--pending .ot-step-content p {
+  color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .ot-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ot-summary-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ot-summary-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
