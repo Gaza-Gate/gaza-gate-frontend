@@ -51,6 +51,9 @@ import AdminDashboard from './pages/AdminDashboard'
 // ← 1) ضيف الاستيراد هون
 import FloatingChatWidget from "./components/FloatingChatWidget";
 
+// ← الليّاوت الجديد يلي بيحتوي CustomerNavbar مرة وحدة لكل صفحات الزبون
+import CustomerLayout from "./components/CustomerLayout";
+
 export default function App() {
 
   // ← 2) اجلب المسار الحالي
@@ -77,19 +80,23 @@ export default function App() {
         <Route path="/verify-email"         element={<VerifyEmail />} />
         <Route path="/forgot-password"      element={<ForgotPassword />} />
 
-        {/* مسارات الكاستمر */}
-        <Route path="/customer/become-seller" element={<ConvertToSeller />} />
-        <Route path="/messages" element={<CustomerMessages />} />
-        <Route path="/notifications" element={<CustomerNotifications />} />
-        <Route path="/home/customer" element={<CustomerHome />} />
-        <Route path="/products" element={<CustomerProducts />} />
-        <Route path="/product/:id" element={<CustomerProductDetails />} />
-        <Route path="/cart" element={<CustomerCart />} />
-        <Route path="/profile/customer" element={<CustomerProfile />} />
-        <Route path="/favorites" element={<CustomerFavorites />} />
-        <Route path="/orders" element={<CustomerOrders />} />
-        <Route path="/my-orders" element={<CustomerMyOrders />} />
-        <Route path="/my-orders/:id" element={<CustomerOrderTracking />} />
+        {/* مسارات الكاستمر — بتظهر تحت CustomerNavbar (مكتوب مرة وحدة جوا CustomerLayout) */}
+        <Route element={<CustomerLayout />}>
+          <Route path="/customer/become-seller" element={<ConvertToSeller />} />
+          <Route path="/messages" element={<CustomerMessages />} />
+          <Route path="/notifications" element={<CustomerNotifications />} />
+          <Route path="/home/customer" element={<CustomerHome />} />
+          <Route path="/products" element={<CustomerProducts />} />
+          <Route path="/product/:id" element={<CustomerProductDetails />} />
+          <Route path="/cart" element={<CustomerCart />} />
+          <Route path="/profile/customer" element={<CustomerProfile />} />
+          <Route path="/favorites" element={<CustomerFavorites />} />
+          <Route path="/orders" element={<CustomerOrders />} />
+          <Route path="/my-orders" element={<CustomerMyOrders />} />
+          <Route path="/my-orders/:id" element={<CustomerOrderTracking />} />
+        </Route>
+
+        {/* مسارات الكاستمر بدون Navbar — عملية الدفع بتظهر لحالها بدون تشتيت */}
         <Route path="/checkout/review" element={<CustomerCheckoutReview />} />
         <Route path="/checkout/payment" element={<CustomerCheckoutPayment />} />
         <Route path="/checkout/confirm" element={<CustomerCheckoutConfirm />} />

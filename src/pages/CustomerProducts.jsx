@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Monitor,
 } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
+ 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProductsWithFilters } from "../services/productService";
@@ -93,7 +93,7 @@ export default function CustomerProducts() {
 
   return (
     <div className="cp-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+      
 
       <main className="cp-main">
         <header className="cp-header">

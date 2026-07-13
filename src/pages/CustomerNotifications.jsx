@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import CustomerNavbar from "../components/CustomerNavbar";
-import { useCart } from "../context/CartContext";
+ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import {
   getAuthToken,
@@ -129,7 +128,7 @@ export default function CustomerNotifications() {
 
   return (
     <div className="np-root" dir="rtl">
-      <CustomerNavbar cartCount={cartCount} wishlistCount={wishlistCount} />
+      
 
       <main className="np-main">
         <div className="np-header">

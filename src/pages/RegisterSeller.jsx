@@ -95,7 +95,7 @@ export default function RegisterSeller() {
   return (
     <FormCard>
       <CardHeader
-        icon={<>🏪 {isGoogleFlow ? 'أكمل إنشاء متجرك 🚀' : 'أنشئ متجرك الآن 🚀'}</>}
+        icon={<> {isGoogleFlow ? 'أكمل إنشاء متجرك ' : 'أنشئ متجرك الآن  '}</>}
         subtitle={
           fromGoogleLogin
             ? 'حسابك غير موجود بعد — أكمل بيانات متجرك باستخدام بريدك من جوجل'

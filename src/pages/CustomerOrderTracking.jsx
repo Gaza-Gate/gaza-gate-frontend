@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronRight, CheckCircle, Store, Package } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getCustomerOrderDetails } from "../services/authService";
@@ -73,7 +72,6 @@ export default function CustomerOrderTracking() {
   if (loading) {
     return (
       <div className="ot-wrapper" dir="rtl">
-        <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
         <main className="ot-main">
           <p>جاري التحميل...</p>
         </main>
@@ -84,7 +82,6 @@ export default function CustomerOrderTracking() {
   if (error || !order) {
     return (
       <div className="ot-wrapper" dir="rtl">
-        <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
         <main className="ot-main">
           <button className="ot-back" onClick={() => navigate("/my-orders")}>
             <ChevronRight size={14} />
@@ -103,8 +100,6 @@ export default function CustomerOrderTracking() {
 
   return (
     <div className="ot-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
-
       <main className="ot-main">
         <button className="ot-back" onClick={() => navigate("/my-orders")}>
           <ChevronRight size={14} />

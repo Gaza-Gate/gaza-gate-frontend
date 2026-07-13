@@ -6,7 +6,7 @@ import {
   getCustomerMessages,
   sendCustomerMessage,
 } from "../services/authService";
-import CustomerNavbar from "../components/CustomerNavbar";
+ 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import "./Messages.css";
@@ -109,8 +109,7 @@ export default function CustomerMessages() {
 
   return (
     <div className="messages-wrapper" dir="rtl">
-      <CustomerNavbar cartCount={cartCount} wishlistCount={wishlistCount} />
-
+ 
       <div className="messages-title-area">
         <h1>المراسلات</h1>
         <p>تواصل مع البائعين مباشرة</p>

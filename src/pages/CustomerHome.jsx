@@ -11,7 +11,6 @@ import {
   PackagePlus,
   Monitor,
 } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProducts } from "../services/productService";
@@ -64,7 +63,7 @@ export default function CustomerHome() {
 
   return (
     <div className="home-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+      
 
       {/* ── Hero ── */}
       <section className="home-hero">

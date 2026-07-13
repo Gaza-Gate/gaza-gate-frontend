@@ -9,8 +9,7 @@ import {
   User,
   ChevronLeft,
 } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
-import { useCart } from "../context/CartContext";
+ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import {
   getCustomerProfile,
@@ -163,7 +162,7 @@ const handleDeleteAddress = async (id) => {
   if (loading) {
     return (
       <div className="cprof-wrapper" dir="rtl">
-        <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+        
         <main className="cprof-main">
           <p style={{ textAlign: "center", padding: "40px 0" }}>جاري التحميل...</p>
         </main>
@@ -174,8 +173,7 @@ const handleDeleteAddress = async (id) => {
   if (error || !profile) {
     return (
       <div className="cprof-wrapper" dir="rtl">
-        <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
-        <main className="cprof-main">
+         <main className="cprof-main">
           <p style={{ textAlign: "center", padding: "40px 0", color: "#dc2626" }}>
             {error || "تعذر تحميل الملف الشخصي"}
           </p>
@@ -193,7 +191,7 @@ const handleDeleteAddress = async (id) => {
 
   return (
     <div className="cprof-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+      
 
       <main className="cprof-main">
         <nav className="cprof-breadcrumb">

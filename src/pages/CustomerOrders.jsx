@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Package } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
+ 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getCustomerOrders } from "../services/authService";
@@ -129,7 +129,7 @@ export default function CustomerOrders() {
 
   return (
     <div className="co-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+     
 
       <main className="co-main">
         <header className="co-header">

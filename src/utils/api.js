@@ -39,20 +39,37 @@ api.interceptors.request.use((config) => {
 // ── 4. Response interceptor — الريفريش ──
 let refreshPromise = null
 
+// الطلبات يلي لازم ما نعمل الها أي refresh أو redirect تلقائي
+// لأنه فشلها الطبيعي هو "بيانات دخول غلط" مش "جلسة منتهية"
+const AUTH_ENDPOINTS_NO_REFRESH = [
+  '/api/auth/customer/local/login',
+  '/api/auth/customer/local/register',
+  '/api/auth/seller/local/login',
+  '/api/auth/seller/local/register',
+  '/api/auth/customer/google/login',
+  '/api/auth/customer/google/register',
+  '/api/auth/seller/google/login',
+  '/api/auth/seller/google/register/init',
+  '/api/auth/seller/google/register/complete',
+  '/api/auth/refresh-token',
+]
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
 
-    if (error.response?.status === 401 && !original._retry) {
-      // منع الـ infinite loop على refresh نفسه
-      if (original.url?.includes('/api/auth/refresh-token')) {
-        const userType = localStorage.getItem('userType') || 'customer'
-        localStorage.clear()
-        window.location.href = `/login/${userType}`
-        return Promise.reject(error)
-      }
+    // إذا الطلب الفاشل هو أصلاً طلب تسجيل دخول/تسجيل → رجّعي الخطأ زي ما هو
+    // بدون أي محاولة refresh أو تحويل لصفحة تانية
+    const isAuthEndpoint = AUTH_ENDPOINTS_NO_REFRESH.some((url) =>
+      original.url?.includes(url)
+    )
 
+    if (isAuthEndpoint) {
+      return Promise.reject(error)
+    }
+
+    if (error.response?.status === 401 && !original._retry) {
       original._retry = true
 
       // منع الـ race condition
@@ -64,10 +81,8 @@ api.interceptors.response.use(
 
       try {
         const res = await refreshPromise
-        // احفظ الـ accessToken الجديد
         const newToken = res.data.data.accessToken
         localStorage.setItem('token', newToken)
-        // حدّث الـ header وأعد الـ request
         original.headers.Authorization = `Bearer ${newToken}`
         return api(original)
       } catch {
@@ -80,6 +95,5 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
 // ── 5. export ──
 export default api

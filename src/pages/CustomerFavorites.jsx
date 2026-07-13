@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Heart, Plus, Star, Store, Trash2 } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
+ 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import logo from "../assets/logo.png";
@@ -16,7 +16,7 @@ export default function CustomerFavorites() {
 
   return (
     <div className="fav-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+      
 
       <main className="fav-main">
         <header className="fav-header">

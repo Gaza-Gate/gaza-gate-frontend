@@ -25,8 +25,8 @@ export default function LoginSeller() {
       saveSellerSession(token, user, remember)
       navigate('/seller/dashboard')
     } catch (err) {
-      setApiError(err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
-    } finally {
+      setApiError(err.response?.data?.data?.message || err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
+     } finally {
       setSubmitting(false)
     }
   }
@@ -58,7 +58,7 @@ export default function LoginSeller() {
 
   return (
     <FormCard>
-      <CardHeader icon={<>🏪 مرحباً بك من جديد 👋</>} subtitle="ادخل بياناتك للوصول للوحة التحكم" />
+      <CardHeader icon={<>  مرحباً بك من جديد  </>} subtitle="ادخل بياناتك للوصول للوحة التحكم" />
       <Formik initialValues={{ email: '', password: '' }} validationSchema={loginSchema} onSubmit={handleSubmit}>
         {({ isSubmitting }) => (
           <Form noValidate>

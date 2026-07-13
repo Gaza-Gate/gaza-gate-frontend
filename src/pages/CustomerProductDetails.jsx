@@ -10,7 +10,7 @@ import {
   Star,
   Store,
 } from "lucide-react";
-import CustomerNavbar from "../components/CustomerNavbar";
+ 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProductDetails } from "../services/productService";
@@ -63,7 +63,7 @@ export default function CustomerProductDetails() {
   if (loading) {
     return (
       <div className="pd-wrapper" dir="rtl">
-        <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
+         
         <main className="pd-main">
           <div className="pd-empty">
             <h3>جاري التحميل...</h3>
@@ -85,8 +85,7 @@ export default function CustomerProductDetails() {
 
   return (
     <div className="pd-wrapper" dir="rtl">
-      <CustomerNavbar logo={logo} cartCount={cartCount} wishlistCount={wishlistCount} />
-
+       
       <main className="pd-main">
         <nav className="pd-breadcrumb" aria-label="مسار التنقل">
           <Link to="/products">المنتجات</Link>
