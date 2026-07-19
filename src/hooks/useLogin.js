@@ -36,7 +36,7 @@ export function useLogin() {
     try {
     const result = await loginSeller(email, password);
       (remember ? localStorage : sessionStorage).setItem("token", result.data.accessToken);
-      setSuccess(`أهلاً ${result.data.user.name}! جاري تحويلك... ✅`);
+      setSuccess(`أهلاً ${result.data.user.name}! جاري تحويلك...   `);
       setTimeout(() => navigate("/seller/dashboard"), 1000);
     } catch (err) {
       setError(err.message);

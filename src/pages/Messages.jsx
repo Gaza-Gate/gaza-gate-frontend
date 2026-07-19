@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { Send, Search, Info, Loader2, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
+ import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+ import { Send, Search, Info, Loader2, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
 import {
   getAuthToken,
   getCurrentUser,
@@ -51,6 +52,8 @@ export default function Messages() {
   const currentUser = getCurrentUser();
   const myId = currentUser?.id;
 
+  const [searchParams] = useSearchParams();
+  const conversationIdFromUrl = searchParams.get("conversationId");
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -89,14 +92,21 @@ export default function Messages() {
   }, [openMenuId]);
 
   // ---------- تحميل المحادثات ----------
-  useEffect(() => {
+ useEffect(() => {
     async function fetchConversations() {
       try {
         setLoadingConvs(true);
         const data = await getConversations();
         const list = data?.data?.conversations ?? [];
         setConversations(list);
-        if (list.length > 0) setSelectedId(list[0].id);
+
+        //   لو جاي من إشعار فيه conversationId محدد بالرابط، افتحيها أول شي
+        const targetExists = conversationIdFromUrl && list.some((c) => sameId(c.id, conversationIdFromUrl));
+        if (targetExists) {
+          setSelectedId(conversationIdFromUrl);
+        } else if (list.length > 0) {
+          setSelectedId(list[0].id);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -104,7 +114,7 @@ export default function Messages() {
       }
     }
     fetchConversations();
-  }, []);
+  }, [conversationIdFromUrl]);
 
   // ---------- تحميل رسائل المحادثة المختارة ----------
   useEffect(() => {

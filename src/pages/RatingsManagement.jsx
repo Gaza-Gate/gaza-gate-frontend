@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "./RatingsManagement.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
@@ -29,6 +29,9 @@ import SellerNavbar from "../components/SellerNavbar";
 // }
 
 const IS_API_READY = !!import.meta.env.VITE_API_URL;
+
+//   مدة بقاء الهايلايت المؤقت على التقييم المستهدف (بالميلي ثانية)
+const HIGHLIGHT_DURATION_MS = 2500;
 
 // ── Icons ──
 const StarIcon = ({ filled }) => (
@@ -127,6 +130,8 @@ const fetchReviews = async () => {
 };
 
 const RatingsManagement = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [reviews, setReviews]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(null);
@@ -136,6 +141,12 @@ const RatingsManagement = () => {
   const [openReplyId, setOpenReplyId] = useState(null);
   const [replyDraft, setReplyDraft]   = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
+
+  //   دعم فتح تقييم محدد عبر الرابط (?reviewId=...)
+  const [highlightedReviewId, setHighlightedReviewId] = useState(null);
+  const reviewRefs = useRef({});           // { [reviewId]: HTMLElement }
+  const highlightTimeoutRef = useRef(null); // مؤقّت إخفاء الهايلايت
+  const handledReviewIdRef = useRef(null);  // يمنع تكرار السكرول/الهايلايت لنفس الـ reviewId
 
   const sortRef = useRef(null);
 
@@ -167,6 +178,46 @@ const RatingsManagement = () => {
   }, []);
 
   useEffect(() => { loadReviews(); }, [loadReviews]);
+
+  //   لمّا يوصل ?reviewId= بالرابط: نشيل أي فلتر نجوم فعّال، نعمل سكرول
+  // للتقييم المطلوب، ونحطله هايلايت مؤقت لحتى يظهر واضح للبائع.
+  useEffect(() => {
+    const reviewId = searchParams.get("reviewId");
+    if (!reviewId || loading) return;
+    if (handledReviewIdRef.current === reviewId) return; // خلصنا فيه قبل هيك، منعاً للتكرار
+
+    const targetExists = reviews.some((r) => String(r._id ?? r.id) === String(reviewId));
+    if (!targetExists) return;
+
+    handledReviewIdRef.current = reviewId;
+
+    // إزالة أي فلتر نجوم فعّال حتى يكون التقييم المطلوب ظاهر بالقائمة
+    setActiveFilter("all");
+
+    // تأخير بسيط لضمان إعادة رسم القائمة (بعد رفع الفلتر) قبل السكرول
+    const scrollTimer = setTimeout(() => {
+      const node = reviewRefs.current[reviewId];
+      if (node) {
+        node.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      setHighlightedReviewId(reviewId);
+
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedReviewId(null);
+      }, HIGHLIGHT_DURATION_MS);
+    }, 150);
+
+    return () => clearTimeout(scrollTimer);
+  }, [searchParams, loading, reviews]);
+
+  //   تنظيف مؤقت الهايلايت عند مغادرة الصفحة
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+    };
+  }, []);
 
   // ── حسابات الملخص ──
   const totalReviews  = reviews.length;
@@ -290,8 +341,19 @@ const RatingsManagement = () => {
         <div className="rm-reviews-list">
           {visibleReviews.map((review, i) => {
             const reviewId = review._id ?? review.id;
+            const isHighlighted = highlightedReviewId === reviewId;
             return (
-            <div className="rm-review-card" key={reviewId}>
+            <div
+              className="rm-review-card"
+              key={reviewId}
+              ref={(el) => { reviewRefs.current[reviewId] = el; }}
+              style={{
+                transition: "background-color 0.6s ease, box-shadow 0.6s ease",
+                ...(isHighlighted
+                  ? { backgroundColor: "#fff7ed", boxShadow: "0 0 0 2px #f97316 inset" }
+                  : {}),
+              }}
+            >
               <div className="rm-review-top">
                 <div className="rm-review-meta">
                   <StarsDisplay rating={review.rating} />

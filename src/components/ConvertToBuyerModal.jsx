@@ -2,13 +2,13 @@ import React from "react";
 import { X } from "lucide-react";
 import "./ConvertToBuyerModal.css";
 
-const ConvertToBuyerModal = ({ isOpen, onClose, onConfirm }) => {
+const ConvertToBuyerModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
   if (!isOpen) return null;
 
   return (
     <div className="cbm-overlay" onClick={onClose}>
       <div className="cbm-card" onClick={(e) => e.stopPropagation()}>
-        <button className="cbm-close-btn" onClick={onClose} aria-label="إغلاق">
+        <button className="cbm-close-btn" onClick={onClose} aria-label="إغلاق" disabled={isLoading}>
           <X size={18} />
         </button>
 
@@ -26,8 +26,8 @@ const ConvertToBuyerModal = ({ isOpen, onClose, onConfirm }) => {
           <li>لن ترى لوحة البائع أو الطلبات الواردة مؤقتًا.</li>
         </ul>
 
-        <button className="cbm-confirm-btn" onClick={onConfirm}>
-          نعم، تحول لمشتري
+        <button className="cbm-confirm-btn" onClick={onConfirm} disabled={isLoading}>
+          {isLoading ? "جاري التحويل..." : "نعم، تحول لمشتري"}
         </button>
       </div>
     </div>

@@ -20,7 +20,7 @@ import RatingsManagement from "./pages/RatingsManagement";
 import NotificationsPage from "./pages/NotificationsPage";
 import VerifyOTP from "./pages/VerifyOTP";
 import CustomerCheckoutFailed from "./pages/CustomerCheckoutFailed";
-import ConvertToSeller from "./pages/ConvertToSeller"; // ✅ إضافة جديدة
+import ConvertToSeller from "./pages/ConvertToSeller"; //  
 import ProductMissing from "./pages/ProductMissing";
 import CustomerHome from "./pages/CustomerHome";
 import CustomerProducts from "./pages/CustomerProducts";

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./ProductsList.css";
 import { getProducts, deleteProduct, updateProductStatus } from "../services/productService";
 import { getAuthToken } from "../services/authService";
@@ -59,6 +60,9 @@ export default function ProductsList() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  //   لدعم فتح منتج محدد مباشرة عبر الرابط (?productId=xxx) — جاي مثلاً من صفحة الإشعارات
+  const [searchParams, setSearchParams] = useSearchParams();
+
  const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -74,6 +78,27 @@ export default function ProductsList() {
   useEffect(() => {
     fetchProducts();
   }, [token]);
+
+  //   بعد ما تنجلب المنتجات: لو في productId بالرابط، نلاقي المنتج ونفتحله
+  // مودال التفاصيل تلقائياً (نفس اللي بيصير لما تدوسي عالكارد)، وبعدها منشيل
+  // الـ query param من الرابط حتى ما يعاود يفتح المودال لو المستخدم سكّره ورجع.
+  useEffect(() => {
+    if (loading) return;
+    const productId = searchParams.get("productId");
+    if (!productId) return;
+
+    const found = products.find((p) => (p._id ?? p.id) === productId);
+    if (found) {
+      setSelectedProduct(found);
+      setIsDetailsOpen(true);
+    }
+
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("productId");
+      return next;
+    }, { replace: true });
+  }, [loading, products, searchParams, setSearchParams]);
 
   const handleToggleStatus = async (product) => {
     const id = product._id ?? product.id;

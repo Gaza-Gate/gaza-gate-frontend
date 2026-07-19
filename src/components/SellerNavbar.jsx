@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, LogOut, ChevronDown, Menu, X, ArrowLeftRight } from "lucide-react";
 import logo from "../assets/logo.png";
 import ConvertToBuyerModal from "./ConvertToBuyerModal";
-import { logout } from "../services/authService";
+import { logout, switchRole, becomeCustomer } from "../services/authService";
 import api from "../utils/api";
 import { connectSocket, disconnectSocket } from "../utils/socket";
 import "./SellerNavbar.css";
@@ -20,11 +20,8 @@ const MORE_LINKS = [
   { to: "/seller/messages", label: "المراسلات" },
 ];
 
-// جلب عدد الإشعارات غير المقروءة من نفس مسار صفحة الإشعارات
-// شكل الريسبونس: { status, data: { notifications: [], stats: {...}, pagination: {...} } }
 async function fetchUnreadCount() {
   const res = await api.get("/api/seller/notification");
-  // الباك اند بيرجّع stats.unRead (بحرف R كبير) - لو موجود منستخدمه مباشرة، وإلا منحسبه من القائمة
   const statsUnread = res.data?.data?.stats?.unRead;
   if (typeof statsUnread === "number") return statsUnread;
 
@@ -33,8 +30,6 @@ async function fetchUnreadCount() {
   return arr.filter((n) => !n.isRead).length;
 }
 
-// hasNotification كـ prop أصبح اختياري: لو الأب مرّره صراحة (true/false) منستخدمه كما هو،
-// وإلا منجيب العدد الحقيقي من الـ API ومنبني عليه ظهور النقطة الحمرا
 export default function SellerNavbar({ hasNotification }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -43,6 +38,7 @@ export default function SellerNavbar({ hasNotification }) {
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isConverting, setIsConverting] = useState(false); // ✅ حالة تحميل أثناء التحويل
 
   useEffect(() => {
     function handleClick() {
@@ -52,15 +48,11 @@ export default function SellerNavbar({ hasNotification }) {
     return () => document.removeEventListener("click", handleClick);
   }, [showMore]);
 
-  // إغلاق قائمة الموبايل تلقائياً عند تغيير الصفحة
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // نجيب عدد الإشعارات غير المقروءة أول ما يفتح المستخدم التطبيق (تحميل أولي)
-  // وبعدين منستمع بالـ socket لأي تحديث لحظي (إشعار جديد / تعليم كمقروء) بدون إعادة الجلب
   useEffect(() => {
-    // لو الأب مرّر hasNotification صراحة، ما في حاجة نجيب العدد أو نفتح اتصال socket
     if (hasNotification !== undefined) return;
 
     let isMounted = true;
@@ -77,13 +69,10 @@ export default function SellerNavbar({ hasNotification }) {
 
     const socket = connectSocket();
 
-    // 🔧 أداة تشخيص مؤقتة: بتطبع بالـ Console اسم أي حدث حقيقي يوصل من السيرفر
-    // بعد ما تتأكدي من الاسم الصحيح، احذفي هذا الـ onAny واستبدلي الأسماء تحته بالاسم الحقيقي فقط
     socket.onAny((eventName, payload) => {
       console.log("📡 Socket event received:", eventName, payload);
     });
 
-    // أسماء مقترحة شائعة لحدث "إشعار جديد" - عدّليها للاسم الحقيقي فور معرفته من الباك اند
     const NEW_NOTIFICATION_EVENTS = ["newNotification", "notification:new", "notification"];
     const READ_EVENTS = ["notification:read", "notification:readAll", "notificationsUpdated"];
 
@@ -91,7 +80,6 @@ export default function SellerNavbar({ hasNotification }) {
       if (isMounted) setUnreadCount((prev) => prev + 1);
     };
     const handleReadUpdate = () => {
-      // أبسط وأضمن حل: نعيد جلب العدد الحقيقي من السيرفر بعد أي تحديث قراءة
       loadInitialCount();
     };
 
@@ -107,13 +95,8 @@ export default function SellerNavbar({ hasNotification }) {
     };
   }, [hasNotification]);
 
-  // القيمة النهائية اللي بتحدد ظهور النقطة الحمرا
   const showDot = hasNotification !== undefined ? hasNotification : unreadCount > 0;
 
-  // ✅ الآن الخروج مربوط فعلياً بالـ API: بنستدعي /api/auth/logout
-  // لإبطال التوكن على السيرفر، وبعدين بنمسحه محلياً ونحول المستخدم لصفحة الدخول.
-  // حتى لو فشل الطلب (مثلاً السيرفر مش متاح) منكمل نسجل الخروج محلياً
-  // عشان ما نأخر أو نعلّق المستخدم بمكانه.
   async function handleLogout() {
     if (loggingOut) return;
     setLoggingOut(true);
@@ -135,7 +118,38 @@ export default function SellerNavbar({ hasNotification }) {
     setShowConvertModal(true);
   }
 
-  // كل الروابط سوا (تظهر مدمجة بقائمة الموبايل)
+  // ✅ هون صار فعليًا الاستدعاء للـ API لما المستخدم يضغط "نعم، تحول لمشتري" بالمودال
+async function handleConfirmConvert() {
+  if (isConverting) return;
+  setIsConverting(true);
+  try {
+    let result;
+    try {
+      // أول محاولة: تحويل حقيقي (أول مرة يصير فيها العميل customer)
+      result = await becomeCustomer();
+    } catch (err) {
+      // لو عنده صلاحية customer أصلاً (409)، بنستخدم switch-role بس للتنقل
+      if (err.response?.status === 409) {
+        result = await switchRole("customer");
+      } else {
+        throw err;
+      }
+    }
+
+    if (result?.reconnectSocket) {
+      disconnectSocket();
+      connectSocket();
+    }
+
+    setShowConvertModal(false);
+    navigate("/home/customer");
+  } catch (error) {
+    console.error("فشل التحويل لحساب المشتري:", error);
+  } finally {
+    setIsConverting(false);
+  }
+}
+
   const allLinksForMobile = [...NAV_LINKS, ...MORE_LINKS];
 
   return (
@@ -144,7 +158,6 @@ export default function SellerNavbar({ hasNotification }) {
         <img src={logo} alt="Gaza Gate" className="snb-logo" />
       </Link>
 
-      {/* ── روابط سطح المكتب ── */}
       <div className="snb-links snb-links-desktop">
         {NAV_LINKS.map((item) => (
           <Link
@@ -178,7 +191,6 @@ export default function SellerNavbar({ hasNotification }) {
           )}
         </div>
 
-        {/* زر التحويل لمشتري - ظاهر مباشرة بجانب "المزيد"، مش جوا القائمة المنسدلة */}
         <button
           type="button"
           className="snb-link snb-link-btn snb-convert-btn"
@@ -189,7 +201,6 @@ export default function SellerNavbar({ hasNotification }) {
         </button>
       </div>
 
-      {/* ── أزرار يمين: الإشعارات + خروج (سطح المكتب) ── */}
       <div className="snb-actions snb-actions-desktop">
         <button
           className="snb-bell-btn"
@@ -205,7 +216,6 @@ export default function SellerNavbar({ hasNotification }) {
         </button>
       </div>
 
-      {/* ── زر الهامبرغر (موبايل فقط) ── */}
       <button
         className="snb-hamburger-btn"
         aria-label="فتح القائمة"
@@ -217,7 +227,6 @@ export default function SellerNavbar({ hasNotification }) {
         {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
 
-      {/* ── قائمة الموبايل المنسدلة ── */}
       {mobileMenuOpen && (
         <div className="snb-mobile-menu" onClick={(e) => e.stopPropagation()}>
           {allLinksForMobile.map((item) => (
@@ -260,10 +269,8 @@ export default function SellerNavbar({ hasNotification }) {
         <ConvertToBuyerModal
           isOpen={showConvertModal}
           onClose={() => setShowConvertModal(false)}
-          onConfirm={() => {
-            setShowConvertModal(false);
-            navigate("/buyer"); // أو أي مسار البائع-> مشتري عندك، مثلاً /buyer/home
-          }}
+          onConfirm={handleConfirmConvert} // ✅ صار يستدعي الفنكشن الجديدة يلي فيها الـ API
+          isLoading={isConverting} // ✅ لو بدك تعطلي الزر جوا المودال أثناء التحميل
         />
       )}
     </nav>

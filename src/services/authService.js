@@ -19,7 +19,7 @@ export async function forgotPassword(email) {
   return res.data;
 }
 
-// ✅ المسار الصحيح حسب Postman: PUT /api/seller/profile/changePassword
+// المسار الصحيح حسب Postman: PUT /api/seller/profile/changePassword
 export async function changePassword(passwordData) {
   const res = await api.put("/api/seller/profile/changePassword", passwordData);
   return res.data;
@@ -253,3 +253,25 @@ export async function clearAllCustomerNotifications() {
   const res = await api.delete("/api/customer/notifications");
   return res.data;
 }
+ 
+
+export const switchRole = async (role) => {
+  const response = await api.post("/api/auth/switch-role", { role });
+  const { accessToken, user, reconnectSocket } = response.data.data;
+ 
+  // نفس المفتاح "token" المستخدم بباقي المشروع (شفناه بـ handleLogout بـ SellerNavbar)
+  localStorage.setItem("token", accessToken);
+  localStorage.setItem("user", JSON.stringify(user));
+ 
+  return { user, reconnectSocket };
+};
+export const becomeCustomer = async () => {
+  const response = await api.post("/api/auth/become-customer");
+  const { accessToken, user, reconnectSocket } = response.data.data;
+
+  localStorage.setItem("token", accessToken);
+  localStorage.setItem("user", JSON.stringify(user));
+
+  return { user, reconnectSocket };
+};
+ 

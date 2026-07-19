@@ -57,3 +57,11 @@ export function connectSocket() {
 export function disconnectSocket() {
   if (socket?.connected) socket.disconnect();
 }
+export function reconnectSocket() {
+  const s = getSocket();
+  if (s.connected) {
+    s.disconnect();
+  }
+  s.connect();
+  return s;
+}

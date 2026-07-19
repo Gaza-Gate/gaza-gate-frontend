@@ -148,7 +148,7 @@ export default function ConvertToSeller() {
           </div>
 
           {errors.general && <div className="cts-banner-error">{errors.general}</div>}
-          {success && <div className="cts-banner-success">تم تفعيل متجرك بنجاح، جاري تحويلك... ✅</div>}
+          {success && <div className="cts-banner-success">تم تفعيل متجرك بنجاح، جاري تحويلك...  </div>}
 
           <button type="submit" className="cts-btn-submit" disabled={loading}>
             {loading ? <SpinnerIcon /> : <StoreIcon />}

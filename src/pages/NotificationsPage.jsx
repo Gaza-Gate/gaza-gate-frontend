@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import "./NotificationsPage.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
@@ -6,7 +7,7 @@ import { connectSocket } from "../utils/socket";
 
 const IS_API_READY = !!import.meta.env.VITE_API_URL;
 
-// ✅ الاسم الصحيح لحدث الإشعار الجديد القادم من السيرفر (تأكدنا منه من الـ Console)
+// الاسم الصحيح لحدث الإشعار الجديد القادم من السيرفر (تأكدنا منه من الـ Console)
 const NEW_NOTIFICATION_EVENT = "notification:new";
 
 // ── Icons ──
@@ -43,14 +44,7 @@ const FunnelIcon = () => (
   </svg>
 );
 
-const CloseIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-// ✅ أيقونة حذف (سلة مهملات) للإشعار الواحد
+//   أيقونة حذف (سلة مهملات) للإشعار الواحد
 const TrashIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="3 6 5 6 21 6" />
@@ -90,7 +84,7 @@ const BACKEND_TYPE_MAP = {
   alert: "alert",
 };
 
-// ✅ حل مؤقت (Patch): الباك اند حالياً عم يبعت type: "GENERAL" لإشعارات
+//  حل مؤقت (Patch): الباك اند حالياً عم يبعت type: "GENERAL" لإشعارات
 // الرسائل الجديدة بدل "message"، فمنفرّق حسب العنوان كـ fallback.
 // ⚠️ هاد حل مؤقت فقط - لازم يترصلح من الأساس عند الباك اند (نور) بحيث
 // يبعت type: "message" الصحيح لهاد النوع من الإشعارات، وبعدها ممكن
@@ -100,6 +94,16 @@ const resolveNotifType = (n) => {
   const isMessageByTitle = /new message|رسالة جديدة/i.test(n?.title ?? "");
   if (isMessageByTitle) return "message";
   return BACKEND_TYPE_MAP[rawType] ?? "alert";
+};
+
+//   مسارات احتياطية (fallback) حسب نوع الإشعار، تُستخدم فقط لو الإشعار
+// ما إلوش actionUrl جاي من الباك اند (متل بعض إشعارات "GENERAL" القديمة).
+// عدّل هاد المسارات إذا بدك توجيه مختلف.
+const FALLBACK_ROUTE_BY_TYPE = {
+  order:   "/seller/orders",
+  rating:  "/seller/ratings",
+  message: "/seller/messages",
+  alert:   "/seller/products",
 };
 
 // ── Static fallback ──
@@ -114,7 +118,7 @@ const STATIC_NOTIFS = [
 const PAGE_SIZE = 20; // عدد الإشعارات المطلوبة بكل صفحة
 
 // ── API Helpers ──
-// ✅ صارت تدعم رقم الصفحة، وترجع كمان معلومات pagination
+//   صارت تدعم رقم الصفحة، وترجع كمان معلومات pagination
 const fetchNotifications = async (page = 1) => {
   const res = await api.get(
     `/api/seller/notification?page=${page}&limit=${PAGE_SIZE}`
@@ -129,7 +133,7 @@ const fetchNotifications = async (page = 1) => {
   const mapped = arr.map((n) => ({
     ...n,
     _id: n._id ?? n.id,
-    type: resolveNotifType(n), // ✅ يستخدم الدالة الجديدة (type + fallback بالعنوان)
+    type: resolveNotifType(n), //   يستخدم الدالة الجديدة (type + fallback بالعنوان)
   }));
 
   const pagination =
@@ -157,14 +161,14 @@ const deleteOneAPI = async (id) => {
 
 // ── Component ──
 export default function NotificationsPage() {
+  const navigate = useNavigate();
   const [notifs, setNotifs]       = useState([]);
   const [loading, setLoading]     = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false); // ✅ تحميل صفحة إضافية
-  const [page, setPage]           = useState(1);          // ✅ الصفحة الحالية المحمّلة
-  const [hasMore, setHasMore]     = useState(false);      // ✅ هل يوجد صفحات إضافية
+  const [loadingMore, setLoadingMore] = useState(false); //   تحميل صفحة إضافية
+  const [page, setPage]           = useState(1);          //   الصفحة الحالية المحمّلة
+  const [hasMore, setHasMore]     = useState(false);      //  هل يوجد صفحات إضافية
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedNotif, setSelectedNotif] = useState(null); // ← الإشعار المفتوح بالـ Modal
-  const [deletingId, setDeletingId] = useState(null); // ✅ يمنع دبل-كليك على نفس زر الحذف أثناء التنفيذ
+  const [deletingId, setDeletingId] = useState(null); //   يمنع دبل-كليك على نفس زر الحذف أثناء التنفيذ
   const moreRef = useRef(null);
 
   useEffect(() => {
@@ -236,15 +240,15 @@ export default function NotificationsPage() {
     socket.on("connect_error", (err) => console.log("❌ [NotificationsPage] connect_error:", err.message));
 
     const handleNewNotification = (payload) => {
-      console.log("🔔 [NotificationsPage] new notification:", payload);
+      console.log("  [NotificationsPage] new notification:", payload);
 
-      // ✅ الـ payload الحقيقي جاي بالشكل: { notification: {...}, stats: {...} }
+      //   الـ payload الحقيقي جاي بالشكل: { notification: {...}, stats: {...} }
       const notif = payload?.notification ?? payload;
 
       const mapped = {
         ...notif,
         _id: notif?._id ?? notif?.id,
-        type: resolveNotifType(notif), // ✅ يستخدم الدالة الجديدة (type + fallback بالعنوان)
+        type: resolveNotifType(notif), //   يستخدم الدالة الجديدة (type + fallback بالعنوان)
         isRead: false,
       };
 
@@ -262,14 +266,6 @@ export default function NotificationsPage() {
     };
   }, []);
 
-  // إغلاق الـ Modal بزر Escape
-  useEffect(() => {
-    if (!selectedNotif) return;
-    const onKey = (e) => { if (e.key === "Escape") setSelectedNotif(null); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [selectedNotif]);
-
   const safeNotifs = Array.isArray(notifs) ? notifs : [];
   const visible = safeNotifs.filter((n) => activeTab === "all" || n.type === activeTab);
 
@@ -282,13 +278,32 @@ export default function NotificationsPage() {
     }
   };
 
-  const openNotif = (n) => {
-    setSelectedNotif(n);
-    if (!n.isRead) markRead(n._id);
-  };
+  //   فتح الإشعار: بيوديك دايماً على صفحته (actionUrl لو موجود، وإلا مسار
+  // احتياطي حسب نوع الإشعار من FALLBACK_ROUTE_BY_TYPE) — بدون أي Modal.
+const openNotif = (n) => {
+  if (!n.isRead) markRead(n._id);
 
-  const closeModal = () => setSelectedNotif(null);
+  let target = n.actionUrl;
+  console.log("🔎 openNotif →", { type: n.type, actionUrl: n.actionUrl });
 
+if (n.type === "alert") {
+     
+    target = "/seller/products";
+  } else if (n.type === "rating") {
+    target = "/seller/ratings";
+  } else if (target) {
+    if (target.startsWith("/conversations/")) {
+      const conversationId = target.replace("/conversations/", "");
+      target = `/seller/messages?conversationId=${conversationId}`;
+    } else if (!target.startsWith("/seller")) {
+      target = `/seller${target}`;
+    }
+  } else {
+    target = FALLBACK_ROUTE_BY_TYPE[n.type] ?? "/seller/dashboard";
+  }
+     console.log("🔎 target final →", target);
+  navigate(target);
+};
   const markAllRead = async () => {
     try {
       if (IS_API_READY) await markAllReadAPI();
@@ -302,14 +317,13 @@ export default function NotificationsPage() {
     try {
       if (IS_API_READY) await deleteAllAPI();
       setNotifs([]);
-      setSelectedNotif(null);
       setHasMore(false);
     } catch (err) {
       console.error("فشل حذف الإشعارات:", err);
     }
   };
 
-  // ✅ حذف إشعار واحد — بيوقف انتشار الحدث حتى ما يفتح الـ Modal معه
+  //   حذف إشعار واحد — بيوقف انتشار الحدث حتى ما يفتح الإشعار معه
   const deleteOne = async (id, e) => {
     if (e) e.stopPropagation();
     if (deletingId === id) return; // منع الضغط المتكرر أثناء التنفيذ
@@ -317,8 +331,6 @@ export default function NotificationsPage() {
     try {
       if (IS_API_READY) await deleteOneAPI(id);
       setNotifs((prev) => (Array.isArray(prev) ? prev : []).filter((n) => n._id !== id));
-      // لو كان الإشعار المحذوف مفتوح حالياً بالـ Modal، سكّره
-      setSelectedNotif((prev) => (prev && prev._id === id ? null : prev));
     } catch (err) {
       console.error("فشل حذف الإشعار:", err);
     } finally {
@@ -395,13 +407,16 @@ export default function NotificationsPage() {
                   {meta.icon}
                 </div>
                 <div className="np-item-body">
-                  <div className="np-item-title">{n.title}</div>
+                 <div className="np-item-title">
+                  {n.title}
+                  {n.type === "message" && n.sender?.name && ` - ${n.sender.name}`}
+                </div>
                   <div className="np-item-desc">{n.body ?? n.content}</div>
                 </div>
                 <div className="np-item-right">
                   <span className="np-item-time">{n.time ?? n.sentAt?.slice(0, 10) ?? n.createdAt?.slice(0, 10)}</span>
                   {!n.isRead && <span className="np-unread-dot"></span>}
-                  {/* ✅ زر حذف الإشعار الواحد */}
+                  {/*  زر حذف الإشعار الواحد */}
                   <button
                     className="np-item-delete-btn"
                     onClick={(e) => deleteOne(n._id, e)}
@@ -417,7 +432,7 @@ export default function NotificationsPage() {
           })}
         </div>
 
-        {/* ✅ زر تحميل المزيد — يظهر فقط لو في صفحات إضافية ولسنا بتبويب مفلتر بحيث القائمة المعروضة قد لا تعكس كل البيانات بعد */}
+        {/*   زر تحميل المزيد — يظهر فقط لو في صفحات إضافية ولسنا بتبويب مفلتر بحيث القائمة المعروضة قد لا تعكس كل البيانات بعد */}
         {hasMore && (
           <div className="np-load-more-wrap" style={{ textAlign: "center", padding: "16px" }}>
             <button
@@ -434,42 +449,6 @@ export default function NotificationsPage() {
             >
               {loadingMore ? "جاري التحميل…" : "تحميل المزيد"}
             </button>
-          </div>
-        )}
-
-        {/* ── Modal تفاصيل الإشعار ── */}
-        {selectedNotif && (
-          <div className="np-modal-backdrop" onClick={closeModal}>
-            <div
-              className="np-modal-card"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button className="np-modal-close" onClick={closeModal} aria-label="إغلاق">
-                <CloseIcon />
-              </button>
-
-              <div
-                className="np-modal-icon"
-                style={{
-                  background: (TYPE_META[selectedNotif.type] ?? TYPE_META.alert).bg,
-                  color: (TYPE_META[selectedNotif.type] ?? TYPE_META.alert).color,
-                }}
-              >
-                {(TYPE_META[selectedNotif.type] ?? TYPE_META.alert).icon}
-              </div>
-
-              <h2 className="np-modal-title">{selectedNotif.title}</h2>
-              <p className="np-modal-desc">{selectedNotif.body ?? selectedNotif.content}</p>
-
-              <div className="np-modal-meta">
-                <span className="np-modal-time">
-                  {selectedNotif.time
-                    ?? selectedNotif.sentAt?.slice(0, 10)
-                    ?? selectedNotif.createdAt?.slice(0, 10)}
-                </span>
-                <span className="np-modal-read-badge">تم التعليم كمقروء</span>
-              </div>
-            </div>
           </div>
         )}
 

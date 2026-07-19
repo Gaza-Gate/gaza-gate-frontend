@@ -112,8 +112,8 @@ const patchOrderStatus = async (id, newStatus) => {
   return res.data;
 };
 
-const rejectOrder = async (id) => {
-  const res = await api.get(`/api/order/${id}/reject`);
+const rejectOrder = async (id, rejectionReason) => {
+  const res = await api.patch(`/api/order/${id}/reject`, { rejectionReason });
   return res.data;
 };
 
@@ -173,6 +173,8 @@ const OrderDetails = () => {
   const [rejecting, setRejecting]         = useState(false);
   const [showSuccess, setShowSuccess]     = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -222,13 +224,16 @@ const OrderDetails = () => {
     }
   };
 
-  const handleReject = async () => {
+    const handleReject = async () => {
     if (!order || rejecting) return;
-    if (!window.confirm("هل أنت متأكد من رفض هذا الطلب؟")) return;
+    if (!rejectionReason.trim()) {
+      setError("الرجاء كتابة سبب الرفض قبل المتابعة.");
+      return;
+    }
     setRejecting(true);
     setError(null);
     try {
-      if (IS_API_READY) await rejectOrder(order.id);
+      if (IS_API_READY) await rejectOrder(order.id, rejectionReason.trim());
       navigate("/seller/orders");
     } catch (err) {
       console.error("فشل رفض الطلب:", err);
@@ -338,19 +343,48 @@ const OrderDetails = () => {
               </div>
             )}
 
-            {order.status === "pending_review" && (
-              <div className="od-update-block">
-                <button
-                  type="button"
-                  className={`od-btn-reject ${rejecting ? "od-btn-loading" : ""}`}
-                  onClick={handleReject}
-                  disabled={rejecting}
-                >
-                  {rejecting ? "جاري الرفض…" : "رفض الطلب"}
-                </button>
-              </div>
-            )}
-          </div>
+         {order.status === "pending_review" && (
+  <div className="od-update-block">
+    {!showRejectForm ? (
+      <button
+        type="button"
+        className="od-btn-reject"
+        onClick={() => setShowRejectForm(true)}
+      >
+        رفض الطلب
+      </button>
+    ) : (
+      <div className="od-reject-form">
+        <textarea
+          className="od-reject-textarea"
+          placeholder="اكتب سبب رفض الطلب (سيصل هذا السبب إلى العميل)…"
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+          rows={3}
+        />
+        <div className="od-reject-form-actions">
+          <button
+            type="button"
+            className={`od-btn-reject ${rejecting ? "od-btn-loading" : ""}`}
+            onClick={handleReject}
+            disabled={rejecting}
+          >
+            {rejecting ? "جاري الرفض…" : "تأكيد الرفض"}
+          </button>
+          <button
+            type="button"
+            className="od-btn-cancel-reject"
+            onClick={() => { setShowRejectForm(false); setRejectionReason(""); setError(null); }}
+            disabled={rejecting}
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+ </div>
         )}
 
         <div className="od-info-grid-wrapper">

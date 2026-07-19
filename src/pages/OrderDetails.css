@@ -374,3 +374,46 @@
 .od-btn-reject:hover {
   background: #dc2626;
 }
+.od-reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.od-reject-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 70px;
+}
+
+.od-reject-textarea:focus {
+  outline: none;
+  border-color: #ef4444;
+}
+
+.od-reject-form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.od-btn-cancel-reject {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.od-btn-cancel-reject:hover {
+  background: #f9fafb;
+}
