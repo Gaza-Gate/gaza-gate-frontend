@@ -95,3 +95,8 @@ export async function getPublicCategories() {
   const res = await api.get(`/api/category/public`);
   return res.data?.data?.categories || res.data?.categories || res.data;
 }
+
+export const getProductReviews = async (productId) => {
+  const res = await api.get(`/api/review/product/${productId}`);
+  return res.data;
+};

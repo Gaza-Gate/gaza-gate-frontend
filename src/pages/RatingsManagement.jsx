@@ -1,32 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import "./RatingsManagement.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 
 // ══════════════════════════════════════════════════
-//  ⚙️  أسماء الحقول — عدّليها حسب ما يرجع من الباك اند
+//  ⚙️  الـ endpoints — تأكدي من المسار الصحيح ببوستمان
 // ══════════════════════════════════════════════════
-// الـ response الحقيقي:
-// {
-//   status: "success",
-//   data: {
-//     averageRating: "0.00",
-//     totalReviews: 0,
-//     distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-//     reviews: [
-//       {
-//         _id / id: "...",
-//         customerName: "أحمد محمد",
-//         createdAt: "2026-06-08T...",
-//         rating: 5,
-//         comment: "...",
-//         sellerReply: { text: "...", createdAt: "..." } | null
-//       }
-//     ],
-//     pagination: { totalItems: 0, totalPages: 0, currentPage: 1 }
-//   }
-// }
+// Tab 1: تقييمات الزبائن لمنتجاتي (Seller Product Reviews)
+const PRODUCT_REVIEWS_ENDPOINT = "/api/seller/review";
+
+// Tab 2: تقييماتي أنا كسيلر للزبائن (Seller Customer Reviews)
+const CUSTOMER_REVIEWS_ENDPOINT = "/api/seller/review/customer/my";
+
+// ⚠️ ما تأكدنا من شكل الـ Body تبع الـ PATCH لسا (افتراض: { rating, comment })
+// إذا رجع خطأ، افتحي "Update Seller Customer Review" ببوستمان وشوفي شكل الـ Body الحقيقي
+const customerReviewUrl = (id) => `/api/seller/review/customer/${id}`;
 
 const IS_API_READY = !!import.meta.env.VITE_API_URL;
 
@@ -53,6 +42,13 @@ const EditIcon = () => (
   </svg>
 );
 
+const TrashIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+  </svg>
+);
+
 const ReplyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -69,10 +65,29 @@ function StarsDisplay({ rating }) {
   );
 }
 
+// نجمة قابلة للضغط - لفورم تعديل تقييم الزبون
+function StarPicker({ value, onChange }) {
+  return (
+    <div className="rm-star-picker">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          className="rm-star-picker-btn"
+          onClick={() => onChange(n)}
+          aria-label={`${n} نجوم`}
+        >
+          <StarIcon filled={n <= value} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const AVATAR_COLORS = ["#f97316", "#16a34a", "#2563eb", "#9333ea", "#e11d48"];
 
-// ── Static fallback ──
-const STATIC_REVIEWS = [
+// ── Static fallback (تقييمات الزبائن لمنتجاتي) ──
+const STATIC_PRODUCT_REVIEWS = [
   {
     _id: "1",
     customerName: "أحمد محمد",
@@ -89,27 +104,13 @@ const STATIC_REVIEWS = [
     comment: "جودة المنتج جيدة جداً لكن وقت التوصيل كان أطول من المتوقع.",
     sellerReply: null,
   },
-  {
-    _id: "3",
-    customerName: "محمود حسن",
-    createdAt: "2026-06-03",
-    rating: 5,
-    comment: "منتج رائع ويستحق التقييم بـ5 نجوم.",
-    sellerReply: null,
-  },
-  {
-    _id: "4",
-    customerName: "سارة خالد",
-    createdAt: "2026-05-31",
-    rating: 2,
-    comment: "لم يكن المنتج كما توقعت، وصل متأخراً.",
-    sellerReply: null,
-  },
 ];
 
 // ── API Helpers ──
-const fetchReviews = async () => {
-  const res = await api.get("/api/seller/review");
+
+// تقييمات الزبائن لمنتجاتي
+const fetchProductReviews = async () => {
+  const res = await api.get(PRODUCT_REVIEWS_ENDPOINT);
   const payload = res.data?.data ?? res.data ?? {};
   const list = Array.isArray(payload?.reviews)
     ? payload.reviews
@@ -117,22 +118,71 @@ const fetchReviews = async () => {
     ? payload
     : [];
 
-  
   return list.map((r) => {
-    const firstName = r.customer?.user?.firstName ?? "";
-    const lastName = r.customer?.user?.lastName ?? "";
+    const firstName = r.customer?.user?.firstName ?? r.customer?.firstName ?? "";
+    const lastName = r.customer?.user?.lastName ?? r.customer?.lastName ?? "";
     const fullName = `${firstName} ${lastName}`.trim();
+
+    // الـ API بيرجع sellerReply كنص مباشر + sellerRepliedAt منفصل
+    // بنحولهم هون لنفس شكل الـ object يلي باقي الكود متوقعه
+    const sellerReply = r.sellerReply
+      ? { text: r.sellerReply, createdAt: r.sellerRepliedAt ?? null }
+      : null;
+
     return {
       ...r,
       customerName: r.customerName ?? (fullName || "عميل"),
+      sellerReply,
     };
   });
 };
 
+// تقييماتي أنا كسيلر للزبائن — كل عنصر فيه customer (الزبون المُقيَّم) + order + product
+const fetchCustomerReviews = async () => {
+  const res = await api.get(CUSTOMER_REVIEWS_ENDPOINT);
+  const payload = res.data?.data ?? res.data ?? {};
+  const list = Array.isArray(payload?.reviews)
+    ? payload.reviews
+    : Array.isArray(payload)
+    ? payload
+    : [];
+
+  return list.map((r) => {
+    const firstName = r.customer?.firstName ?? "";
+    const lastName = r.customer?.lastName ?? "";
+    const fullName = `${firstName} ${lastName}`.trim();
+    return {
+      ...r,
+      customerName: fullName || "عميل",
+    };
+  });
+};
+
+// تعديل تقييم زبون سابق
+const updateCustomerReview = async (id, { orderId, rating, comment }) => {
+  const res = await api.patch(customerReviewUrl(id), { orderId, rating, comment });
+  return res.data;
+};
+
+// حذف تقييم زبون
+const deleteCustomerReview = async (id) => {
+  const res = await api.delete(customerReviewUrl(id));
+  return res.data;
+};
+
 const RatingsManagement = () => {
+   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [reviews, setReviews]         = useState([]);
+  // ── التبويب النشط ──
+  const [activeTab, setActiveTab] = useState("productReviews"); // "productReviews" | "customerReviews"
+
+  // ── بيانات كل تبويب لحاله ──
+  const [productReviews, setProductReviews] = useState([]);
+  const [customerReviews, setCustomerReviews] = useState([]);
+  const [productLoaded, setProductLoaded] = useState(false);
+  const [customerLoaded, setCustomerLoaded] = useState(false);
+
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -142,11 +192,20 @@ const RatingsManagement = () => {
   const [replyDraft, setReplyDraft]   = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
 
-  //   دعم فتح تقييم محدد عبر الرابط (?reviewId=...)
+  // ── تعديل/حذف تقييم زبون (تبويب تقييماتي للزبائن) ──
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editRating, setEditRating]           = useState(0);
+  const [editComment, setEditComment]         = useState("");
+  const [editLoading, setEditLoading]         = useState(false);
+  const [editError, setEditError]             = useState("");
+  const [deletingId, setDeletingId]           = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  //   دعم فتح تقييم محدد عبر الرابط (?reviewId=...) — بينطبق بس على تبويب المنتجات
   const [highlightedReviewId, setHighlightedReviewId] = useState(null);
-  const reviewRefs = useRef({});           // { [reviewId]: HTMLElement }
-  const highlightTimeoutRef = useRef(null); // مؤقّت إخفاء الهايلايت
-  const handledReviewIdRef = useRef(null);  // يمنع تكرار السكرول/الهايلايت لنفس الـ reviewId
+  const reviewRefs = useRef({});
+  const highlightTimeoutRef = useRef(null);
+  const handledReviewIdRef = useRef(null);
 
   const sortRef = useRef(null);
 
@@ -158,68 +217,81 @@ const RatingsManagement = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const loadReviews = useCallback(async () => {
+  // ── تحميل بيانات التبويب النشط (مرة وحدة فقط لكل تبويب) ──
+  const loadActiveTab = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      if (IS_API_READY) {
-        const data = await fetchReviews();
-        setReviews(Array.isArray(data) ? data : []);
+      if (activeTab === "productReviews") {
+        if (!productLoaded) {
+          if (IS_API_READY) {
+            const data = await fetchProductReviews();
+            setProductReviews(Array.isArray(data) ? data : []);
+          } else {
+            setProductReviews(STATIC_PRODUCT_REVIEWS);
+          }
+          setProductLoaded(true);
+        }
       } else {
-        setReviews(STATIC_REVIEWS);
+        if (!customerLoaded) {
+          if (IS_API_READY) {
+            const data = await fetchCustomerReviews();
+            setCustomerReviews(Array.isArray(data) ? data : []);
+          } else {
+            setCustomerReviews([]);
+          }
+          setCustomerLoaded(true);
+        }
       }
     } catch (err) {
       console.error("فشل جلب التقييمات:", err);
       setError("تعذّر تحميل التقييمات.");
-      setReviews(STATIC_REVIEWS);
+      if (activeTab === "productReviews") setProductReviews(STATIC_PRODUCT_REVIEWS);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab, productLoaded, customerLoaded]);
 
-  useEffect(() => { loadReviews(); }, [loadReviews]);
+  useEffect(() => { loadActiveTab(); }, [loadActiveTab]);
 
-  //   لمّا يوصل ?reviewId= بالرابط: نشيل أي فلتر نجوم فعّال، نعمل سكرول
-  // للتقييم المطلوب، ونحطله هايلايت مؤقت لحتى يظهر واضح للبائع.
   useEffect(() => {
+    setActiveFilter("all");
+  }, [activeTab]);
+
+  const reviews = activeTab === "productReviews" ? productReviews : customerReviews;
+
+  //   لمّا يوصل ?reviewId= بالرابط: بينطبق بس على تبويب تقييمات المنتجات
+  useEffect(() => {
+    if (activeTab !== "productReviews") return;
     const reviewId = searchParams.get("reviewId");
     if (!reviewId || loading) return;
-    if (handledReviewIdRef.current === reviewId) return; // خلصنا فيه قبل هيك، منعاً للتكرار
+    if (handledReviewIdRef.current === reviewId) return;
 
     const targetExists = reviews.some((r) => String(r._id ?? r.id) === String(reviewId));
     if (!targetExists) return;
 
     handledReviewIdRef.current = reviewId;
-
-    // إزالة أي فلتر نجوم فعّال حتى يكون التقييم المطلوب ظاهر بالقائمة
     setActiveFilter("all");
 
-    // تأخير بسيط لضمان إعادة رسم القائمة (بعد رفع الفلتر) قبل السكرول
     const scrollTimer = setTimeout(() => {
       const node = reviewRefs.current[reviewId];
-      if (node) {
-        node.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
 
       setHighlightedReviewId(reviewId);
-
       if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
-      highlightTimeoutRef.current = setTimeout(() => {
-        setHighlightedReviewId(null);
-      }, HIGHLIGHT_DURATION_MS);
+      highlightTimeoutRef.current = setTimeout(() => setHighlightedReviewId(null), HIGHLIGHT_DURATION_MS);
     }, 150);
 
     return () => clearTimeout(scrollTimer);
-  }, [searchParams, loading, reviews]);
+  }, [searchParams, loading, reviews, activeTab]);
 
-  //   تنظيف مؤقت الهايلايت عند مغادرة الصفحة
   useEffect(() => {
     return () => {
       if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
     };
   }, []);
 
-  // ── حسابات الملخص ──
+  // ── حسابات الملخص (حسب التبويب النشط) ──
   const totalReviews  = reviews.length;
   const averageRating = totalReviews
     ? reviews.reduce((sum, r) => sum + Number(r.rating ?? 0), 0) / totalReviews
@@ -240,31 +312,88 @@ const RatingsManagement = () => {
         : new Date(a.createdAt) - new Date(b.createdAt)
     );
 
-  // ── الرد على التقييم ──
+  // ── الرد على تقييم منتج ──
   const handleOpenReply = (id) => { setOpenReplyId(id); setReplyDraft(""); };
   const handleEditReply = (review) => { setOpenReplyId(review._id ?? review.id); setReplyDraft(review.sellerReply.text); };
 
-  const handleSubmitReply = async (id) => {
-    if (!replyDraft.trim()) return;
-    setReplyLoading(true);
+ const handleSubmitReply = async (id) => {
+  if (!replyDraft.trim()) {
+    return;
+  }
+  setReplyLoading(true);
+  try {
+    if (IS_API_READY) {
+      await api.post(`/api/seller/review/${id}/reply`, { reply: replyDraft.trim() });
+    }
+    setProductReviews((prev) =>
+      prev.map((r) =>
+        (r._id ?? r.id) === id
+          ? { ...r, sellerReply: { text: replyDraft.trim(), createdAt: new Date().toISOString() } }
+          : r
+      )
+    );
+    setOpenReplyId(null);
+    setReplyDraft("");
+  } catch (err) {
+    console.error("فشل الرد على التقييم:", err);
+  } finally {
+    setReplyLoading(false);
+  }
+};
+  // ── تعديل تقييم زبون ──
+  const handleOpenEdit = (review) => {
+    setEditingReviewId(review._id ?? review.id);
+    setEditRating(review.rating ?? 0);
+    setEditComment(review.comment ?? "");
+    setEditError("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setEditError("");
+  };
+
+const handleSubmitEdit = async (id, orderId) => {
+  if (editRating === 0) {
+    setEditError("الرجاء اختيار عدد النجوم.");
+    return;
+  }
+  setEditLoading(true);
+  setEditError("");
+  try {
+    if (IS_API_READY) {
+      await updateCustomerReview(id, { orderId, rating: editRating, comment: editComment.trim() });
+    }
+    setCustomerReviews((prev) =>
+      prev.map((r) =>
+        (r._id ?? r.id) === id
+          ? { ...r, rating: editRating, comment: editComment.trim() }
+          : r
+      )
+    );
+    setEditingReviewId(null);
+  } catch (err) {
+    console.error("فشل تعديل التقييم:", err);
+    setEditError("تعذّر حفظ التعديل. حاول مرة أخرى.");
+  } finally {
+    setEditLoading(false);
+  }
+};
+
+  // ── حذف تقييم زبون ──
+  const handleConfirmDelete = async (id) => {
+    setDeletingId(id);
     try {
       if (IS_API_READY) {
-       
-        await api.post(`/api/seller/review/${id}/reply`, { text: replyDraft.trim() });
+        await deleteCustomerReview(id);
       }
-      setReviews((prev) =>
-        prev.map((r) =>
-          (r._id ?? r.id) === id
-            ? { ...r, sellerReply: { text: replyDraft.trim(), createdAt: new Date().toISOString() } }
-            : r
-        )
-      );
-      setOpenReplyId(null);
-      setReplyDraft("");
+      setCustomerReviews((prev) => prev.filter((r) => (r._id ?? r.id) !== id));
+      setConfirmDeleteId(null);
     } catch (err) {
-      console.error("فشل إرسال الرد:", err);
+      console.error("فشل حذف التقييم:", err);
+      setError("تعذّر حذف التقييم. حاول مرة أخرى.");
     } finally {
-      setReplyLoading(false);
+      setDeletingId(null);
     }
   };
 
@@ -290,6 +419,22 @@ const RatingsManagement = () => {
         <div className="rm-header">
           <h1 className="rm-page-title">إدارة التقييمات</h1>
           <p className="rm-page-subtitle">إدارة وعرض تقييمات الزبائن على متجرك</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="rm-tabs">
+          <button
+            className={`rm-tab ${activeTab === "productReviews" ? "rm-tab-active" : ""}`}
+            onClick={() => setActiveTab("productReviews")}
+          >
+            تقييمات الزبائن لي
+          </button>
+          <button
+            className={`rm-tab ${activeTab === "customerReviews" ? "rm-tab-active" : ""}`}
+            onClick={() => setActiveTab("customerReviews")}
+          >
+            تقييماتي للزبائن
+          </button>
         </div>
 
         {error && <div className="od-error-inline">{error}</div>}
@@ -342,6 +487,9 @@ const RatingsManagement = () => {
           {visibleReviews.map((review, i) => {
             const reviewId = review._id ?? review.id;
             const isHighlighted = highlightedReviewId === reviewId;
+            const isCustomerTab = activeTab === "customerReviews";
+            const isEditing = editingReviewId === reviewId;
+
             return (
             <div
               className="rm-review-card"
@@ -357,24 +505,127 @@ const RatingsManagement = () => {
               <div className="rm-review-top">
                 <div className="rm-review-meta">
                   <StarsDisplay rating={review.rating} />
-                
-                  <span className="rm-review-name">{review.customerName}</span>
+                  <span
+                    className="rm-review-name"
+                    onClick={() => {
+                      // ⚠️ مهم: نعطي الأولوية لحقل customerId (سواء جوا customer أو على
+                      // المستوى الأعلى بالـ review) لأنه هو المطابق لـ actionUrl الحقيقي
+                      // من الباك اند. review.customer?.id ممكن يكون ID مختلف (fallback أخير فقط).
+                      const customerId =
+                        review.customer?.customerId ??
+                        review.customerId ??
+                        review.customer?.id ??
+                        null;
+                      if (customerId) navigate(`/profile/customer/${customerId}`);
+                    }}
+                    style={{ cursor: "pointer", textDecoration: "underline" }}
+                    title="عرض بروفايل الزبون"
+                  >
+                    {review.customerName}
+                  </span>
                   <span className="rm-review-date">{review.createdAt?.slice(0, 10)}</span>
-                  {review.sellerReply
-                    ? <span className="rm-badge rm-badge-green">تم الرد عليه</span>
-                    : <span className="rm-badge rm-badge-yellow">بانتظار الرد</span>
-                  }
+                  {!isCustomerTab && (
+                    review.sellerReply
+                      ? <span className="rm-badge rm-badge-green">تم الرد عليه</span>
+                      : <span className="rm-badge rm-badge-yellow">بانتظار الرد</span>
+                  )}
                 </div>
-                <div className="rm-avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
-                  
-                  {review.customerName?.charAt(0)}
-                </div>
+
+                {review.customer?.avatar ? (
+                  <img src={review.customer.avatar} alt={review.customerName} className="rm-avatar-img" />
+                ) : (
+                  <div className="rm-avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                    {review.customerName?.charAt(0)}
+                  </div>
+                )}
               </div>
 
-             
-              <p className="rm-review-comment">{review.comment}</p>
+              {/* سطر إضافي - بيظهر بس بتبويب "تقييماتي للزبائن": رقم الطلبية + اسم المنتج */}
+              {isCustomerTab && (review.order || review.product) && (
+                <p className="rm-review-extra">
+                  {review.product?.name && <span>المنتج: {review.product.name}</span>}
+                  {review.order?.orderNumber && <span> · الطلبية: {review.order.orderNumber}</span>}
+                </p>
+              )}
 
-              {review.sellerReply && openReplyId !== reviewId && (
+              {/* فورم التعديل يحل مكان التعليق العادي لما تكون بحالة تعديل */}
+              {isCustomerTab && isEditing ? (
+                <div className="rm-edit-form">
+                  <StarPicker value={editRating} onChange={setEditRating} />
+                  <textarea
+                    className="rm-reply-textarea"
+                    value={editComment}
+                    onChange={(e) => setEditComment(e.target.value)}
+                    rows={3}
+                  />
+                  {editError && <div className="od-error-inline">{editError}</div>}
+                  <div className="rm-reply-form-actions">
+                    <button
+                      type="button"
+                      className="rm-btn-submit-reply"
+                      onClick={() => handleSubmitEdit(reviewId, review.order?.id)}
+                      disabled={editLoading}
+                    >
+                      {editLoading ? "جاري الحفظ…" : "حفظ التعديل"}
+                    </button>
+                    <button
+                      type="button"
+                      className="rm-btn-cancel-reply"
+                      onClick={handleCancelEdit}
+                      disabled={editLoading}
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="rm-review-comment">{review.comment}</p>
+              )}
+
+              {/* أزرار تعديل/حذف - بتبويب تقييماتي للزبائن بس */}
+              {isCustomerTab && !isEditing && (
+                <div className="rm-customer-review-actions">
+                  <button
+                    type="button"
+                    className="rm-btn-edit-review"
+                    onClick={() => handleOpenEdit(review)}
+                  >
+                    <EditIcon /> تعديل
+                  </button>
+
+                  {confirmDeleteId === reviewId ? (
+                    <div className="rm-confirm-delete">
+                      <span>متأكدة من الحذف؟</span>
+                      <button
+                        type="button"
+                        className="rm-btn-confirm-delete"
+                        onClick={() => handleConfirmDelete(reviewId)}
+                        disabled={deletingId === reviewId}
+                      >
+                        {deletingId === reviewId ? "جاري الحذف…" : "نعم، احذف"}
+                      </button>
+                      <button
+                        type="button"
+                        className="rm-btn-cancel-reply"
+                        onClick={() => setConfirmDeleteId(null)}
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="rm-btn-delete-review"
+                      onClick={() => setConfirmDeleteId(reviewId)}
+                    >
+                      <TrashIcon /> حذف
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* الرد يظهر بس بتقييمات المنتجات */}
+              {!isCustomerTab && review.sellerReply && openReplyId !== reviewId && (
                 <div className="rm-reply-box">
                   <div className="rm-reply-header">
                     <button type="button" className="rm-edit-reply" onClick={() => handleEditReply(review)}>
@@ -382,32 +633,33 @@ const RatingsManagement = () => {
                     </button>
                     <span>رد البائع:</span>
                   </div>
-                 
                   <p className="rm-reply-text">{review.sellerReply.text}</p>
                 </div>
               )}
 
-              {openReplyId === reviewId ? (
-                <div className="rm-reply-form">
-                  <textarea
-                    className="rm-reply-textarea"
-                    value={replyDraft}
-                    onChange={(e) => setReplyDraft(e.target.value)}
-                    placeholder="اكتب ردك هنا..."
-                    rows={3}
-                  />
-                  <div className="rm-reply-form-actions">
-                    <button type="button" className="rm-btn-submit-reply" onClick={() => handleSubmitReply(reviewId)} disabled={replyLoading}>
-                      {replyLoading ? "جاري الإرسال…" : "إرسال الرد"}
-                    </button>
-                    <button type="button" className="rm-btn-cancel-reply" onClick={() => setOpenReplyId(null)}>إلغاء</button>
+              {!isCustomerTab && (
+                openReplyId === reviewId ? (
+                  <div className="rm-reply-form">
+                    <textarea
+                      className="rm-reply-textarea"
+                      value={replyDraft}
+                      onChange={(e) => setReplyDraft(e.target.value)}
+                      placeholder="اكتب ردك هنا..."
+                      rows={3}
+                    />
+                    <div className="rm-reply-form-actions">
+                      <button type="button" className="rm-btn-submit-reply" onClick={() => handleSubmitReply(reviewId)} disabled={replyLoading}>
+                        {replyLoading ? "جاري الإرسال…" : "إرسال الرد"}
+                      </button>
+                      <button type="button" className="rm-btn-cancel-reply" onClick={() => setOpenReplyId(null)}>إلغاء</button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                !review.sellerReply && (
-                  <button type="button" className="rm-btn-reply" onClick={() => handleOpenReply(reviewId)}>
-                    <ReplyIcon /> رد على التقييم
-                  </button>
+                ) : (
+                  !review.sellerReply && (
+                    <button type="button" className="rm-btn-reply" onClick={() => handleOpenReply(reviewId)}>
+                      <ReplyIcon /> رد على التقييم
+                    </button>
+                  )
                 )
               )}
             </div>

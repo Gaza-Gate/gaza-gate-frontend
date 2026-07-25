@@ -417,3 +417,51 @@
 .od-btn-cancel-reject:hover {
   background: #f9fafb;
 }
+/* ══ قسم تقييم الزبون ══ */
+.od-review-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.od-review-done-text {
+  font-size: 0.88rem;
+  color: #16a34a;
+  font-weight: 600;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.od-review-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.od-review-stars-picker {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.od-review-star-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  line-height: 0;
+  transition: transform 0.1s;
+}
+
+.od-review-star-btn:hover {
+  transform: scale(1.1);
+}

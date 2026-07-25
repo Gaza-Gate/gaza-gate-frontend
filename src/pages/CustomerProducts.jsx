@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Monitor,
 } from "lucide-react";
- 
+
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProductsWithFilters } from "../services/productService";
@@ -43,6 +43,7 @@ export default function CustomerProducts() {
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
@@ -55,6 +56,12 @@ export default function CustomerProducts() {
     fetchProducts();
   }, [search, activeCategory, page, minPrice, maxPrice, sortBy]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -63,16 +70,13 @@ export default function CustomerProducts() {
         page,
         search: search || undefined,
       };
-      // أرسل categoryId إذا لم يكن "all"
       if (activeCategory !== "all") {
         filters.categoryId = activeCategory;
       }
-      // فلتر السعر
       if (minPrice) filters.minPrice = minPrice;
       if (maxPrice) filters.maxPrice = maxPrice;
-      // الترتيب
       if (sortBy) filters.sort = sortBy;
-      
+
       const response = await getPublicProductsWithFilters(filters);
       setProducts(response.data?.products || []);
     } catch (err) {
@@ -91,10 +95,19 @@ export default function CustomerProducts() {
     setSortBy("");
   };
 
+  const handleAddToCart = async (e, product) => {
+    e.stopPropagation();
+    try {
+      await addItem(product);
+      setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
+    } catch (err) {
+      const msg = err.response?.data?.data?.message || err.message || "حدث خطأ ما";
+      setToast({ message: msg, type: "error" });
+    }
+  };
+
   return (
     <div className="cp-wrapper" dir="rtl">
-      
-
       <main className="cp-main">
         <header className="cp-header">
           <h1>جميع المنتجات</h1>
@@ -258,10 +271,7 @@ export default function CustomerProducts() {
 
                     <button
                       className="cp-add-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addItem(product);
-                      }}
+                      onClick={(e) => handleAddToCart(e, product)}
                     >
                       <Plus size={16} />
                       أضف
@@ -274,6 +284,12 @@ export default function CustomerProducts() {
         )}
         </div>
       </main>
+
+      {toast && (
+        <div className={`cp-toast cp-toast--${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
