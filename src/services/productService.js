@@ -95,3 +95,10 @@ export async function getPublicCategories() {
   const res = await api.get(`/api/category/public`);
   return res.data?.data?.categories || res.data?.categories || res.data;
 }
+
+
+// جلب تقييمات منتج معين
+export const getProductReviews = async (productId) => {
+  const res = await api.get(`/api/review/product/${productId}`);
+  return res.data;
+};
