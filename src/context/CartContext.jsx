@@ -49,7 +49,7 @@ export function CartProvider({ children }) {
     localStorage.setItem(scopedKey(CART_BASE_KEY), JSON.stringify(items));
   }, [items, userId]);
 
-  const addItem = async (product, quantity = 1) => {
+ const addItem = async (product, quantity = 1) => {
     const productId = product.id || product._id;
     let enrichedProduct = product;
     let sellerId = extractSellerId(product);
@@ -64,6 +64,15 @@ export function CartProvider({ children }) {
       }
     }
 
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("الرجاء تسجيل الدخول لإضافة المنتج للسلة");
+    }
+
+    // ننادي السيرفر أولاً - لو رفض، منوقف هون ومنرمي الخطأ
+    await addToCart(productId, quantity, token);
+
+    // لو نجح السيرفر، هلأ منحدث السلة المحلية
     setItems((prev) => {
       const existing = prev.find((i) => i.id === productId);
       if (existing) {
@@ -73,17 +82,6 @@ export function CartProvider({ children }) {
       }
       return [...prev, { ...enrichedProduct, id: productId, quantity, sellerId }];
     });
-
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn("لا يوجد توكن دخول - لن تتم إضافة المنتج لسلة السيرفر");
-        return;
-      }
-      await addToCart(productId, quantity, token);
-    } catch (err) {
-      console.error("فشل إضافة المنتج لسلة السيرفر:", err);
-    }
   };
 
   const removeItem = (id) => {

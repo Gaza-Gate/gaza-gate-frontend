@@ -10,7 +10,7 @@ import {
   Star,
   Store,
 } from "lucide-react";
- 
+
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProductDetails } from "../services/productService";
@@ -40,10 +40,17 @@ export default function CustomerProductDetails() {
   const { addItem, cartCount } = useCart();
   const { isWishlisted, toggleWishlist, wishlistCount } = useWishlist();
   const [quantity, setQuantity] = useState(1);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchProductDetails();
   }, [id]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const fetchProductDetails = async () => {
     try {
@@ -63,7 +70,6 @@ export default function CustomerProductDetails() {
   if (loading) {
     return (
       <div className="pd-wrapper" dir="rtl">
-         
         <main className="pd-main">
           <div className="pd-empty">
             <h3>جاري التحميل...</h3>
@@ -79,13 +85,18 @@ export default function CustomerProductDetails() {
 
   const wishlisted = isWishlisted(product.id);
 
-  const handleAddToCart = () => {
-    addItem(product, quantity);
+  const handleAddToCart = async () => {
+    try {
+      await addItem(product, quantity);
+      setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
+    } catch (err) {
+      const msg = err.response?.data?.data?.message || err.message || "حدث خطأ ما";
+      setToast({ message: msg, type: "error" });
+    }
   };
 
   return (
     <div className="pd-wrapper" dir="rtl">
-       
       <main className="pd-main">
         <nav className="pd-breadcrumb" aria-label="مسار التنقل">
           <Link to="/products">المنتجات</Link>
@@ -180,6 +191,12 @@ export default function CustomerProductDetails() {
           </section>
         </div>
       </main>
+
+      {toast && (
+        <div className={`pd-toast pd-toast--${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
- import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+ import { useSearchParams, useNavigate } from "react-router-dom";
  import { Send, Search, Info, Loader2, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react";
 import {
   getAuthToken,
@@ -48,6 +48,7 @@ function addMessageUnique(prevMessages, newMsg) {
 }
 
 export default function Messages() {
+   const navigate = useNavigate();
   const token = getAuthToken();
   const currentUser = getCurrentUser();
   const myId = currentUser?.id;
@@ -445,12 +446,23 @@ export default function Messages() {
 
           {/* نافذة المحادثة */}
           <div className="messages-chat">
-            {selectedConv ? (
+     {selectedConv ? (
               <div className="messages-chat-header">
                 <button className="messages-info-btn">
                   <Info size={18} color="#9ca3af" />
                 </button>
-                <div className="messages-chat-user">
+                <div
+                  className="messages-chat-user"
+                  onClick={() => {
+                    // ⚠️ مهم: نستخدم customerId وليس id — الباك اند بيرجع otherParty.id كـ id عام
+                    // للطرف الآخر بالمحادثة، بينما customerId هو الـ ID الحقيقي المطابق لـ actionUrl
+                    // ولـ endpoints البروفايل: /profile/customer/{CUSTOMER_ID}
+                    const customerId = selectedConv.otherParty?.customerId ?? selectedConv.otherParty?.id;
+                    if (customerId) navigate(`/profile/customer/${customerId}`);
+                  }}
+                  style={{ cursor: selectedConv.otherParty?.id ? "pointer" : "default" }}
+                  title="عرض بروفايل الزبون"
+                >
                   <div className="messages-chat-user-info">
                     <p className="messages-chat-user-name">{fullName(selectedConv.otherParty)}</p>
                     <p className="messages-chat-user-role">

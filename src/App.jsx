@@ -46,9 +46,9 @@ import AdminNotifications from './pages/AdminNotifications';
 import AdminReports from './pages/AdminReports';
 import AdminCategories from './pages/AdminCategories';
 import AdminUsers from './pages/AdminUsers';
-import AdminDashboard from './pages/AdminDashboard'
-
-// ← 1) ضيف الاستيراد هون
+import AdminDashboard from './pages/AdminDashboard';
+ 
+ 
 import FloatingChatWidget from "./components/FloatingChatWidget";
 
 // ← الليّاوت الجديد يلي بيحتوي CustomerNavbar مرة وحدة لكل صفحات الزبون
@@ -116,7 +116,7 @@ export default function App() {
         <Route path="/seller/ratings" element={<RatingsManagement />} />
         <Route path="/seller/notifications" element={<NotificationsPage />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
-
+          <Route path="/store/:sellerId" element={<StoreProfile />} />
         {/* مسارات الأدمن */}
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/profile" element={<AdminProfile />} />
