@@ -1,0 +1,301 @@
+/* ╔══════════════════════════════════════════════════════════════════╗
+   ║  Skeleton — عناصر بتلمع (shimmer) متل المحتوى اللي رح يطلع      ║
+   ╚══════════════════════════════════════════════════════════════════╝ */
+
+:root {
+  --skel-base: #eef0f3;
+  --skel-highlight: #f8fafc;
+  --skel-radius: 8px;
+}
+
+.skel {
+  display: inline-block;
+  position: relative;
+  background: var(--skel-base);
+  overflow: hidden;
+  border-radius: var(--skel-radius);
+  flex-shrink: 0;
+}
+
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skel-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Layout helpers ── */
+.skel-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.skel-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Grid (default: 4 cols) ── */
+.skel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* ── Product card skeleton ── */
+.skel-product-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.skel-product-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+  display: block;
+}
+
+.skel-product-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skel-product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.skel-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* ── Hero (store profile) ── */
+.skel-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 180px;
+}
+
+.skel-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ── Trust strip (store) ── */
+.skel-trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 14px;
+  padding: 14px 20px;
+}
+
+.skel-trust-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.skel-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.skel-mini-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* ── Tabs (store) ── */
+.skel-tabs {
+  display: flex;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 6px;
+}
+
+.skel-tabs > .skel {
+  flex: 1;
+  border-radius: 11px;
+}
+
+/* ── Order card skeleton ── */
+.skel-order-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.skel-order-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Table skeleton ── */
+.skel-table-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.skel-table-head,
+.skel-table-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.skel-table-head {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* ── Stats grid ── */
+.skel-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.skel-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+/* ── Notification row ── */
+.skel-notif-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+/* ── Product details skeleton ── */
+.skel-pd-wrap {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.skel-pd-img {
+  width: 320px;
+  height: 320px;
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+/* ── Order details skeleton ── */
+.skel-block-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Profile skeleton ── */
+.skel-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+/* ── LoadingState default (compact) ── */
+.skel-shimmer-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .skel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .skel-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .skel-pd-wrap { flex-direction: column; }
+  .skel-pd-img { width: 100%; height: 280px; }
+}
+
+@media (max-width: 640px) {
+  .skel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .skel-stats-grid { grid-template-columns: 1fr; }
+  .skel-trust-strip { flex-wrap: wrap; gap: 10px; }
+  .skel-trust-item { flex: 1 1 45%; }
+  .skel-hero { flex-direction: column; text-align: center; padding: 18px; }
+  .skel-avatar { width: 80px; height: 80px; }
+  .skel-table-head,
+  .skel-table-row { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .skel-table-head > .skel:nth-child(n+4),
+  .skel-table-row > .skel:nth-child(n+4) { display: none; }
+}

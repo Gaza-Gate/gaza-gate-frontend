@@ -90,8 +90,67 @@ export async function getPublicProductDetails(productId) {
   return res.data?.data?.product || res.data?.product || res.data;
 }
 
-// جلب جميع الفئات العامة (لصفحة المتجر العام)
+// جلب جميع الفئات العامة (لصفحة المتجر العام وصفحة المنتجات)
+/**
+ * GET /api/category/public
+ * الـ response المتوقع:
+ * {
+ *   "status": "success",
+ *   "data": {
+ *     "categories": [
+ *       { "id": "uuid", "name": "Electronics" },
+ *       { "id": "uuid", "name": "Food" }
+ *     ]
+ *   }
+ * }
+ * أو مصفوفة مباشرة: [{ id, name }]
+ *
+ * نُطبّع الحقل: nameAr (مترجم إلى العربية إذا كان إنجليزي) + iconKey
+ */
+const CATEGORY_NAME_MAP = {
+  // إنجليزي → عربي + مفتاح أيقونة
+  "electronics": { ar: "الإلكترونيات", iconKey: "electronics" },
+  "electronic":  { ar: "الإلكترونيات", iconKey: "electronics" },
+  "food":        { ar: "المأكولات المنزلية", iconKey: "food" },
+  "homemade":    { ar: "المأكولات المنزلية", iconKey: "food" },
+  "home food":   { ar: "المأكولات المنزلية", iconKey: "food" },
+  "clothes":     { ar: "ملابس", iconKey: "clothes" },
+  "clothing":    { ar: "ملابس", iconKey: "clothes" },
+  "fashion":     { ar: "ملابس", iconKey: "clothes" },
+  "handicraft":  { ar: "الأشغال اليدوية", iconKey: "handicraft" },
+  "handicrafts": { ar: "الأشغال اليدوية", iconKey: "handicraft" },
+  "hand made":   { ar: "الأشغال اليدوية", iconKey: "handicraft" },
+  "handmade":    { ar: "الأشغال اليدوية", iconKey: "handicraft" },
+  "books":       { ar: "الكتب", iconKey: "books" },
+  "beauty":      { ar: "الجمال والعناية", iconKey: "beauty" },
+  "sports":      { ar: "الرياضة", iconKey: "sports" },
+  "toys":        { ar: "الألعاب", iconKey: "toys" },
+  "furniture":   { ar: "الأثاث", iconKey: "furniture" },
+};
+
+/**
+ * ترجمة اسم فئة + استخراج مفتاح الأيقونة
+ */
+function mapCategory(raw) {
+  if (!raw) return null;
+  const rawName = String(raw.name ?? "").trim();
+  const lower = rawName.toLowerCase();
+  const mapped = CATEGORY_NAME_MAP[lower];
+  return {
+    id: raw.id,
+    name: rawName,
+    nameAr: mapped?.ar ?? rawName,           // لو الباك رجّع عربي نستخدمه، وإلا نترجم
+    iconKey: mapped?.iconKey ?? "default",
+    productCount: Number(raw.productCount ?? raw.productsCount ?? raw._count?.products ?? 0),
+  };
+}
+
 export async function getPublicCategories() {
   const res = await api.get(`/api/category/public`);
-  return res.data?.data?.categories || res.data?.categories || res.data;
+  const list = res.data?.data?.categories
+    ?? res.data?.categories
+    ?? res.data?.data
+    ?? res.data;
+  if (!Array.isArray(list)) return [];
+  return list.map(mapCategory).filter(Boolean);
 }

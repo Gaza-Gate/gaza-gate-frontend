@@ -4,6 +4,7 @@ import "./NotificationsPage.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 import { connectSocket } from "../utils/socket";
+import LoadingState from "../components/LoadingState";
 
 const IS_API_READY = !!import.meta.env.VITE_API_URL;
 
@@ -348,10 +349,7 @@ if (n.type === "alert") {
       <div className="np-root" dir="rtl">
         <SellerNavbar />
         <main className="np-main">
-          <div className="rm-state-center">
-            <div className="od-spinner" />
-            <p>جاري تحميل الإشعارات…</p>
-          </div>
+          <LoadingState message="جاري تحميل الإشعارات…" />
         </main>
       </div>
     );

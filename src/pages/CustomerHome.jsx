@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import ChatbotWidget from "../components/ChatbotWidget";
 
 import {
   ShoppingCart,
@@ -14,11 +13,12 @@ import {
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProducts } from "../services/productService";
-import logo from "../assets/logo.png";
-import heroBanner from "../assets/hero-banner.png";
+import { getCurrentUser } from "../services/authService";
+import heroBanner from "../assets/hero-banner.webp";
 import handcraftIconImg from "../assets/icon-park-outline_traditional-chinese-medicine.jpg";
 import foodIconImg from "../assets/ion_fast-food-outline.png";
 import clothesIconImg from "../assets/hugeicons_clothes.jpg";
+import logoFallback from "../assets/logo.png";
 import "./CustomerHome.css";
 
 
@@ -38,28 +38,99 @@ const howItWorks = [
   { Icon: Search, title: "تصفح وابحث", desc: "ابحث في آلاف المنتجات وفلتر حسب الفئة" },
 ];
 
+// ── Skeleton Card (يظهر وقت تحميل المنتجات) ──
+const ProductSkeleton = memo(function ProductSkeleton() {
+  return (
+    <div className="home-product-card home-product-skeleton" aria-hidden="true">
+      <div className="home-product-img skel-block" />
+      <div className="home-product-info">
+        <div className="skel-line skel-line--sm" />
+        <div className="skel-line skel-line--md" />
+        <div className="skel-line skel-line--xs" />
+      </div>
+    </div>
+  );
+});
+
+// ── Product Card (memoized — ما يعيد render إلا إذا تغيّر المنتج) ──
+const ProductCard = memo(function ProductCard({ product, onOpen }) {
+  const imageUrl = product.primaryImage?.imageUrl || logoFallback;
+  const handleClick = useCallback(() => onOpen(product.id), [product.id, onOpen]);
+  const handleKey = useCallback((e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  }, [handleClick]);
+
+  return (
+    <div
+      className="home-product-card home-product-card--clickable"
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKey}
+    >
+      <div className="home-product-img">
+        <img
+          src={imageUrl}
+          alt={product.name}
+          loading="lazy"
+          decoding="async"
+          width={300}
+          height={190}
+        />
+      </div>
+      <div className="home-product-info">
+        <span className="home-product-status">{product.status || "متوفر"}</span>
+        <h4>{product.name}</h4>
+        <div className="home-product-row">
+          <span className="home-product-price">{product.price}₪</span>
+          <span className="home-product-qty">الكمية: {product.quantity || 0}</span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export default function CustomerHome() {
   const navigate = useNavigate();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const userName = "أحمد";
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFeaturedProducts();
+  // ✅ اسم حقيقي من auth (يقرأ من localStorage بدون API call)
+  const userName = useMemo(() => {
+    const user = getCurrentUser();
+    if (!user) return "ضيف";
+    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    return name || user.email?.split("@")[0] || "ضيف";
   }, []);
 
-  const fetchFeaturedProducts = async () => {
-    try {
-      const response = await getPublicProducts(1);
-      setFeaturedProducts(response.data?.products?.slice(0, 3) || []);
-    } catch (err) {
-      console.error("Error fetching featured products:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    // ✅ mounted flag — يمنع setState بعد ما الـ component يتفكك
+    let mounted = true;
+    (async () => {
+      try {
+        const response = await getPublicProducts(1);
+        if (!mounted) return;
+        setFeaturedProducts(response.data?.products?.slice(0, 6) || []);
+      } catch (err) {
+        if (!mounted) return;
+        console.error("Error fetching featured products:", err);
+        setError(true);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const goToProduct = useCallback((id) => navigate(`/product/${id}`), [navigate]);
+  const goToProducts = useCallback(() => navigate("/products"), [navigate]);
 
   return (
     <div className="home-wrapper" dir="rtl">
@@ -67,7 +138,18 @@ export default function CustomerHome() {
 
       {/* ── Hero ── */}
       <section className="home-hero">
-        <img src={heroBanner} alt="" className="home-hero-bg" />
+        {/* ✅ WebP فقط — أصغر 99% من PNG الأصلي (~96KB vs 14MB) — مدعوم في 96%+ من المتصفحات */}
+        <img
+          src={heroBanner}
+          alt=""
+          className="home-hero-bg"
+          // ✅ above-the-fold → eager + high priority عشان تظهر فوراً
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width={1920}
+          height={600}
+        />
         <div className="home-hero-overlay" />
 
         <div className="home-hero-content">
@@ -80,7 +162,7 @@ export default function CustomerHome() {
           <p className="home-hero-text">
             آلاف المنتجات من أفضل المتاجر بأسعار لا تُقاوم. شحن مجاني وإرجاع سهل خلال 14 يوم.
           </p>
-          <button className="home-hero-btn" onClick={() => navigate("/products")}>
+          <button className="home-hero-btn" onClick={goToProducts}>
             تسوق الان
           </button>
         </div>
@@ -90,7 +172,7 @@ export default function CustomerHome() {
       <section className="home-section">
         <div className="home-section-head">
           <h2>تصفح الأقسام</h2>
-          <button className="home-link-btn" onClick={() => navigate("/products")}>
+          <button className="home-link-btn" onClick={goToProducts}>
             عرض الكل
             <ArrowLeft size={15} />
           </button>
@@ -98,17 +180,20 @@ export default function CustomerHome() {
 
        <div className="home-categories">
     {categories.map(({ id, label, iconSrc, icon: Icon }) => (
-      <button 
-        key={id} 
+      <button
+        key={id}
         className="home-category-card"
         onClick={() => navigate(`/products?category=${id}`)}
       >
         <span className="home-category-icon">
           {iconSrc ? (
-            <img 
-              src={iconSrc} 
-              alt={label} 
-              style={{ width: '28px', height: '28px', objectFit: 'contain' }} 
+            <img
+              src={iconSrc}
+              alt={label}
+              loading="lazy"
+              decoding="async"
+              width={28}
+              height={28}
             />
           ) : (
             Icon && <Icon size={28} />
@@ -144,7 +229,7 @@ export default function CustomerHome() {
       <section className="home-section" >
         <div className="home-section-head">
           <h2>منتجات مميزة</h2>
-          <button className="home-link-btn" onClick={() => navigate("/products")}>
+          <button className="home-link-btn" onClick={goToProducts}>
             عرض الكل
             <ArrowLeft size={15} />
           </button>
@@ -152,36 +237,20 @@ export default function CustomerHome() {
 
         <div className="home-products">
           {loading ? (
-            <p>جاري التحميل...</p>
+            <>
+              <ProductSkeleton />
+              <ProductSkeleton />
+              <ProductSkeleton />
+            </>
+          ) : error ? (
+            <p className="home-products-msg home-products-msg--err">
+              تعذّر تحميل المنتجات. حاول مرة ثانية لاحقاً.
+            </p>
           ) : featuredProducts.length === 0 ? (
-            <p>لا توجد منتجات مميزة</p>
+            <p className="home-products-msg">لا توجد منتجات مميزة حالياً.</p>
           ) : (
             featuredProducts.map((p) => (
-              <div
-                className="home-product-card home-product-card--clickable"
-                key={p.id}
-                onClick={() => navigate(`/product/${p.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate(`/product/${p.id}`);
-                  }
-                }}
-              >
-                <div className="home-product-img">
-                  <img src={p.primaryImage?.imageUrl || logo} alt={p.name} />
-                </div>
-                <div className="home-product-info">
-                  <span className="home-product-status">{p.status || "متوفر"}</span>
-                  <h4>{p.name}</h4>
-                  <div className="home-product-row">
-                    <span className="home-product-price">{p.price}₪</span>
-                    <span className="home-product-qty">الكمية: {p.quantity || 0}</span>
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={p.id} product={p} onOpen={goToProduct} />
             ))
           )}
         </div>
@@ -202,7 +271,6 @@ export default function CustomerHome() {
           ))}
         </div>
       </section>
-       <ChatbotWidget />
     </div>
   );
 }

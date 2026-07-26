@@ -118,6 +118,7 @@
   font-size: 0.9rem;
   color: var(--text-muted);
   margin-bottom: 18px;
+  flex-wrap: wrap; /* الزر ممكن ينزل لسطر جديد على شاشات صغيرة */
 }
 
 .pd-seller svg {
@@ -126,6 +127,70 @@
 
 .pd-seller strong {
   color: var(--text-dark);
+}
+
+/* ✅ اسم البائع — clickable link */
+.pd-seller-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pd-seller-link {
+  color: var(--text-dark);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin-inline-start: -4px; /* تعوّض البادينغ بدون إزاحة الـ layout */
+  transition: color 0.15s ease, background-color 0.15s ease;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pd-seller-link:hover {
+  color: #ea580c;
+  background-color: #fff7ed;
+}
+.pd-seller-link:hover strong {
+  color: #ea580c;
+}
+.pd-seller-link:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* ✅ زر "مراسلة المتجر" — بجانب اسم البائع */
+.pd-msg-store-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.pd-msg-store-btn:hover:not(:disabled) {
+  background: #ea580c;
+  color: #fff;
+  border-color: #ea580c;
+}
+.pd-msg-store-btn:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+.pd-msg-store-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .pd-price-block {
@@ -183,6 +248,13 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+/* التقييمات — انسيابي تحت المنتج بمسافة بسيطة */
+.pd-reviews-flow {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .pd-qty {

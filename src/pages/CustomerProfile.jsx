@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
  import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { ProfileSkeleton } from "../components/LoadingState";
 import {
   getCustomerProfile,
   updateCustomerProfile,
@@ -162,9 +163,9 @@ const handleDeleteAddress = async (id) => {
   if (loading) {
     return (
       <div className="cprof-wrapper" dir="rtl">
-        
+
         <main className="cprof-main">
-          <p style={{ textAlign: "center", padding: "40px 0" }}>جاري التحميل...</p>
+          <ProfileSkeleton />
         </main>
       </div>
     );

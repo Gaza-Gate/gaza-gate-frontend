@@ -220,6 +220,43 @@
   color: var(--orange);
 }
 
+/* ── Card actions (cancel link) ── */
+.co-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+}
+.co-cancel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 5px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  font-family: inherit;
+}
+.co-cancel-link:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+.co-cancel-link:active { transform: scale(0.97); }
+.co-cancel-link:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
 /* ── Timeline ── */
 .co-timeline {
   display: flex;
@@ -322,6 +359,18 @@
   font-size: 13px;
 }
 
+@media (max-width: 768px) {
+  .co-main {
+    padding: 24px 20px 40px;
+  }
+  .co-card {
+    padding: 18px 18px 22px;
+  }
+  .co-timeline-label {
+    font-size: 11px;
+  }
+}
+
 @media (max-width: 640px) {
   .co-main {
     padding: 20px 16px 40px;
@@ -342,5 +391,29 @@
   .co-timeline-icon {
     width: 26px;
     height: 26px;
+  }
+
+  .co-timeline {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 8px;
+    margin: 0 -4px;
+  }
+
+  .co-timeline-step {
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 380px) {
+  .co-main {
+    padding: 16px 12px 32px;
+  }
+  .co-timeline-label {
+    font-size: 9px;
+  }
+  .co-timeline-icon {
+    width: 24px;
+    height: 24px;
   }
 }

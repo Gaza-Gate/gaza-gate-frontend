@@ -33,9 +33,10 @@ import CustomerCheckoutConfirm from "./pages/CustomerCheckoutConfirm";
 import CustomerFavorites from "./pages/CustomerFavorites";
 import CustomerMyOrders from "./pages/CustomerMyOrders";
 import CustomerOrderTracking from "./pages/CustomerOrderTracking";
-import CustomerOrders from "./pages/CustomerOrders";
 import CustomerMessages from "./pages/CustomerMessages";
 import CustomerNotifications from "./pages/CustomerNotifications";
+import CustomerStoreProfile from "./pages/CustomerStoreProfile";
+import CustomerProfilePage from "./pages/CustomerProfilePage";
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
@@ -50,9 +51,31 @@ import AdminDashboard from './pages/AdminDashboard'
 
 // ← 1) ضيف الاستيراد هون
 import FloatingChatWidget from "./components/FloatingChatWidget";
+import CustomerChatWidget from "./components/CustomerChatWidget";
 
 // ← الليّاوت الجديد يلي بيحتوي CustomerNavbar مرة وحدة لكل صفحات الزبون
 import CustomerLayout from "./components/CustomerLayout";
+
+// ── صفحات المشتري (الزبون) يلي بيظهر فيها الـ CustomerChatWidget ──
+const CUSTOMER_AREA_PREFIXES = [
+  "/home/customer",
+  "/products",
+  "/product/",
+  "/cart",
+  "/profile/customer",
+  "/favorites",
+  "/orders",
+  "/my-orders",
+  "/customer/",
+  "/checkout/",
+  "/messages",
+  "/notifications",
+  "/product-missing",
+];
+
+function isCustomerPath(pathname) {
+  return CUSTOMER_AREA_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
+}
 
 export default function App() {
 
@@ -61,6 +84,7 @@ export default function App() {
 
   // ← 3) شرط: الويدجت يظهر بس إذا المسار الحالي يبلش بـ /seller
   const isSellerArea = location.pathname.startsWith('/seller');
+  const isCustomerArea = isCustomerPath(location.pathname);
 
   return (
     <>
@@ -91,9 +115,13 @@ export default function App() {
           <Route path="/cart" element={<CustomerCart />} />
           <Route path="/profile/customer" element={<CustomerProfile />} />
           <Route path="/favorites" element={<CustomerFavorites />} />
-          <Route path="/orders" element={<CustomerOrders />} />
           <Route path="/my-orders" element={<CustomerMyOrders />} />
           <Route path="/my-orders/:id" element={<CustomerOrderTracking />} />
+          <Route path="/customer/store" element={<CustomerStoreProfile />} />
+          <Route path="/customer/store/:sellerId" element={<CustomerStoreProfile />} />
+          <Route path="/customer/profile/:customerId" element={<CustomerProfilePage />} />
+          {/* ✅ route public يطابق الـ actionUrl اللي بترجعه API (لزملائك يلاقوه) */}
+          <Route path="/profile/customer/:customerId" element={<CustomerProfilePage />} />
         </Route>
 
         {/* مسارات الكاستمر بدون Navbar — عملية الدفع بتظهر لحالها بدون تشتيت */}
@@ -133,6 +161,9 @@ export default function App() {
 
       {/* ← 4) الويدجت هون، برا الـ Routes، وبيظهر بس لما isSellerArea تكون true */}
       {isSellerArea && <FloatingChatWidget />}
+
+      {/* ✅ ويدجت الزبون — بيظهر على كل صفحات المشتري */}
+      {isCustomerArea && <CustomerChatWidget />}
     </>
   )
 }

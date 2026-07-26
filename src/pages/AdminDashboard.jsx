@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import AdminSidebar from '../components/AdminSidebar'
 import AdminTopbar from '../components/AdminTopbar'
+import { StatsGridSkeleton, Skeleton } from '../components/LoadingState'
 import { SidebarProvider } from '../components/SidebarContext'
 import { getAdminDashboard } from '../services/adminService'
 import './AdminDashboard.css'
@@ -117,7 +118,23 @@ function AdminDashboardContent() {
 
         <main className="admin-dashboard-page__content">
           {loading || !data ? (
-            <p className="dashboard-loading">جاري التحميل...</p>
+            <div className="dashboard-skel-wrap">
+              <StatsGridSkeleton count={4} />
+              <div className="dashboard-skel-charts">
+                <div className="dashboard-skel-chart-card">
+                  <div className="skel-stack" style={{ gap: 10 }}>
+                    <Skeleton width="35%" height={14} />
+                    <div className="dashboard-skel-chart" />
+                  </div>
+                </div>
+                <div className="dashboard-skel-chart-card">
+                  <div className="skel-stack" style={{ gap: 10 }}>
+                    <Skeleton width="35%" height={14} />
+                    <div className="dashboard-skel-chart" />
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               {/* بطاقات الإحصائيات */}

@@ -4,6 +4,7 @@ import AdminSidebar from '../components/AdminSidebar'
 import AdminTopbar from '../components/AdminTopbar'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { SidebarProvider } from '../components/SidebarContext'
+import { Skeleton } from '../components/LoadingState'
 import { settingsAPI } from '../services/settingsService'
 import './AdminSettings.css'
 
@@ -160,7 +161,17 @@ function AdminSettingsContent() {
             </div>
 
             {loadingNotifications || !notifications ? (
-              <p className="settings-card__loading">جاري التحميل...</p>
+              <div className="skel-stack" style={{ gap: 14 }}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div className="settings-row" key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div className="skel-stack" style={{ gap: 8, flex: 1 }}>
+                      <Skeleton width="30%" height={13} />
+                      <Skeleton width="55%" height={11} />
+                    </div>
+                    <Skeleton width={40} height={22} radius={999} />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="settings-card__rows">
                 {NOTIFICATION_FIELDS.map(({ key, label, hint }) => (

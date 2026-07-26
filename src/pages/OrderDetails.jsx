@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import LoadingState from "../components/LoadingState";
 import "./OrderDetails.css";
 
 // ── Icons ──
@@ -246,9 +247,8 @@ const OrderDetails = () => {
   if (loading) {
     return (
       <div className="od-root" dir="rtl">
-        <div className="od-container od-state-center">
-          <div className="od-spinner" />
-          <p className="od-state-text">جاري تحميل بيانات الطلب…</p>
+        <div className="od-container">
+          <LoadingState message="جاري تحميل بيانات الطلب…" />
         </div>
       </div>
     );

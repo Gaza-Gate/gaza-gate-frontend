@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Package, Lock, XCircle } from "lucide-react";
- 
+import { ChevronLeft, Package, Lock, XCircle, Ban, AlertCircle } from "lucide-react";
+
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
-import { getCustomerOrders } from "../services/authService";
-import { ORDER_STEPS, getStepIndex, isCancelledStatus, getStatusLabel, getStatusClass } from "../utils/orderStatus";
+import { getMyOrders } from "../services/orderService";
+import { ORDER_STEPS, getStepIndex, isCancelledStatus, isCancellableStatus, getStatusLabel, getStatusClass } from "../utils/orderStatus";
 import logo from "../assets/logo.png";
 import "./CustomerMyOrders.css";
+import CancelOrderModal from "../components/CancelOrderModal";
+import { useToast, ToastContainer } from "../components/Toast";
+import {
+  EmptyState,
+  ErrorState,
+  OrderListSkeleton,
+} from "../components/LoadingState";
 
 function OrderTimeline({ status }) {
   if (isCancelledStatus(status)) {
@@ -61,6 +68,8 @@ export default function CustomerMyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     fetchOrders();
@@ -75,7 +84,7 @@ export default function CustomerMyOrders() {
         navigate("/login/customer");
         return;
       }
-      const orders = await getCustomerOrders(token);
+      const orders = await getMyOrders();
       setOrders(Array.isArray(orders) ? orders : []);
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -131,28 +140,38 @@ export default function CustomerMyOrders() {
         </div>
 
         {loading ? (
-          <div className="co-empty">
-            <Package size={48} strokeWidth={1.2} />
-            <h3>جاري التحميل...</h3>
-          </div>
+          <OrderListSkeleton count={4} />
         ) : error ? (
-          <div className="co-empty">
-            <Package size={48} strokeWidth={1.2} />
-            <h3>حدث خطأ</h3>
-            <p>{error}</p>
-          </div>
+          <ErrorState
+            icon={AlertCircle}
+            title="حدث خطأ"
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
         ) : orders.length === 0 ? (
-          <div className="co-empty">
-            <Package size={48} strokeWidth={1.2} />
-            <h3>لا توجد طلبات</h3>
-            <p>ابدأ بالتسوق لإنشاء طلباتك الأولى</p>
-          </div>
+          <EmptyState
+            icon={Package}
+            title="لا توجد طلبات"
+            description="ابدأ بالتسوق لإنشاء طلباتك الأولى"
+            action={
+              <button onClick={() => navigate("/products")}>
+                تصفح المنتجات
+              </button>
+            }
+          />
         ) : (
           <ul className="co-list">
             {orders.map((order) => {
               const firstItem = order.items?.[0] || {};
               const itemsCount = order.items?.length || 1;
+              const totalQuantity = (order.items || []).reduce(
+                (s, it) => s + Number(it.quantity ?? 1), 0
+              );
               const displayNumber = order.orderNumber || order.id;
+              // نستخدم canCancel من الباك، ولو مش موجود نحسبه محلياً
+              const cancellable = typeof order.canCancel === "boolean"
+                ? order.canCancel
+                : isCancellableStatus(order.status);
 
               return (
                 <li key={order.id}>
@@ -173,7 +192,7 @@ export default function CustomerMyOrders() {
                         <div className="co-card-info">
                           <span className="co-card-id">{displayNumber}</span>
                           <span className="co-card-meta">
-                            {formatDate(order.createdAt)} · {itemsCount} منتج
+                            {formatDate(order.createdAt)} · {totalQuantity} قطعة ({itemsCount} منتج)
                           </span>
                         </div>
                         <div className="co-card-img">
@@ -187,6 +206,31 @@ export default function CustomerMyOrders() {
                     </div>
 
                     <OrderTimeline status={order.status} />
+
+                    {cancellable && (
+                      <div className="co-card-actions">
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="co-cancel-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setCancelTarget(order);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setCancelTarget(order);
+                            }
+                          }}
+                        >
+                          <Ban size={12} />
+                          إلغاء الطلب
+                        </span>
+                      </div>
+                    )}
                   </button>
                 </li>
               );
@@ -194,6 +238,34 @@ export default function CustomerMyOrders() {
           </ul>
         )}
       </main>
+
+      <CancelOrderModal
+        open={!!cancelTarget}
+        order={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onCancelled={(updated) => {
+          // ندمج بحذر — نحتفظ بكل بيانات order الأصلية
+          // ونحدّث فقط الحقول اللي تغيّرت
+          setOrders((prev) =>
+            prev.map((o) =>
+              o.id === updated.id
+                ? {
+                    ...o,
+                    status: "cancelled",
+                    canCancel: false,
+                  }
+                : o
+            )
+          );
+          setCancelTarget(null);
+          toast.success(
+            "تم إلغاء الطلب ✓",
+            `الطلب ${updated?.orderNumber || ""} تم إلغاؤه بنجاح`,
+            { duration: 5000 }
+          );
+        }}
+      />
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismiss} />
     </div>
   );
 }

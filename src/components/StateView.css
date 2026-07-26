@@ -1,0 +1,147 @@
+/* ╔══════════════════════════════════════════════════════════════════╗
+   ║  Gaza Gate — Shared State Views (Empty / Error)                 ║
+   ║  حالات فارغة وخطأ موحّدة لكل الصفحات                          ║
+   ╚══════════════════════════════════════════════════════════════════╝ */
+
+:root {
+  --sv-primary: #f97316;
+  --sv-primary-soft: #fff7ed;
+  --sv-text: #111827;
+  --sv-text-mid: #4b5563;
+  --sv-text-mute: #9ca3af;
+  --sv-border: #f3f4f6;
+  --sv-card: #ffffff;
+  --sv-danger: #ef4444;
+  --sv-danger-soft: #fee2e2;
+  --sv-shadow: 0 4px 16px rgba(17, 24, 39, 0.06);
+  --sv-radius: 14px;
+}
+
+.sv-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  color: var(--sv-text);
+}
+
+.sv-page {
+  min-height: 50vh;
+  padding: 40px 20px;
+}
+
+.sv-inline {
+  padding: 36px 20px;
+  min-height: 200px;
+}
+
+.sv-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.sv-art {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  color: var(--sv-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.10);
+  flex-shrink: 0;
+}
+
+.sv-art-error {
+  background: var(--sv-danger-soft);
+  color: var(--sv-danger);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.10);
+}
+
+.sv-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--sv-text);
+  margin: 0;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.sv-desc {
+  font-size: 13.5px;
+  color: var(--sv-text-mid);
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.sv-action {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Buttons inside actions (default style if not provided) ── */
+.sv-action button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.sv-action button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.42);
+}
+
+.sv-retry {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.sv-retry:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.42);
+}
+
+@media (max-width: 520px) {
+  .sv-page { min-height: 40vh; padding: 28px 16px; }
+  .sv-inline { padding: 24px 16px; }
+  .sv-art { width: 72px; height: 72px; }
+  .sv-art svg { width: 36px; height: 36px; }
+  .sv-title { font-size: 15.5px; }
+  .sv-desc { font-size: 13px; }
+}

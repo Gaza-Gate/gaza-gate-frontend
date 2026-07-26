@@ -486,6 +486,56 @@
   border-radius: 14px;
 }
 
+/* ── Reply form error ── */
+.rm-reply-error {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ── Pagination ── */
+.rm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.rm-pagination button {
+  padding: 8px 18px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.rm-pagination button:hover:not(:disabled) {
+  background: #f97316;
+  border-color: #f97316;
+  color: #fff;
+}
+.rm-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.rm-pagination span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 /* ══ RESPONSIVE ══ */
 @media (max-width: 640px) {
   .rm-navbar { padding: 0 14px; }

@@ -1,10 +1,37 @@
 import axios from 'axios'
- 
+
+const ENV_API_URL = import.meta.env.VITE_API_URL
+const DEFAULT_API_URL = 'https://gaza-gate-backend-f9hf.onrender.com'
+const API_BASE_URL = ENV_API_URL || DEFAULT_API_URL
+export { API_BASE_URL }
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://gaza-gate-backend-f9hf.onrender.com',
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
+
+// ── dev warning: لو الـ frontend على localhost بس الـ API على دومين بعيد ──
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+  const isLocalFrontend = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  const isRemoteApi = !API_BASE_URL.includes("localhost") && !API_BASE_URL.includes("127.0.0.1")
+  if (isLocalFrontend && isRemoteApi) {
+    console.warn(
+      "%c⚠️ تحذير API",
+      "color: #f59e0b; font-weight: bold; font-size: 14px;",
+      "\nالـ Frontend شغّال على localhost بس الـ API على دومين بعيد:",
+      `\n  Frontend: ${window.location.origin}`,
+      `\n  API:      ${API_BASE_URL}`,
+      "\nإذا بدك تستخدم باك محلي، عدّل VITE_API_URL في .env.development إلى http://localhost:5000"
+    )
+  } else {
+    console.info(
+      "%c🔗 API Base URL",
+      "color: #2563eb; font-weight: bold;",
+      API_BASE_URL
+    )
+  }
+}
 
 // ── 2. عرّفي authAPI أولاً ──
 export const authAPI = {
@@ -33,6 +60,26 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  // ✅ إصلاح 400 Bad Request عند إرسال FormData (تقييم بصورة، بروفايل بصورة، ...)
+  // السبب: الـ instance عنده Content-Type: application/json كـ default،
+  // و axios 1.x ما بيشيله تلقائياً لما الـ body يكون FormData.
+  // فالمتصفح بيبعت FormData مع Content-Type: application/json
+  // → الباك بيرفض بـ 400 لأنه متوقع multipart/form-data مع boundary.
+  //
+  // الحل: لو الـ body FormData → نشيل Content-Type تماماً
+  // → المتصفح/axios بيحطّ multipart/form-data; boundary=... تلقائياً.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers && typeof config.headers.delete === 'function') {
+      // AxiosHeaders instance (axios 1.x)
+      config.headers.delete('Content-Type')
+    } else if (config.headers) {
+      // plain object (احتياط)
+      delete config.headers['Content-Type']
+      delete config.headers['content-type']
+    }
+  }
+
   return config
 })
 

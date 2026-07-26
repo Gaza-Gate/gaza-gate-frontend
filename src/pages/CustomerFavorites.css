@@ -50,11 +50,18 @@
   color: #dc2626;
 }
 
-/* ── Grid ── */
+/* ── Grid (4 لابتوب / 3 تابلت / 2 موبايل) ── */
 .fav-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .fav-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .fav-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
 .fav-card {
@@ -144,6 +151,32 @@
   font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 10px;
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1.2;
+}
+
+/* ✅ clickable variant — used by <Link> wrapper */
+.fav-store--link {
+  cursor: pointer;
+  width: fit-content;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin-inline-start: -4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.fav-store--link:hover {
+  color: #ea580c;
+  background-color: #fff7ed;
+}
+.fav-store--link:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* static fallback (لو ما عندنا seller ID) */
+.fav-store--static {
+  cursor: default;
 }
 
 .fav-meta {

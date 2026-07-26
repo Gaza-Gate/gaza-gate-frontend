@@ -5,6 +5,8 @@ import logo from "../assets/logo.png";
 import SellerNavbar from "../components/SellerNavbar";
 import { getSellerOrders } from "../services/orderService";
 import { getAuthToken } from "../services/authService";
+import { Inbox } from "lucide-react";
+import LoadingState, { EmptyState } from "../components/LoadingState";
 
 // ── Icons ──
 const EyeIcon = () => (
@@ -188,9 +190,15 @@ const OrdersManagement = () => {
           <h2 className="om-table-title">قائمة الطلبات</h2>
 
           {loading ? (
-            <div className="om-loading">جاري التحميل...</div>
+            <div className="om-loading-wrap">
+              <LoadingState message="جاري تحميل الطلبات…" />
+            </div>
           ) : orders.length === 0 ? (
-            <div className="om-empty">لا توجد طلبات بعد</div>
+            <EmptyState
+              icon={Inbox}
+              title="لا توجد طلبات بعد"
+              description="ستظهر طلبات المشترين هنا عند وصولها"
+            />
           ) : (
             <div className="om-table-wrap">
               <table className="om-table">

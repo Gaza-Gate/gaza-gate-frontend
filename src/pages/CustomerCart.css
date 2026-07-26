@@ -294,3 +294,22 @@
     margin-top: 24px;
   }
 }
+
+@media (max-width: 380px) {
+  .cart-item-img {
+    width: 60px;
+    height: 60px;
+  }
+  .cart-item-name {
+    font-size: 13px;
+  }
+  .cart-header {
+    padding: 16px 14px 12px;
+  }
+  .cart-items {
+    padding: 8px 14px;
+  }
+  .cart-footer {
+    padding: 14px 14px 20px;
+  }
+}

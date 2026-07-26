@@ -7,11 +7,13 @@ import InputField from '../components/InputField'
 import { loginSchema } from '../utils/validationSchemas'
 import { authAPI } from '../utils/api'
 import { resolveSellerGoogleLogin } from '../utils/googleAuth'
-import { extractToken, extractUser, saveSellerSession } from '../utils/authSession'
+import { extractToken, extractUser } from '../utils/authSession'
+import { useAuth } from '../context/AuthContext'
 import GoogleBtn from '../components/GoogleBtn'
 
-export default function LoginSeller() {
+export default function Login() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [apiError, setApiError] = useState('')
   const [remember, setRemember] = useState(true)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -22,11 +24,20 @@ export default function LoginSeller() {
       const res = await authAPI.sellerLogin({ email: values.email, password: values.password })
       const token = extractToken(res.data)
       const user = extractUser(res.data)
-      if (!token) throw new Error('لم يتم استلام رمز الدخول')
-      saveSellerSession(token, user, remember)
+      if (!token || !user) throw new Error('استجابة الخادم غير مكتملة')
+
+      // ✅ مرّر user + accessToken للـ login() — React state و localStorage
+      //    ينحدّثوا فوراً، بدون page reload
+      login({ user, accessToken: token })
+
       navigate('/seller/dashboard')
     } catch (err) {
-      setApiError(err.response?.data?.data?.message || err.response?.data?.message || err.message || 'حدث خطأ، حاول مرة أخرى')
+      setApiError(
+        err?.response?.data?.data?.message ||
+          err?.response?.data?.message ||
+          err.message ||
+          'حدث خطأ، حاول مرة أخرى'
+      )
     } finally {
       setSubmitting(false)
     }
@@ -39,10 +50,15 @@ export default function LoginSeller() {
       const result = await resolveSellerGoogleLogin(credentialResponse.credential, remember)
 
       if (result.mode === 'login') {
+        // ✅ login() صار يستقبل user + accessToken بشكل صريح
+        if (result.user && result.accessToken) {
+          login({ user: result.user, accessToken: result.accessToken })
+        }
         navigate('/seller/dashboard')
         return
       }
 
+      // حالة register: لسا ما في user كامل — بنوجّه لصفحة إكمال التسجيل
       navigate('/register/seller', {
         state: {
           fromGoogleLogin: true,

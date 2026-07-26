@@ -1,0 +1,102 @@
+/* src/components/Navbar.css */
+
+.gn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.gn-logo {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f97316;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.gn-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.gn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  color: #374151;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.gn-link:hover {
+  background: #f9fafb;
+  color: #f97316;
+}
+
+.gn-link-active {
+  background: #fff7ed;
+  color: #f97316;
+  font-weight: 700;
+}
+
+.gn-actions {
+  display: flex;
+  align-items: center;
+  min-height: 38px; /* يمنع "قفزة" بالـ layout لما يبدّل من placeholder لزر حقيقي */
+}
+
+.gn-actions-placeholder {
+  width: 120px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f3f4f6;
+}
+
+.gn-login-btn,
+.gn-become-seller-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gn-become-seller-btn:hover,
+.gn-login-btn:hover {
+  background: #ea6c0e;
+}
+
+@media (max-width: 720px) {
+  .gn-nav {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .gn-links {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+}

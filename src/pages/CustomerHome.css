@@ -118,6 +118,8 @@
 /* ════════ Sections عامة ════════ */
 .home-section {
   padding: 40px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .home-section-head {
@@ -125,6 +127,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .home-section-head h2 {
@@ -134,7 +138,7 @@
 }
 
 .home-link-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: none;
@@ -144,7 +148,12 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  min-height: 36px;
+  transition: background 0.15s;
 }
+.home-link-btn:hover { background: var(--orange-pale); }
 
 /* ════════ الأقسام ════════ */
 .home-categories {
@@ -264,7 +273,7 @@
 /* ════════ منتجات مميزة ════════ */
 .home-products {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -335,11 +344,11 @@ align-self: flex-end;
   color: var(--text-muted);
 }
 
-@media (max-width: 900px) {
-  .home-products { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1024px) {
+  .home-products { grid-template-columns: repeat(3, 1fr); }
 }
-@media (max-width: 600px) {
-  .home-products { grid-template-columns: 1fr; }
+@media (max-width: 640px) {
+  .home-products { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
 /* ════════ كيف يعمل سوق؟ ════════ */
@@ -411,4 +420,60 @@ align-self: flex-end;
   object-fit: cover;
   object-position: center;
   z-index: 0;
+}
+
+/* ════════ Skeleton loaders + رسائل المنتجات ════════ */
+@keyframes home-skel-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skel-block,
+.skel-line {
+  background: linear-gradient(90deg, #eef0f3 0%, #f6f7f9 40%, #eef0f3 80%);
+  background-size: 800px 100%;
+  animation: home-skel-shimmer 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+.home-product-skeleton { cursor: default; }
+.home-product-skeleton:hover { transform: none; box-shadow: none; }
+.home-product-skeleton .home-product-img { background: transparent; }
+
+.skel-line {
+  height: 12px;
+  margin-bottom: 8px;
+}
+.skel-line--xs { width: 30%; height: 10px; }
+.skel-line--sm { width: 35%; height: 12px; }
+.skel-line--md { width: 80%; height: 14px; }
+
+.home-products-msg {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.home-products-msg--err {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px dashed #fecaca;
+  border-radius: 12px;
+}
+
+/* ✅ reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .skel-block,
+  .skel-line {
+    animation: none;
+    background: #eef0f3;
+  }
+  .home-product-card,
+  .home-category-card,
+  .home-step,
+  .home-product-img img {
+    transition: none !important;
+  }
 }

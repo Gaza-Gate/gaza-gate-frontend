@@ -1,5 +1,6 @@
  import { useEffect, useState } from 'react'
 import { FiCalendar } from 'react-icons/fi'
+import { StatsGridSkeleton, Skeleton } from '../components/LoadingState'
 import {
   LineChart,
   Line,
@@ -112,7 +113,15 @@ function AdminReportsContent() {
           </div>
 
           {loading || !data ? (
-            <p className="reports-loading">جاري التحميل...</p>
+            <div className="reports-skel-wrap">
+              <StatsGridSkeleton count={4} />
+              <div className="reports-skel-chart-card">
+                <div className="skel-stack" style={{ gap: 10 }}>
+                  <Skeleton width="30%" height={14} />
+                  <div className="reports-skel-chart" />
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               {/* بطاقات الإحصائيات */}

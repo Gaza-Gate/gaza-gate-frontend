@@ -1,13 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import "./ConvertToSeller.css";
-import CustomerNavbar from "../components/CustomerNavbar";
-import logo from "../assets/logo.png";
 import { validateStoreName, validateStoreDescription } from "../utils/validators";
-import { convertCustomerToSeller, getAuthToken } from "../services/authService";
-
-// ── فئات المتجر — نفس الفئات المستخدمة بنموذج المنتجات، للحفاظ على الاتساق بين الطرفين ──
-const CATEGORIES = ["الاطعمة", "ملابس", "أدوات منزلية", "إلكترونيات", "أخرى"];
+import { useAuth } from "../context/AuthContext";
+import { connectSocket, disconnectSocket } from "../utils/socket";
 
 // ── Icons ──
 const StoreIcon = () => (
@@ -29,17 +25,27 @@ const SpinnerIcon = () => <span className="cts-spinner" />;
 
 export default function ConvertToSeller() {
   const navigate = useNavigate();
-  const token = getAuthToken();
+  const { becomeSeller, hasSellerProfile } = useAuth();
 
   const [form, setForm] = useState({
     storeName: "",
-    category: "",
     storeDescription: "",
-    address: "غزة، فلسطين",
   });
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // ─────────────────────────────────────────────────────────────────
+  // ✅ One-time-only guard:
+  //    هاي الصفحة "معلومات المتجر" لازم تنعرض فقط إذا المستخدم
+  //    ما عندوش seller profile. لو عنده متجر (هاي الصفحة خلصت مرة
+  //    أو الـ state محدّث من تاب تاني)، نحوّله على لوحة البائع فوراً
+  //    بدون عرض الفورم.
+  // ─────────────────────────────────────────────────────────────────
+  if (hasSellerProfile) {
+    return <Navigate to="/seller/dashboard" replace />;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,7 +57,6 @@ export default function ConvertToSeller() {
     const errs = {};
     const storeNameErr = validateStoreName(form.storeName);
     if (storeNameErr) errs.storeName = storeNameErr;
-    if (!form.category) errs.category = "نوع التصنيف مطلوب";
     const descErr = validateStoreDescription(form.storeDescription);
     if (descErr) errs.storeDescription = descErr;
     return errs;
@@ -60,25 +65,37 @@ export default function ConvertToSeller() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
 
     setLoading(true);
     setErrors({});
     try {
-      await convertCustomerToSeller(
-        {
-          storeName: form.storeName.trim(),
-          category: form.category,
-          storeDescription: form.storeDescription.trim(),
-          address: form.address.trim(),
-        },
-        token
-      );
-      localStorage.setItem("userType", "seller");
+      // ✅ AuthContext.becomeSeller صار يتعامل مع 409 شفّاف:
+      //    لو الباك رجّع 409 (state محلي قديم)، بيرجع success مع
+      //    recoveredFrom409=true والـ state ينحدّث تلقائياً.
+      const result = await becomeSeller({
+        storeName: form.storeName.trim(),
+        storeDescription: form.storeDescription.trim(),
+      });
+
+      if (result?.reconnectSocket) {
+        disconnectSocket();
+        connectSocket();
+      }
+
       setSuccess(true);
-      setTimeout(() => navigate("/seller/dashboard"), 1200);
+      // نوجّه على لوحة البائع — هاي الصفحة خلصت دورها (one-time-only)
+      setTimeout(() => navigate("/seller/dashboard", { replace: true }), 1000);
     } catch (err) {
-      setErrors({ general: err.message });
+      const backendMsg =
+        err?.response?.data?.data?.message ||
+        err?.response?.data?.message ||
+        err.message ||
+        "حدث خطأ، حاول مرة أخرى";
+      setErrors({ general: backendMsg });
     } finally {
       setLoading(false);
     }
@@ -86,8 +103,6 @@ export default function ConvertToSeller() {
 
   return (
     <div className="cts-root" dir="rtl">
-      <CustomerNavbar logo={logo} />
-
       <div className="cts-wrapper">
         <p className="cts-breadcrumb">انشاء حساب بائع</p>
         <h1 className="cts-title">معلومات المتجر</h1>
@@ -107,22 +122,6 @@ export default function ConvertToSeller() {
           </div>
 
           <div className="cts-field">
-            <label>نوع التصنيف *</label>
-            <select
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              className={errors.category ? "cts-input-error" : ""}
-            >
-              <option value="">اختر نوع التصنيف</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            {errors.category && <p className="cts-error">{errors.category}</p>}
-          </div>
-
-          <div className="cts-field">
             <label>وصف المتجر</label>
             <textarea
               name="storeDescription"
@@ -131,24 +130,17 @@ export default function ConvertToSeller() {
               placeholder="اكتب وصفاً مختصراً لمتجرك"
               className={errors.storeDescription ? "cts-input-error" : ""}
             />
-            {errors.storeDescription && <p className="cts-error">{errors.storeDescription}</p>}
-          </div>
-
-          <div className="cts-field">
-            <label className="cts-field-label-icon">
-              <LocationIcon />
-              العنوان
-            </label>
-            <input
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-              placeholder="غزة، فلسطين"
-            />
+            {errors.storeDescription && (
+              <p className="cts-error">{errors.storeDescription}</p>
+            )}
           </div>
 
           {errors.general && <div className="cts-banner-error">{errors.general}</div>}
-          {success && <div className="cts-banner-success">تم تفعيل متجرك بنجاح، جاري تحويلك...  </div>}
+          {success && (
+            <div className="cts-banner-success">
+              تم تفعيل متجرك بنجاح، جاري تحويلك...
+            </div>
+          )}
 
           <button type="submit" className="cts-btn-submit" disabled={loading}>
             {loading ? <SpinnerIcon /> : <StoreIcon />}

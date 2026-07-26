@@ -55,3 +55,17 @@ const STATUS_CLASSES = {
 export function getStatusClass(status) {
   return STATUS_CLASSES[status] || "co-status--waiting";
 }
+
+/**
+ * هل يمكن للزبون إلغاء الطلب في حالته الحالية؟
+ *  - قيد المراجعة (pending_review) → نعم (قبل ما البائع يبدأ)
+ *  - تم القبول (approved) → نعم (قبل التحضير)
+ *  - باقي الحالات → لا
+ */
+export const CANCELLABLE_STATUSES = ["pending_review", "approved"];
+
+export function isCancellableStatus(status) {
+  if (!status) return false;
+  if (isCancelledStatus(status)) return false;
+  return CANCELLABLE_STATUSES.includes(status);
+}

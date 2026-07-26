@@ -1,19 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
   Check,
   Heart,
+  MessageCircle,
   Minus,
   Plus,
   ShoppingCart,
   Star,
   Store,
 } from "lucide-react";
- 
+
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProductDetails } from "../services/productService";
+import { getCurrentUser } from "../services/authService";
+import { storeProfilePath, extractSellerId } from "../utils/sellerHelpers";
+import { contactStore } from "../utils/chatHelpers";
+import BuyerProductReviewsSection from "../components/BuyerProductReviewsSection";
+import { ProductDetailsSkeleton } from "../components/LoadingState";
 import logo from "../assets/logo.png";
 import "./CustomerProductDetails.css";
 
@@ -34,16 +40,25 @@ function StarRating({ rating }) {
 
 export default function CustomerProductDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addItem, cartCount } = useCart();
   const { isWishlisted, toggleWishlist, wishlistCount } = useWishlist();
   const [quantity, setQuantity] = useState(1);
+  // ✅ حالة زر "مراسلة المتجر" — نمنع الضغطات المتعددة وندلّ على التحميل
+  const [messagingStore, setMessagingStore] = useState(false);
 
   useEffect(() => {
     fetchProductDetails();
   }, [id]);
+
+  // ✅ لما يفوت اليوزر بـ ?reviewId=xxx (مثلاً من إشعار "رد على تقييمك")
+  // → بنمرر الـ id للـ BuyerProductReviewsSection عن طريق prop
+  // → وبنعمل scroll + highlight لمكان الرد بعد ما الريفيوز يحمل
+  const highlightReviewId = searchParams.get("reviewId");
 
   const fetchProductDetails = async () => {
     try {
@@ -65,9 +80,7 @@ export default function CustomerProductDetails() {
       <div className="pd-wrapper" dir="rtl">
          
         <main className="pd-main">
-          <div className="pd-empty">
-            <h3>جاري التحميل...</h3>
-          </div>
+          <ProductDetailsSkeleton />
         </main>
       </div>
     );
@@ -81,6 +94,35 @@ export default function CustomerProductDetails() {
 
   const handleAddToCart = () => {
     addItem(product, quantity);
+  };
+
+  // ── مراسلة المتجر ──
+  // يستخدم contactStore helper الموحّد من utils/chatHelpers.js
+  // — صفحة /messages بتقرأ الـ state وتستدعي createConversation بنفسها
+  //   (لتفادي duplicate calls ولتمركز الـ logic بمكان واحد)
+  const handleMessageStore = () => {
+    if (messagingStore) return; // prevent double-clicks
+
+    // 1) لازم يكون مسجل دخول (المشتري) — وإلا نوجّهه لصفحة الدخول
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      navigate("/login/customer");
+      return;
+    }
+
+    // 2) نستخرج sellerId من أي shape للـ product
+    const sellerId = extractSellerId(product);
+    if (!sellerId) {
+      console.warn("[ProductDetails] لا يمكن مراسلة المتجر: sellerId مفقود من المنتج");
+      return;
+    }
+
+    // 3) نوجّه على /messages مع state — صفحة الرسائل بتتولّى إنشاء/فتح المحادثة
+    contactStore(navigate, {
+      sellerId,
+      productId: product.id,
+      storeName: product.seller?.storeName || product.sellerName,
+    });
   };
 
   return (
@@ -119,12 +161,51 @@ export default function CustomerProductDetails() {
               <span className="pd-review-count">({product.reviewsCount || 0} تقييم)</span>
             </div>
 
-            <div className="pd-seller">
-              <Store size={16} />
-              <span>
-                البائع: <strong>{product.seller?.storeName || product.sellerName || "متجر"}</strong>
-              </span>
-            </div>
+            {(() => {
+              const sellerName =
+                product.seller?.storeName || product.sellerName || "متجر";
+              const storePath = storeProfilePath(product);
+              const sellerId = extractSellerId(product);
+
+              return (
+                <div className="pd-seller">
+                  <Store size={16} />
+                  <span className="pd-seller-name">
+                    البائع:{" "}
+                    {storePath ? (
+                      // ✅ اسم البائع = <Link> يودّي على صفحة المتجر
+                      <Link
+                        to={storePath}
+                        className="pd-seller-link"
+                        title={`زيارة متجر ${sellerName}`}
+                        aria-label={`زيارة متجر ${sellerName}`}
+                      >
+                        <strong>{sellerName}</strong>
+                      </Link>
+                    ) : (
+                      <strong>{sellerName}</strong>
+                    )}
+                  </span>
+
+                  {/* ✅ زر "مراسلة المتجر" — يظهر فقط لو عندنا sellerId */}
+                  {sellerId && (
+                    <button
+                      type="button"
+                      className="pd-msg-store-btn"
+                      onClick={handleMessageStore}
+                      disabled={messagingStore}
+                      title="مراسلة المتجر"
+                      aria-label="مراسلة المتجر"
+                    >
+                      <MessageCircle size={15} />
+                      <span>
+                        {messagingStore ? "جاري الفتح..." : "مراسلة المتجر"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="pd-price-block">
               <span className="pd-price-label">السعر</span>
@@ -179,6 +260,33 @@ export default function CustomerProductDetails() {
             </button>
           </section>
         </div>
+
+        {/* ═══════ تقييمات المشترين على هذا المنتج (انسيابي) ═══════ */}
+        {product?.id && (
+          <BuyerProductReviewsSection
+            productId={product.id}
+            title="آراء العملاء"
+            subtitle=""
+            inline
+            showHeader
+            highlightReviewId={highlightReviewId}
+            onHighlighted={() => {
+              // ✅ بعد ما الريفيو اتعلم — بنشيل الـ query param من URL عشان ما يضل معنا
+              // وبنعمل scroll ناعم لمكانه
+              const targetId = `review-${highlightReviewId}`;
+              const el = document.getElementById(targetId);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+              if (searchParams.get("reviewId")) {
+                const next = new URLSearchParams(searchParams);
+                next.delete("reviewId");
+                setSearchParams(next, { replace: true });
+              }
+            }}
+            className="pd-reviews-flow"
+          />
+        )}
       </main>
     </div>
   );

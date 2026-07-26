@@ -28,6 +28,11 @@ export function buildSellerGoogleInitialValues(profile) {
   };
 }
 
+/**
+ * تسجيل دخول/إنشاء حساب مشتري عبر Google.
+ * ✅ الآن بيرجّع { mode, user, accessToken } — فيقدر الـ caller
+ *    يستدعي login({ user, accessToken }) من AuthContext فوراً.
+ */
 export async function authenticateCustomerWithGoogle(credential, remember = true) {
   try {
     const data = await customerGoogleLogin(credential);
@@ -35,7 +40,7 @@ export async function authenticateCustomerWithGoogle(credential, remember = true
     const user = extractUser(data);
     if (!token) throw new Error("لم يتم استلام رمز الدخول من السيرفر");
     saveCustomerSession(token, user, remember);
-    return { mode: "login" };
+    return { mode: "login", user, accessToken: token };
   } catch (loginError) {
     try {
       const data = await customerGoogleRegister(credential);
@@ -43,20 +48,25 @@ export async function authenticateCustomerWithGoogle(credential, remember = true
       const user = extractUser(data);
       if (!token) throw new Error("لم يتم استلام رمز الدخول من السيرفر");
       saveCustomerSession(token, user, remember);
-      return { mode: "register" };
+      return { mode: "register", user, accessToken: token };
     } catch (registerError) {
       throw registerError;
     }
   }
 }
 
+/**
+ * تسجيل دخول البائع عبر Google.
+ * ✅ الآن بيرجّع { mode, user, accessToken } — فيقدر الـ caller
+ *    يستدعي login({ user, accessToken }) من AuthContext فوراً.
+ */
 export async function authenticateSellerWithGoogle(credential, remember = true) {
   const data = await sellerGoogleLogin(credential);
   const token = extractToken(data);
   const user = extractUser(data);
   if (!token) throw new Error("لم يتم استلام رمز الدخول من السيرفر");
   saveSellerSession(token, user, remember);
-  return { mode: "login" };
+  return { mode: "login", user, accessToken: token };
 }
 
 export async function prepareSellerGoogleRegistration(credential) {
@@ -74,6 +84,11 @@ export async function prepareSellerGoogleRegistration(credential) {
   };
 }
 
+/**
+ * يجمع login + register في تجربة واحدة.
+ * - إذا الحساب موجود → mode=login + user/accessToken جاهزين للـ login()
+ * - إذا مش موجود → mode=register + pendingToken لصفحة إكمال التسجيل
+ */
 export async function resolveSellerGoogleLogin(credential, remember = true) {
   try {
     return await authenticateSellerWithGoogle(credential, remember);
@@ -82,6 +97,8 @@ export async function resolveSellerGoogleLogin(credential, remember = true) {
       const registration = await prepareSellerGoogleRegistration(credential);
       return {
         mode: "register",
+        user: null,
+        accessToken: null,
         ...registration,
       };
     } catch {

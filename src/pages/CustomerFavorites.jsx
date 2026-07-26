@@ -1,8 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, Plus, Star, Store, Trash2 } from "lucide-react";
- 
+
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { storeProfilePath, extractSellerName } from "../utils/sellerHelpers";
 import logo from "../assets/logo.png";
 import "./CustomerFavorites.css";
 
@@ -89,10 +90,32 @@ export default function CustomerFavorites() {
                   <span className="fav-status">{product.status || "نشط"}</span>
                   <h3 className="fav-card-title">{product.name}</h3>
 
-                  <div className="fav-store">
-                    <Store size={13} />
-                    <span>{product.seller?.storeName || "متجر"}</span>
-                  </div>
+                  {(() => {
+                    const storePath = storeProfilePath(product);
+                    const sellerName = extractSellerName(product);
+                    // لو ما عندنا seller ID → plain text (fallback)
+                    if (!storePath) {
+                      return (
+                        <div className="fav-store fav-store--static">
+                          <Store size={13} />
+                          <span>{sellerName}</span>
+                        </div>
+                      );
+                    }
+                    // ✅ <Link> من react-router-dom — يفتح صفحة المتجر
+                    return (
+                      <Link
+                        to={storePath}
+                        className="fav-store fav-store--link"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`زيارة متجر ${sellerName}`}
+                        aria-label={`زيارة متجر ${sellerName}`}
+                      >
+                        <Store size={13} />
+                        <span>{sellerName}</span>
+                      </Link>
+                    );
+                  })()}
 
                   <div className="fav-meta">
                     {product.averageRating && (

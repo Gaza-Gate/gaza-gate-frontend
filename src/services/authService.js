@@ -197,7 +197,8 @@ export async function getCustomerOrderDetails(orderId) {
 }
 
 export async function cancelCustomerOrder(orderId) {
-  const res = await api.post(`/api/customer/order/${orderId}/cancel`);
+  // PATCH بدون body — مطابق لـ spec الباك
+  const res = await api.patch(`/api/customer/order/${orderId}/cancel`);
   return res.data?.data?.order || res.data?.order || res.data;
 }
 
@@ -205,31 +206,62 @@ export async function createOrder(orderData) {
   const res = await api.post("/api/customer/order", orderData);
   return res.data?.data?.order || res.data?.order || res.data;
 }
+export const becomeSeller = async (storeData) => {
+  const response = await api.post("/api/auth/become-seller", storeData);
+  const { accessToken, user, reconnectSocket } = response.data.data;
 
-// ⚠️ المسار "/api/seller/convert" افتراضي - تأكدي من نور (Backend) شو المسار الصحيح بالضبط
-export async function convertCustomerToSeller(storeData) {
-  const res = await api.post("/api/seller/convert", storeData);
-  return res.data;
-}
+  localStorage.setItem("token", accessToken);
+  localStorage.setItem("user", JSON.stringify(user));
 
-export async function submitProductReview({ productId, orderId, rating, comment }) {
-  const res = await api.post("/api/customer/review", { productId, orderId, rating, comment });
-  return res.data?.data || res.data;
-}
+  return { user, reconnectSocket };
+};
+// ⚠️ تم حذف submitProductReview — استخدم submitReview من "../services/reviewService" بدلاً منها
 
 // ── مراسلات العميل ──
 export async function getCustomerConversations() {
-  const res = await api.get("/api/customer/conversations");
+  const res = await api.get("/api/conversations/");
   return res.data;
 }
 
 export async function getCustomerMessages(conversationId) {
-  const res = await api.get(`/api/customer/conversations/${conversationId}/messages`);
+  const res = await api.get(`/api/conversations/${conversationId}`);
   return res.data;
 }
 
 export async function sendCustomerMessage(conversationId, text) {
-  const res = await api.post(`/api/customer/conversations/${conversationId}/messages`, { text });
+  const res = await api.post(`/api/conversations/${conversationId}/messages`, {
+    content: text,
+  });
+  return res.data;
+}
+
+export async function markConversationAsRead(conversationId) {
+  // ✅ حسب spec الباك: PATCH /api/conversations/:id/read
+  const res = await api.patch(`/api/conversations/${conversationId}/read`);
+  return res.data;
+}
+
+export async function createConversation(
+  sellerId,
+  sourceType = "seller",
+  sourceId = null,
+  options = {}
+) {
+  const { customerId, productId } = options;
+  const currentUser = customerId ? { id: customerId } : getCurrentUser();
+
+  // ✅ الباك بده body كامل حسب الـ spec تبع الـ response
+  const payload = {
+    sellerId,
+    customerId: currentUser?.id,
+    sourceType,
+    // لو ما في sourceId (مثلاً المتجر بدون منتج) → نفس الـ sellerId
+    sourceId: sourceId || sellerId,
+    // ✅ الباك بيرجّع activeProductId بالـ response → لازم نمرره حتى لو null
+    activeProductId: productId || null,
+  };
+
+  const res = await api.post("/api/conversations/", payload);
   return res.data;
 }
 

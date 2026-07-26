@@ -3,6 +3,8 @@ import { FiEdit2, FiTrash2, FiPlus, FiX, FiAlertTriangle } from 'react-icons/fi'
 import AdminSidebar from '../components/AdminSidebar'
 import AdminTopbar from '../components/AdminTopbar'
 import { SidebarProvider } from '../components/SidebarContext'
+import { TableSkeleton, EmptyState } from '../components/LoadingState'
+import { Inbox } from 'lucide-react'
 import {
   getAdminCategories,
   addAdminCategory,
@@ -158,9 +160,13 @@ function AdminCategoriesContent() {
 
           <div className="categories-table-card">
             {loading ? (
-              <p className="categories-loading">جاري التحميل...</p>
+              <TableSkeleton rows={6} columns={3} />
             ) : categories.length === 0 ? (
-              <p className="categories-empty">لا يوجد تصنيفات بعد</p>
+              <EmptyState
+                icon={Inbox}
+                title="لا يوجد تصنيفات بعد"
+                description="ابدأ بإضافة أول تصنيف لتنظيم المنتجات"
+              />
             ) : (
               <table className="categories-table">
               <thead>

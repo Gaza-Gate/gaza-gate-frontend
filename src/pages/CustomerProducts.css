@@ -253,11 +253,101 @@
   flex-wrap: wrap;
 }
 
+.cp-categories-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Carousel arrows للـ categories ── */
+.cp-cat-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: background 0.15s, color 0.15s, transform 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+  animation: cp-arrow-in 0.2s ease;
+}
+
+@keyframes cp-arrow-in {
+  from { opacity: 0; transform: translateY(-50%) scale(0.8); }
+  to   { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+.cp-cat-arrow:hover {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+  transform: translateY(-50%) scale(1.06);
+}
+
+.cp-cat-arrow--left {
+  left: -4px;
+}
+
+.cp-cat-arrow--right {
+  right: -4px;
+}
+
+/* gradient fades على جانبي الـ carousel */
+.cp-categories-wrap::before,
+.cp-categories-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 6px;
+  width: 28px;
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 0.2s;
+}
+
+.cp-categories-wrap::before {
+  right: 0;
+  background: linear-gradient(to left, #f7f7f7, rgba(247, 247, 247, 0));
+  opacity: 0;
+}
+
+.cp-categories-wrap::after {
+  left: 0;
+  background: linear-gradient(to right, #f7f7f7, rgba(247, 247, 247, 0));
+  opacity: 0;
+}
+
+.cp-categories-wrap.has-scroll-left::before { opacity: 1; }
+.cp-categories-wrap.has-scroll-right::after { opacity: 1; }
+
 .cp-categories {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 6px 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-categories::-webkit-scrollbar {
+  display: none;
 }
 
 .cp-category-btn {
@@ -273,19 +363,62 @@
   font-weight: 600;
   color: var(--text-mid);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
   white-space: nowrap;
+  position: relative;
 }
 
 .cp-category-btn:hover {
   border-color: var(--orange);
   color: var(--orange);
+  transform: translateY(-1px);
 }
 
 .cp-category-btn.active {
   background: var(--orange);
   border-color: var(--orange);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.cp-category-btn.active .cp-category-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.cp-category-label {
+  font-weight: 600;
+}
+
+.cp-category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 4px;
+  transition: all 0.15s;
+}
+
+.cp-category-btn:hover .cp-category-count {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.cp-categories-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .cp-category-img {
@@ -293,6 +426,11 @@
   height: 18px;
   object-fit: contain;
 }
+
+.cp-spin {
+  animation: cp-spin 0.7s linear infinite;
+}
+@keyframes cp-spin { to { transform: rotate(360deg); } }
 
 .cp-count {
   display: flex;
@@ -303,10 +441,10 @@
   white-space: nowrap;
 }
 
-/* ── Grid ── */
+/* ── Grid (responsive تلقائي: 4 لابتوب → 3 تابلت → 2 موبايل) ── */
 .cp-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -414,6 +552,32 @@
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 10px;
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1.2;
+}
+
+/* ✅ clickable variant — used by <Link> wrapper */
+.cp-store--link {
+  cursor: pointer;
+  width: fit-content;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin-inline-start: -4px; /* يعوّض البادينغ بدون ما يزيح الـ layout */
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.cp-store--link:hover {
+  color: #ea580c;
+  background-color: #fff7ed;
+}
+.cp-store--link:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* static fallback (لو ما عندنا seller ID) */
+.cp-store--static {
+  cursor: default;
 }
 
 .cp-meta {
@@ -492,39 +656,123 @@
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {
+  /* تابلت = 3 أعمدة */
   .cp-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .cp-main {
+    padding: 24px 24px 40px;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
+  /* موبايل = 2 أعمدة (إجباري) */
+  .cp-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
   .cp-main {
-    padding: 20px 16px 36px;
+    padding: 16px 12px 36px;
+  }
+
+  .cp-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .cp-header p {
+    font-size: 0.82rem;
   }
 
   .cp-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .cp-categories-wrap {
+    width: 100%;
   }
 
   .cp-count {
     justify-content: flex-end;
+    align-self: flex-end;
+    font-size: 0.8rem;
   }
 
   .cp-categories {
-    overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
   }
 
   .cp-category-btn {
     flex-shrink: 0;
+    font-size: 0.78rem;
+    padding: 7px 12px;
+  }
+
+  /* arrows أصغر على الموبايل */
+  .cp-cat-arrow {
+    width: 28px;
+    height: 28px;
+  }
+
+  .cp-filters-popup {
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .cp-card-img-wrap {
+    height: 130px;
+  }
+
+  .cp-card-title {
+    font-size: 0.82rem;
+  }
+
+  .cp-card-body {
+    padding: 10px 12px 12px;
+  }
+
+  .cp-meta {
+    gap: 6px;
+  }
+
+  .cp-rating {
+    font-size: 0.75rem;
+  }
+
+  .cp-price {
+    font-size: 0.9rem;
+  }
+
+  .cp-qty {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+
+  .cp-add-btn {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .cp-store {
+    font-size: 0.7rem;
+    margin-bottom: 6px;
   }
 }
 
-@media (max-width: 520px) {
-  .cp-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 380px) {
+  .cp-main {
+    padding: 14px 10px 32px;
+  }
+  .cp-header h1 {
+    font-size: 1.15rem;
+  }
+  .cp-card-body {
+    padding: 8px 10px 10px;
+  }
+  .cp-card-img-wrap {
+    height: 115px;
   }
 }

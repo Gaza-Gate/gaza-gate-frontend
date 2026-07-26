@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Package } from "lucide-react";
+import { ChevronLeft, Package, AlertCircle } from "lucide-react";
  
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getCustomerOrders } from "../services/authService";
 import logo from "../assets/logo.png";
+import {
+  EmptyState,
+  ErrorState,
+  OrderListSkeleton,
+} from "../components/LoadingState";
 import "./CustomerOrders.css";
 
 const statusConfig = {
@@ -138,22 +143,25 @@ export default function CustomerOrders() {
         </header>
 
         {loading ? (
-          <div className="co-empty">
-            <Package size={48} strokeWidth={1.2} />
-            <h3>جاري التحميل...</h3>
-          </div>
+          <OrderListSkeleton count={4} />
         ) : error ? (
-          <div className="co-empty">
-            <Package size={48} strokeWidth={1.2} />
-            <h3>حدث خطأ</h3>
-            <p>{error}</p>
-          </div>
+          <ErrorState
+            icon={AlertCircle}
+            title="حدث خطأ"
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
         ) : orders.length === 0 ? (
-          <div className="co-empty">
-            <Package size={48} strokeWidth={1.2} />
-            <h3>لا توجد طلبات</h3>
-            <p>ابدأ بالتسوق لإنشاء طلباتك الأولى</p>
-          </div>
+          <EmptyState
+            icon={Package}
+            title="لا توجد طلبات"
+            description="ابدأ بالتسوق لإنشاء طلباتك الأولى"
+            action={
+              <button onClick={() => navigate("/products")}>
+                تصفح المنتجات
+              </button>
+            }
+          />
         ) : (
           <ul className="co-list">
             {orders.map((order) => {

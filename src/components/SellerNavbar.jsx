@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, LogOut, ChevronDown, Menu, X, ArrowLeftRight } from "lucide-react";
 import logo from "../assets/logo.png";
 import ConvertToBuyerModal from "./ConvertToBuyerModal";
-import { logout, switchRole, becomeCustomer } from "../services/authService";
+import { logout } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { connectSocket, disconnectSocket } from "../utils/socket";
 import "./SellerNavbar.css";
@@ -31,6 +32,7 @@ async function fetchUnreadCount() {
 }
 
 export default function SellerNavbar({ hasNotification }) {
+  const { switchRole, becomeCustomer } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showMore, setShowMore] = useState(false);

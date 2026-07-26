@@ -3,6 +3,8 @@ import { FiSearch, FiFilter } from 'react-icons/fi'
 import AdminSidebar from '../components/AdminSidebar'
 import AdminTopbar from '../components/AdminTopbar'
 import { SidebarProvider } from '../components/SidebarContext'
+import { TableSkeleton, EmptyState } from '../components/LoadingState'
+import { Inbox } from 'lucide-react'
 import { getAdminUsers, toggleUserStatus } from '../services/adminService'
 import './AdminUsers.css'
 
@@ -189,9 +191,13 @@ function AdminUsersContent() {
 
           <div className="users-table-card">
             {loading ? (
-              <p className="users-loading">جاري التحميل...</p>
+              <TableSkeleton rows={6} columns={5} />
             ) : filteredUsers.length === 0 ? (
-              <p className="users-empty">لا يوجد نتائج مطابقة</p>
+              <EmptyState
+                icon={Inbox}
+                title="لا يوجد نتائج مطابقة"
+                description="جرّب تغيير البحث أو الفلاتر"
+              />
             ) : (
               <table className="users-table">
                 <thead>

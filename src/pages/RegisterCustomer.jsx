@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
+import { ArrowRight } from 'lucide-react'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, ApiError } from '../components/FormCard'
 import InputField from '../components/InputField'
 import { customerRegisterSchema } from '../utils/validationSchemas'
@@ -46,7 +47,22 @@ export default function RegisterCustomer() {
 
   return (
     <FormCard>
-      <CardHeader icon={<>🏪 اكتشف آلاف المنتجات 🛍️</>} subtitle="عالمك من التسوق يبدأ من هنا" />
+      <button
+        type="button"
+        onClick={() => navigate('/onboarding')}
+        aria-label="رجوع"
+        className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors mb-2"
+      >
+        <ArrowRight size={20} />
+      </button>
+
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+          حساب مشتري
+        </span>
+      </div>
+
+      <CardHeader icon={<> اكتشف آلاف المنتجات </>} subtitle="عالمك من التسوق يبدأ من هنا" />
       <Formik
         initialValues={{ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' }}
         validationSchema={customerRegisterSchema}

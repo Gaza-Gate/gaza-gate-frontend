@@ -6,6 +6,7 @@ import App from './App';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import './index.css';
+import { AuthProvider } from "./context/AuthContext";
 
 // نقوم بإنشاء الجذر الخاص بالتطبيق وإحاطة التطبيق بـ BrowserRouter
 // لتمكين نظام التنقل بين الصفحات بشكل صحيح
@@ -13,12 +14,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <BrowserRouter>
-        <CartProvider>
-          <WishlistProvider>
-            <App />
-          </WishlistProvider>
-        </CartProvider>
+        {/* تم إضافة AuthProvider هنا ليغلف التطبيق بالكامل */}
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <App />
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
   </React.StrictMode>
-)
+);
