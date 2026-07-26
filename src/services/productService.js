@@ -101,3 +101,9 @@ export const getProductReviews = async (productId) => {
   const res = await api.get(`/api/review/product/${productId}`);
   return res.data;
 };
+
+// جلب تفاصيل منتج واحد (سيلر) + آخر تقييمات - بيشتغل حتى لو المنتج مخفي
+export async function getSellerProductDetails(productId) {
+  const res = await api.get(`/api/product/${productId}`);
+  return res.data;
+}
