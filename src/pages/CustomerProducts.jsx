@@ -92,6 +92,7 @@ export default function CustomerProducts() {
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [toast, setToast] = useState(null);
 
   // ── الفئات من الباك أو fallback ──
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
@@ -174,6 +175,12 @@ export default function CustomerProducts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, activeCategory, page, minPrice, maxPrice, sortBy]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -245,6 +252,17 @@ export default function CustomerProducts() {
     },
     [navigate]
   );
+
+  const handleAddToCart = async (e, product) => {
+    e.stopPropagation();
+    try {
+      await addItem(product);
+      setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
+    } catch (err) {
+      const msg = err.response?.data?.data?.message || err.message || "حدث خطأ ما";
+      setToast({ message: msg, type: "error" });
+    }
+  };
 
   return (
     <div className="cp-wrapper" dir="rtl">
@@ -473,10 +491,7 @@ export default function CustomerProducts() {
 
                       <button
                         className="cp-add-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addItem(product);
-                        }}
+                        onClick={(e) => handleAddToCart(e, product)}
                       >
                         <Plus size={16} />
                         أضف
@@ -489,6 +504,12 @@ export default function CustomerProducts() {
           )}
         </div>
       </main>
+
+      {toast && (
+        <div className={`cp-toast cp-toast--${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Send,
   Search,
@@ -54,6 +54,7 @@ const SELLER_QUICK_REPLIES = [
 ];
 
 export default function Messages() {
+  const navigate = useNavigate();
   const token = getAuthToken();
   const currentUser = getCurrentUser();
   const myId = currentUser?.id;
@@ -176,7 +177,7 @@ export default function Messages() {
     return () => s.off("connect", joinCurrent);
   }, [token, selectedId]);
 
-  // ── socket: listners ──
+  // ── socket: listeners ──
   useEffect(() => {
     if (!token) return;
     const s = getSocket();
@@ -301,7 +302,7 @@ export default function Messages() {
 
   const totalUnread = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
-  // ── إرسال رسالة عبر socket (مع optimistic) ──
+  // ── إرسال رسالة عبر REST (مع optimistic) ──
   const handleSend = useCallback(
     async (override) => {
       const text = (override ?? messageText).trim();
@@ -744,7 +745,17 @@ export default function Messages() {
                       <Info size={18} />
                     </button>
                   </div>
-                  <div className="messages-chat-user">
+                  <div
+                    className="messages-chat-user"
+                    onClick={() => {
+                      // ✅ من teammate: اضغط على العميل لفتح بروفايله
+                      // نستخدم customerId أولاً (المطابق لـ actionUrl) ثم نرجع لـ id
+                      const customerId = selectedConv.otherParty?.customerId ?? selectedConv.otherParty?.id;
+                      if (customerId) navigate(`/profile/customer/${customerId}`);
+                    }}
+                    style={{ cursor: selectedConv.otherParty?.id ? "pointer" : "default" }}
+                    title="عرض بروفايل الزبون"
+                  >
                     <div className="messages-chat-user-info">
                       <p className="messages-chat-user-name">
                         {fullName(otherParty, "مشتري")}

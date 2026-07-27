@@ -48,8 +48,11 @@ export default function CustomerProductDetails() {
   const { addItem, cartCount } = useCart();
   const { isWishlisted, toggleWishlist, wishlistCount } = useWishlist();
   const [quantity, setQuantity] = useState(1);
+
   // ✅ حالة زر "مراسلة المتجر" — نمنع الضغطات المتعددة وندلّ على التحميل
   const [messagingStore, setMessagingStore] = useState(false);
+  // ✅ Toast للتنبيهات (إضافة للسلة، أخطاء)
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchProductDetails();
@@ -59,6 +62,13 @@ export default function CustomerProductDetails() {
   // → بنمرر الـ id للـ BuyerProductReviewsSection عن طريق prop
   // → وبنعمل scroll + highlight لمكان الرد بعد ما الريفيوز يحمل
   const highlightReviewId = searchParams.get("reviewId");
+
+  // ✅ Toast auto-dismiss بعد 2.5s
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const fetchProductDetails = async () => {
     try {
@@ -78,7 +88,6 @@ export default function CustomerProductDetails() {
   if (loading) {
     return (
       <div className="pd-wrapper" dir="rtl">
-         
         <main className="pd-main">
           <ProductDetailsSkeleton />
         </main>
@@ -92,8 +101,14 @@ export default function CustomerProductDetails() {
 
   const wishlisted = isWishlisted(product.id);
 
-  const handleAddToCart = () => {
-    addItem(product, quantity);
+  const handleAddToCart = async () => {
+    try {
+      await addItem(product, quantity);
+      setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
+    } catch (err) {
+      const msg = err.response?.data?.data?.message || err.message || "حدث خطأ ما";
+      setToast({ message: msg, type: "error" });
+    }
   };
 
   // ── مراسلة المتجر ──
@@ -127,7 +142,6 @@ export default function CustomerProductDetails() {
 
   return (
     <div className="pd-wrapper" dir="rtl">
-       
       <main className="pd-main">
         <nav className="pd-breadcrumb" aria-label="مسار التنقل">
           <Link to="/products">المنتجات</Link>
@@ -288,6 +302,12 @@ export default function CustomerProductDetails() {
           />
         )}
       </main>
+
+      {toast && (
+        <div className={`pd-toast pd-toast--${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

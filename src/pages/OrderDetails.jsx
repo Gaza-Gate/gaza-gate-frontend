@@ -62,6 +62,13 @@ const SuccessIcon = () => (
   </svg>
 );
 
+// نجمة قابلة للضغط - لاستخدامها بفورم تقييم الزبون
+const RatingStarIcon = ({ filled }) => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill={filled ? "#f97316" : "none"} stroke="#f97316" strokeWidth="1.5">
+    <polygon points="12 2 15.09 8.63 22 9.24 17 14.14 18.18 21 12 17.77 5.82 21 7 14.14 2 9.24 8.91 8.63 12 2" />
+  </svg>
+);
+
 // ── Workflow ──
 // ✅ هاي القيم مطابقة تماماً لعمود status بقاعدة البيانات (enum):
 // pending_review, accepted, rejected, in_production, ready, completed, cancelled
@@ -118,6 +125,17 @@ const rejectOrder = async (id, rejectionReason) => {
   return res.data;
 };
 
+// تقييم السيلر للزبون بعد اكتمال الطلبية
+const createSellerCustomerReview = async ({ orderId, customerId, rating, comment }) => {
+  const res = await api.post("/api/seller/review/customer", {
+    orderId,
+    customerId,
+    rating,
+    comment,
+  });
+  return res.data;
+};
+
 // ── تحويل شكل الداتا الحقيقية القادمة من الـ API لشكل يفهمه الكومبوننت ──
 // الـ API بيرجع: { status: "success", data: { order: {...}, workflow: {...} } }
 const normalizeOrder = (apiResponseData, fallbackId) => {
@@ -137,6 +155,15 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
   const fullName = `${firstName} ${lastName}`.trim() || "عميل";
   const phone = raw.customer?.user?.phone ?? "غير متوفر";
 
+  // ⚠️ مهم: نعطي الأولوية لحقل customerId (سواء جوا customer أو على المستوى الأعلى)
+  // لأنه اكتشفنا بصفحة الرسائل إنه raw.customer?.id ممكن يكون ID مختلف عن الـ customerId
+  // الحقيقي المطابق لـ endpoints البروفايل والتقييم. id بيضل fallback أخير فقط.
+  const customerId =
+    raw.customer?.customerId ??
+    raw.customerId ??
+    raw.customer?.id ??
+    null;
+
   const neighborhood = raw.shippingNeighborhood ?? raw.shipping_neighborhood ?? "";
   const street = raw.shippingStreet ?? raw.shipping_street ?? "";
   const address = [neighborhood, street].filter(Boolean).join(" - ") || "غير متوفر";
@@ -154,7 +181,7 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
     date,
     time,
     status: raw.status ?? "pending_review",
-    customer: { name: fullName, phone, address },
+    customer: { name: fullName, phone, address, id: customerId },
     products,
     subtotal: raw.subtotal ?? 0,
     shipping: raw.shippingFee ?? raw.shipping_fee ?? 0,
@@ -176,6 +203,14 @@ const OrderDetails = () => {
   const [bannerVisible, setBannerVisible] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  // ── تقييم الزبون (يظهر بس لما الطلب يكون completed) ──
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating]     = useState(0);
+  const [reviewComment, setReviewComment]   = useState("");
+  const [reviewLoading, setReviewLoading]   = useState(false);
+  const [reviewError, setReviewError]       = useState("");
+  const [reviewDone, setReviewDone]         = useState(false); // true بعد نجاح التقييم أو لو كان already reviewed
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -244,6 +279,48 @@ const OrderDetails = () => {
     }
   };
 
+  // ── إرسال تقييم الزبون ──
+  const handleSubmitCustomerReview = async () => {
+    if (!order || reviewLoading) return;
+    if (reviewRating === 0) {
+      setReviewError("الرجاء اختيار عدد النجوم أولاً.");
+      return;
+    }
+    if (!order.customer?.id) {
+      setReviewError("تعذّر تحديد الزبون لهذه الطلبية.");
+      return;
+    }
+
+    setReviewLoading(true);
+    setReviewError("");
+    try {
+      if (IS_API_READY) {
+        await createSellerCustomerReview({
+          orderId: order.id,
+          customerId: order.customer.id,
+          rating: reviewRating,
+          comment: reviewComment.trim(),
+        });
+      }
+      setReviewDone(true);
+      setShowReviewForm(false);
+    } catch (err) {
+      const backendMessage = err?.response?.data?.data?.message;
+      if (err?.response?.status === 409) {
+        // الزبون سبق وانقيّم لنفس الطلبية - نعتبرها حالة نهائية، مو خطأ فعلي
+        setReviewDone(true);
+        setShowReviewForm(false);
+      } else if (err?.response?.status === 400) {
+        setReviewError(backendMessage || "لا يمكن تقييم هذا الطلب حالياً.");
+      } else {
+        setReviewError("تعذّر إرسال التقييم. حاول مرة أخرى.");
+      }
+      console.error("فشل تقييم الزبون:", err);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="od-root" dir="rtl">
@@ -270,6 +347,13 @@ const OrderDetails = () => {
   const currentIndex = WORKFLOW_STEPS.findIndex((s) => s.key === order.status);
   const nextStep     = currentIndex >= 0 ? WORKFLOW_STEPS[currentIndex + 1] : null;
   const badge        = STATUS_BADGE[order.status] || STATUS_BADGE.pending_review;
+
+  // ── الانتقال لصفحة بروفايل الزبون العام (نفس نمط RatingsManagement) ──
+  // ⚠️ الراوت مطابق لـ actionUrl يلي بيرجعه الباك اند: /profile/customer/{CUSTOMER_ID}
+  const handleGoToCustomerProfile = () => {
+    const customerId = order.customer?.id;
+    if (customerId) navigate(`/profile/customer/${customerId}`);
+  };
 
   return (
     <div className="od-root" dir="rtl">
@@ -387,6 +471,70 @@ const OrderDetails = () => {
  </div>
         )}
 
+        {/* قسم تقييم الزبون - يظهر بس لما الطلب يكون مكتمل */}
+        {order.status === "completed" && (
+          <div className="od-review-card">
+            <h2 className="od-section-title">تقييم الزبون</h2>
+
+            {reviewDone ? (
+              <p className="od-review-done-text">تم تسجيل تقييمك لهذا الزبون على هذه الطلبية.</p>
+            ) : !showReviewForm ? (
+              <button
+                type="button"
+                className="od-btn-update"
+                onClick={() => setShowReviewForm(true)}
+              >
+                قيّم هذا الزبون
+              </button>
+            ) : (
+              <div className="od-review-form">
+                <div className="od-review-stars-picker">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className="od-review-star-btn"
+                      onClick={() => setReviewRating(n)}
+                      aria-label={`${n} نجوم`}
+                    >
+                      <RatingStarIcon filled={n <= reviewRating} />
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  className="od-reject-textarea"
+                  placeholder="اكتب ملاحظتك عن التعامل مع هذا الزبون (اختياري)…"
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  rows={3}
+                />
+
+                {reviewError && <div className="od-error-inline">{reviewError}</div>}
+
+                <div className="od-reject-form-actions">
+                  <button
+                    type="button"
+                    className={`od-btn-update ${reviewLoading ? "od-btn-loading" : ""}`}
+                    onClick={handleSubmitCustomerReview}
+                    disabled={reviewLoading}
+                  >
+                    {reviewLoading ? "جاري الإرسال…" : "إرسال التقييم"}
+                  </button>
+                  <button
+                    type="button"
+                    className="od-btn-cancel-reject"
+                    onClick={() => { setShowReviewForm(false); setReviewError(""); setReviewRating(0); setReviewComment(""); }}
+                    disabled={reviewLoading}
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="od-info-grid-wrapper">
           <div className="od-info-grid">
             <div className="od-info-card">
@@ -421,7 +569,17 @@ const OrderDetails = () => {
               </div>
               <div className="od-info-rows">
                 <div className="od-info-row od-info-row-single">
-                  <span className="od-info-value">{order.customer?.name}</span>
+                  <span
+                    className="od-info-value"
+                    onClick={handleGoToCustomerProfile}
+                    style={{
+                      cursor: order.customer?.id ? "pointer" : "default",
+                      textDecoration: order.customer?.id ? "underline" : "none",
+                    }}
+                    title="عرض بروفايل الزبون"
+                  >
+                    {order.customer?.name}
+                  </span>
                   <UserIcon />
                 </div>
                 <div className="od-info-row od-info-row-single">
