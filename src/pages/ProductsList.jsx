@@ -262,7 +262,7 @@ const handleDeleteClick = (product) => {
 
       <ProductDetailsModal
         open={isDetailsOpen}
-        product={selectedProduct}
+        productId={selectedProduct?._id ?? selectedProduct?.id}
         onClose={() => setIsDetailsOpen(false)}
       />
     </div>

@@ -174,6 +174,9 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
     total: p.total ?? (Number(p.qty ?? p.quantity ?? 0) * Number(p.price ?? p.unitPrice ?? 0)),
   }));
 
+  // 🆕 الباك اند مش عم يبعت subtotal أبداً، فمنحسبه بنفسنا من مجموع (سعر × كمية) كل منتج
+  const computedSubtotal = products.reduce((sum, p) => sum + Number(p.total || 0), 0);
+
   return {
     id: raw.id ?? fallbackId,
     orderNumber: raw.orderNumber ?? raw.order_number ?? raw.id ?? fallbackId,
@@ -182,7 +185,7 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
     status: raw.status ?? "pending_review",
     customer: { name: fullName, phone, address, id: customerId },
     products,
-    subtotal: raw.subtotal ?? 0,
+    subtotal: computedSubtotal, // 🆕 بدل raw.subtotal ?? 0
     shipping: raw.shippingFee ?? raw.shipping_fee ?? 0,
     total: raw.totalPrice ?? raw.total_price ?? 0,
   };

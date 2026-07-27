@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "./ProductDetailsModal.css";
-import { getProductReviews } from "../services/productService";
+import { getSellerProductDetails, getProductReviews } from "../services/productService";
 
 const CloseIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -17,14 +17,12 @@ const PackageEmptyIcon = () => (
   </svg>
 );
 
-// نجمة واحدة، ممتلئة أو فاضية حسب القيمة
 const StarIcon = ({ filled }) => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill={filled ? "#f97316" : "none"} stroke="#f97316" strokeWidth="1.5">
     <polygon points="12 2 15.09 8.63 22 9.24 17 14.14 18.18 21 12 17.77 5.82 21 7 14.14 2 9.24 8.91 8.63 12 2" />
   </svg>
 );
 
-// صف 5 نجوم يعكس رقم عشري (4.8 مثلاً) بتقريب لأقرب نجمة
 const StarRow = ({ rating }) => {
   const rounded = Math.round(rating);
   return (
@@ -36,7 +34,7 @@ const StarRow = ({ rating }) => {
   );
 };
 
-// بار أفقي لعدد التقييمات لكل نجمة (5 نجوم فوق، 1 نجمة تحت)
+// بار التوزيع - بيشتغل بس لما يكون عنا distribution (من getProductReviews الكاملة)
 const DistributionBars = ({ distribution, total }) => {
   const rows = [5, 4, 3, 2, 1];
   return (
@@ -58,7 +56,6 @@ const DistributionBars = ({ distribution, total }) => {
   );
 };
 
-// تنسيق التاريخ لشكل عربي مقروء (مثال: 18 يوليو 2026)
 const formatReviewDate = (isoDate) => {
   if (!isoDate) return "";
   try {
@@ -72,7 +69,6 @@ const formatReviewDate = (isoDate) => {
   }
 };
 
-// عنصر ريفيو واحد كامل - بكل الحقول الموجودة بالـ API
 const ReviewItem = ({ review }) => {
   const fullName = review.customer
     ? `${review.customer.firstName ?? ""} ${review.customer.lastName ?? ""}`.trim()
@@ -82,11 +78,7 @@ const ReviewItem = ({ review }) => {
     <div className="pdm-review-item">
       <div className="pdm-review-head">
         {review.customer?.avatar ? (
-          <img
-            src={review.customer.avatar}
-            alt={fullName}
-            className="pdm-review-avatar"
-          />
+          <img src={review.customer.avatar} alt={fullName} className="pdm-review-avatar" />
         ) : (
           <div className="pdm-review-avatar pdm-review-avatar-empty" />
         )}
@@ -105,55 +97,105 @@ const ReviewItem = ({ review }) => {
       {review.comment && <p className="pdm-review-comment">{review.comment}</p>}
 
       {review.imageUrl && (
-        <img
-          src={review.imageUrl}
-          alt="صورة مرفقة مع التقييم"
-          className="pdm-review-image"
-        />
+        <img src={review.imageUrl} alt="صورة مرفقة مع التقييم" className="pdm-review-image" />
       )}
     </div>
   );
 };
 
-export default function ProductDetailsModal({ open, product, onClose }) {
-  const [reviewsData, setReviewsData] = useState(null);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewsError, setReviewsError] = useState("");
-  const [showAllReviews, setShowAllReviews] = useState(false);
+// المودال دلوقتي بياخد productId بس، وبيجيب كل شي بنفسه لما يفتح
+export default function ProductDetailsModal({ open, productId, onClose }) {
+  const [product, setProduct] = useState(null);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productError, setProductError] = useState("");
 
-  const productId = product?._id ?? product?.id;
+  // ملخص التقييمات + أول preview - جايين مع نفس طلب تفاصيل المنتج
+  const [reviewsSummary, setReviewsSummary] = useState(null); // { average, total, preview }
+
+  // القائمة الكاملة (مع التوزيع والصفحات) - بتتجاب بس لما يدوس "عرض المزيد"
+  const [fullReviews, setFullReviews] = useState(null);
+  const [fullReviewsLoading, setFullReviewsLoading] = useState(false);
+  const [fullReviewsError, setFullReviewsError] = useState("");
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   useEffect(() => {
     if (!open || !productId) return;
 
     // إعادة الضبط كل ما يتفتح المودال لمنتج جديد
-    setReviewsData(null);
-    setReviewsError("");
+    setProduct(null);
+    setProductError("");
+    setReviewsSummary(null);
+    setFullReviews(null);
+    setFullReviewsError("");
     setShowAllReviews(false);
 
-    const loadReviews = async () => {
-      setReviewsLoading(true);
+    const loadProductDetails = async () => {
+      setProductLoading(true);
       try {
-        const res = await getProductReviews(productId);
-        setReviewsData(res?.data ?? null);
+        const res = await getSellerProductDetails(productId);
+        setProduct(res?.data?.product ?? null);
+        setReviewsSummary(res?.data?.reviews ?? null);
       } catch (err) {
-        setReviewsError("تعذر تحميل التقييمات");
+        setProductError("تعذر تحميل تفاصيل المنتج");
       } finally {
-        setReviewsLoading(false);
+        setProductLoading(false);
       }
     };
 
-    loadReviews();
+    loadProductDetails();
   }, [open, productId]);
 
-  if (!open || !product) return null;
+  // لما يدوس "عرض المزيد" - نجيب القائمة الكاملة (فيها كل الريفيوهات + التوزيع)
+  const handleShowMore = async () => {
+    setShowAllReviews(true);
+    if (fullReviews) return; // مجلوبة قبل هيك، ما تعيد الطلب
+
+    setFullReviewsLoading(true);
+    try {
+      const res = await getProductReviews(productId);
+      setFullReviews(res?.data ?? null);
+    } catch (err) {
+      setFullReviewsError("تعذر تحميل باقي التقييمات");
+    } finally {
+      setFullReviewsLoading(false);
+    }
+  };
+
+  if (!open) return null;
+
+  if (productLoading) {
+    return (
+      <div className="pdm-overlay" onClick={onClose}>
+        <div className="pdm-card pdm-card-loading" onClick={(e) => e.stopPropagation()} dir="rtl">
+          <p>جارِ تحميل تفاصيل المنتج...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (productError || !product) {
+    return (
+      <div className="pdm-overlay" onClick={onClose}>
+        <div className="pdm-card pdm-card-loading" onClick={(e) => e.stopPropagation()} dir="rtl">
+          <button className="pdm-close" onClick={onClose} aria-label="إغلاق">
+            <CloseIcon />
+          </button>
+          <p>{productError || "لم يتم العثور على المنتج"}</p>
+        </div>
+      </div>
+    );
+  }
 
   const image = product.images?.[0]?.imageUrl;
 
-  // آخر 3 ريفيو دايماً ظاهرين، والباقي بيظهر لما يدوس "عرض المزيد"
-  const latestThree = reviewsData?.reviews?.slice(0, 3);
-  const restReviews = reviewsData?.reviews?.slice(3);
-  const hasMore = (reviewsData?.reviews?.length ?? 0) > 3;
+  const total = Number(reviewsSummary?.total ?? 0);
+  const average = reviewsSummary?.average ?? "0.00";
+  const previewList = reviewsSummary?.preview ?? [];
+
+  // لو المستخدم لسه ما دوس "عرض المزيد" منعرض الـ preview بس
+  // ولو دوس، منعرض القائمة الكاملة من fullReviews لو وصلت
+  const displayedReviews = showAllReviews && fullReviews ? fullReviews.reviews ?? [] : previewList;
+  const hasMore = total > previewList.length;
 
   return (
     <div className="pdm-overlay" onClick={onClose}>
@@ -163,7 +205,6 @@ export default function ProductDetailsModal({ open, product, onClose }) {
         </button>
 
         <div className="pdm-main">
-          {/* العمود الأيمن: صورة المنتج */}
           <div className="pdm-img-wrap">
             {image ? (
               <img src={image} alt={product.name} className="pdm-img" />
@@ -177,7 +218,6 @@ export default function ProductDetailsModal({ open, product, onClose }) {
             </span>
           </div>
 
-          {/* العمود الأيسر: التفاصيل + التقييمات */}
           <div className="pdm-side">
             <div className="pdm-body">
               <h2 className="pdm-title">{product.name}</h2>
@@ -193,75 +233,50 @@ export default function ProductDetailsModal({ open, product, onClose }) {
                 <p className="pdm-description">{product.description}</p>
               )}
 
-              {product.category && (
+              {/* category صار object فيه id و name */}
+              {product.category?.name && (
                 <p className="pdm-meta">
-                  <span className="pdm-meta-label">الفئة:</span> {product.category}
+                  <span className="pdm-meta-label">الفئة:</span> {product.category.name}
                 </p>
               )}
             </div>
 
-            {/* قسم التقييمات */}
             <div className="pdm-reviews">
-              {reviewsLoading && (
-                <p className="pdm-reviews-status">جارِ تحميل التقييمات...</p>
-              )}
+              <div className="pdm-reviews-top">
+                <div className="pdm-reviews-summary">
+                  <span className="pdm-reviews-avg">{average}</span>
+                  <StarRow rating={Number(average) || 0} />
+                  <span className="pdm-reviews-total">({total} تقييم)</span>
+                </div>
 
-              {reviewsError && (
-                <p className="pdm-reviews-status pdm-reviews-error">{reviewsError}</p>
-              )}
+                {/* التوزيع بيظهر بس لما تتوفر بيانات fullReviews الكاملة */}
+                {showAllReviews && fullReviews?.distribution && total > 0 && (
+                  <DistributionBars distribution={fullReviews.distribution} total={total} />
+                )}
+              </div>
 
-              {!reviewsLoading && !reviewsError && reviewsData && (
+              {total === 0 ? (
+                <p className="pdm-reviews-empty">لا توجد تقييمات لهذا المنتج بعد</p>
+              ) : (
                 <>
-                  <div className="pdm-reviews-top">
-                    <div className="pdm-reviews-summary">
-                      <span className="pdm-reviews-avg">{reviewsData.averageRating}</span>
-                      <StarRow rating={Number(reviewsData.averageRating) || 0} />
-                      <span className="pdm-reviews-total">({reviewsData.totalReviews} تقييم)</span>
-                    </div>
-
-                    {reviewsData.totalReviews > 0 && (
-                      <DistributionBars
-                        distribution={reviewsData.distribution}
-                        total={reviewsData.totalReviews}
-                      />
-                    )}
+                  <div className="pdm-reviews-list">
+                    {displayedReviews.map((rev) => (
+                      <ReviewItem key={rev.id} review={rev} />
+                    ))}
                   </div>
 
-                  {reviewsData.totalReviews === 0 ? (
-                    <p className="pdm-reviews-empty">لا توجد تقييمات لهذا المنتج بعد</p>
-                  ) : (
-                    <>
-                      <div className="pdm-reviews-list">
-                        {latestThree?.map((rev) => (
-                          <ReviewItem key={rev.id} review={rev} />
-                        ))}
-                      </div>
+                  {fullReviewsLoading && (
+                    <p className="pdm-reviews-status">جارِ تحميل باقي التقييمات...</p>
+                  )}
 
-                      {/* الريفيوهات الإضافية - بتظهر جوا صندوق فيه سكرول لما يدوس عرض المزيد */}
-                      {showAllReviews && restReviews?.length > 0 && (
-                        <div className="pdm-reviews-list pdm-reviews-scroll">
-                          {restReviews.map((rev) => (
-                            <ReviewItem key={rev.id} review={rev} />
-                          ))}
-                        </div>
-                      )}
+                  {fullReviewsError && (
+                    <p className="pdm-reviews-status pdm-reviews-error">{fullReviewsError}</p>
+                  )}
 
-                      {hasMore && !showAllReviews && (
-                        <button
-                          className="pdm-reviews-more"
-                          onClick={() => setShowAllReviews(true)}
-                        >
-                          عرض المزيد
-                        </button>
-                      )}
-
-                      {/* معلومة الصفحات - مفيدة لو صار فيه أكتر من صفحة تقييمات مستقبلاً */}
-                      {reviewsData.pagination?.totalPages > 1 && (
-                        <p className="pdm-reviews-pagination-note">
-                          صفحة {reviewsData.pagination.currentPage} من {reviewsData.pagination.totalPages}
-                        </p>
-                      )}
-                    </>
+                  {hasMore && !showAllReviews && (
+                    <button className="pdm-reviews-more" onClick={handleShowMore}>
+                      عرض المزيد
+                    </button>
                   )}
                 </>
               )}
