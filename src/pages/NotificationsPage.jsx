@@ -218,8 +218,11 @@ export default function NotificationsPage() {
         );
         setNotifs(safe);
         setPage(1);
+       const gotFullPage = Array.isArray(notifications) && notifications.length >= PAGE_SIZE;
         setHasMore(
-          pagination ? pagination.currentPage < pagination.totalPages : false
+          gotFullPage && pagination
+            ? pagination.currentPage < pagination.totalPages
+            : false
         );
       } else {
         setNotifs(STATIC_NOTIFS);
@@ -266,8 +269,11 @@ export default function NotificationsPage() {
       });
 
       setPage(nextPage);
+    const gotFullPage = Array.isArray(notifications) && notifications.length >= PAGE_SIZE;
       setHasMore(
-        pagination ? pagination.currentPage < pagination.totalPages : false
+        gotFullPage && pagination
+          ? pagination.currentPage < pagination.totalPages
+          : false
       );
     } catch (err) {
       console.error("فشل تحميل المزيد من الإشعارات:", err);
