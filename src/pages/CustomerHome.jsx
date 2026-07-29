@@ -153,7 +153,7 @@ export default function CustomerHome() {
         <div className="home-hero-overlay" />
 
         <div className="home-hero-content">
-          <span className="home-hero-pill">مرحبا {userName}, عروض اليوم تصل حتى خصم 40%</span>
+          <span className="home-hero-pill">مرحبا {userName} </span>
           <h1 className="home-hero-title">
             تسوق بذكاء
             <br />
