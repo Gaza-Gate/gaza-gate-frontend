@@ -40,6 +40,7 @@ import {
   addMessageUnique,
   formatConvTime,
 } from "../utils/chatHelpers";
+import { customerProfilePath } from "../utils/sellerHelpers";
 
 import "./Messages.css";
 import SellerNavbar from "../components/SellerNavbar";
@@ -748,10 +749,10 @@ export default function Messages() {
                   <div
                     className="messages-chat-user"
                     onClick={() => {
-                      // ✅ من teammate: اضغط على العميل لفتح بروفايله
-                      // نستخدم customerId أولاً (المطابق لـ actionUrl) ثم نرجع لـ id
-                      const customerId = selectedConv.otherParty?.customerId ?? selectedConv.otherParty?.id;
-                      if (customerId) navigate(`/profile/customer/${customerId}`);
+                      // ✅ استخراج الـ customer ID الصحيح من أي shape للـ API
+                      //   (actionUrl > customerId > id) — راجع sellerHelpers.js
+                      const path = customerProfilePath(selectedConv.otherParty);
+                      if (path) navigate(path);
                     }}
                     style={{ cursor: selectedConv.otherParty?.id ? "pointer" : "default" }}
                     title="عرض بروفايل الزبون"

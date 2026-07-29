@@ -131,7 +131,16 @@ export default function EditStoreProfile() {
 
         if (profile.avatar) setAvatarPreview(profile.avatar);
       } catch (err) {
-        if (isMounted) setErrors({ general: "تعذر تحميل بيانات المتجر، حاول تحديث الصفحة" });
+        // ✅ ما بنمنع الـ user من التعديل حتى لو الـ GET فشل
+        //    (مثلاً 403 لأن الـ profile ناقص / أول مرة)
+        //    بنعرض الـ form فاضي ونخلّيه يحفظ ملفه من الصفر
+        if (isMounted) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[EditStoreProfile] ما قدرنا نحمل البروفايل الحالي:",
+            err?.response?.status
+          );
+        }
       } finally {
         if (isMounted) setInitialLoading(false);
       }

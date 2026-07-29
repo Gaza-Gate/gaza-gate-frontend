@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 import "./RatingsManagement.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
+import { ErrorState } from "../components/LoadingState";
+import { customerProfilePath } from "../utils/sellerHelpers";
 
 // ══════════════════════════════════════════════════
 //  ⚙️  الـ endpoints — تأكدي من المسار الصحيح ببوستمان
@@ -16,8 +19,6 @@ const CUSTOMER_REVIEWS_ENDPOINT = "/api/seller/review/customer/my";
 // ⚠️ ما تأكدنا من شكل الـ Body تبع الـ PATCH لسا (افتراض: { rating, comment })
 // إذا رجع خطأ، افتحي "Update Seller Customer Review" ببوستمان وشوفي شكل الـ Body الحقيقي
 const customerReviewUrl = (id) => `/api/seller/review/customer/${id}`;
-
-const IS_API_READY = !!import.meta.env.VITE_API_URL;
 
 //   مدة بقاء الهايلايت المؤقت على التقييم المستهدف (بالميلي ثانية)
 const HIGHLIGHT_DURATION_MS = 2500;
@@ -85,26 +86,6 @@ function StarPicker({ value, onChange }) {
 }
 
 const AVATAR_COLORS = ["#f97316", "#16a34a", "#2563eb", "#9333ea", "#e11d48"];
-
-// ── Static fallback (تقييمات الزبائن لمنتجاتي) ──
-const STATIC_PRODUCT_REVIEWS = [
-  {
-    _id: "1",
-    customerName: "أحمد محمد",
-    createdAt: "2026-06-08",
-    rating: 5,
-    comment: "منتج ممتاز جداً، الجودة عالية والتوصيل سريع.",
-    sellerReply: { text: "شكراً لتقييمك الرائع!", createdAt: "2026-06-09" },
-  },
-  {
-    _id: "2",
-    customerName: "فاطمة علي",
-    createdAt: "2026-06-05",
-    rating: 4,
-    comment: "جودة المنتج جيدة جداً لكن وقت التوصيل كان أطول من المتوقع.",
-    sellerReply: null,
-  },
-];
 
 // ── API Helpers ──
 
@@ -224,33 +205,39 @@ const RatingsManagement = () => {
     try {
       if (activeTab === "productReviews") {
         if (!productLoaded) {
-          if (IS_API_READY) {
-            const data = await fetchProductReviews();
-            setProductReviews(Array.isArray(data) ? data : []);
-          } else {
-            setProductReviews(STATIC_PRODUCT_REVIEWS);
-          }
+          // ✅ دائماً بنستدعي الـ API الحقيقي — بدون mock data
+          const data = await fetchProductReviews();
+          setProductReviews(Array.isArray(data) ? data : []);
           setProductLoaded(true);
         }
       } else {
         if (!customerLoaded) {
-          if (IS_API_READY) {
-            const data = await fetchCustomerReviews();
-            setCustomerReviews(Array.isArray(data) ? data : []);
-          } else {
-            setCustomerReviews([]);
-          }
+          // ✅ دائماً بنستدعي الـ API الحقيقي
+          const data = await fetchCustomerReviews();
+          setCustomerReviews(Array.isArray(data) ? data : []);
           setCustomerLoaded(true);
         }
       }
     } catch (err) {
       console.error("فشل جلب التقييمات:", err);
-      setError("تعذّر تحميل التقييمات.");
-      if (activeTab === "productReviews") setProductReviews(STATIC_PRODUCT_REVIEWS);
+      const msg =
+        err?.response?.data?.data?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "تعذّر تحميل التقييمات. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }, [activeTab, productLoaded, customerLoaded]);
+
+  // ✅ دالة retry — بتعطي الـ user فرصة إعادة المحاولة بدون reload
+  const retryLoad = useCallback(() => {
+    setProductLoaded(false);
+    setCustomerLoaded(false);
+    setError(null);
+    loadActiveTab();
+  }, [loadActiveTab]);
 
   useEffect(() => { loadActiveTab(); }, [loadActiveTab]);
 
@@ -322,9 +309,8 @@ const RatingsManagement = () => {
   }
   setReplyLoading(true);
   try {
-    if (IS_API_READY) {
-      await api.post(`/api/seller/review/${id}/reply`, { reply: replyDraft.trim() });
-    }
+    // ✅ دائماً بنستدعي الـ API الحقيقي
+    await api.post(`/api/seller/review/${id}/reply`, { reply: replyDraft.trim() });
     setProductReviews((prev) =>
       prev.map((r) =>
         (r._id ?? r.id) === id
@@ -336,6 +322,7 @@ const RatingsManagement = () => {
     setReplyDraft("");
   } catch (err) {
     console.error("فشل الرد على التقييم:", err);
+    setError(err?.response?.data?.data?.message || "فشل إرسال الرد. حاول مرة أخرى.");
   } finally {
     setReplyLoading(false);
   }
@@ -361,9 +348,8 @@ const handleSubmitEdit = async (id, orderId) => {
   setEditLoading(true);
   setEditError("");
   try {
-    if (IS_API_READY) {
-      await updateCustomerReview(id, { orderId, rating: editRating, comment: editComment.trim() });
-    }
+    // ✅ دائماً بنستدعي الـ API الحقيقي
+    await updateCustomerReview(id, { orderId, rating: editRating, comment: editComment.trim() });
     setCustomerReviews((prev) =>
       prev.map((r) =>
         (r._id ?? r.id) === id
@@ -374,7 +360,9 @@ const handleSubmitEdit = async (id, orderId) => {
     setEditingReviewId(null);
   } catch (err) {
     console.error("فشل تعديل التقييم:", err);
-    setEditError("تعذّر حفظ التعديل. حاول مرة أخرى.");
+    setEditError(
+      err?.response?.data?.data?.message || "تعذّر حفظ التعديل. حاول مرة أخرى."
+    );
   } finally {
     setEditLoading(false);
   }
@@ -384,14 +372,15 @@ const handleSubmitEdit = async (id, orderId) => {
   const handleConfirmDelete = async (id) => {
     setDeletingId(id);
     try {
-      if (IS_API_READY) {
-        await deleteCustomerReview(id);
-      }
+      // ✅ دائماً بنستدعي الـ API الحقيقي
+      await deleteCustomerReview(id);
       setCustomerReviews((prev) => prev.filter((r) => (r._id ?? r.id) !== id));
       setConfirmDeleteId(null);
     } catch (err) {
       console.error("فشل حذف التقييم:", err);
-      setError("تعذّر حذف التقييم. حاول مرة أخرى.");
+      setError(
+        err?.response?.data?.data?.message || "تعذّر حذف التقييم. حاول مرة أخرى."
+      );
     } finally {
       setDeletingId(null);
     }
@@ -437,7 +426,29 @@ const handleSubmitEdit = async (id, orderId) => {
           </button>
         </div>
 
-        {error && <div className="od-error-inline">{error}</div>}
+        {error && (
+          <div className="rm-error-block">
+            <ErrorState
+              icon={error.isPermission ? AlertCircle : AlertCircle}
+              title={error.title || "تعذّر تحميل التقييمات"}
+              message={error.message}
+              onRetry={error.isPermission ? null : retryLoad}
+              variant="inline"
+            />
+            {error.isPermission && (
+              <div className="rm-error-hint">
+                <p>💡 قد تحتاج لإكمال إعداد ملف متجرك أولاً قبل أن تستطيع إدارة التقييمات.</p>
+                <button
+                  type="button"
+                  className="rm-edit-link-btn"
+                  onClick={() => navigate("/seller/profile/edit")}
+                >
+                  إكمال ملف المتجر
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Summary card */}
         <div className="rm-summary-card">
@@ -490,6 +501,8 @@ const handleSubmitEdit = async (id, orderId) => {
             const isCustomerTab = activeTab === "customerReviews";
             const isEditing = editingReviewId === reviewId;
 
+            const customerPath = customerProfilePath(review.customer);
+
             return (
             <div
               className="rm-review-card"
@@ -505,24 +518,17 @@ const handleSubmitEdit = async (id, orderId) => {
               <div className="rm-review-top">
                 <div className="rm-review-meta">
                   <StarsDisplay rating={review.rating} />
-                  <span
-                    className="rm-review-name"
-                    onClick={() => {
-                      // ⚠️ مهم: نعطي الأولوية لحقل customerId (سواء جوا customer أو على
-                      // المستوى الأعلى بالـ review) لأنه هو المطابق لـ actionUrl الحقيقي
-                      // من الباك اند. review.customer?.id ممكن يكون ID مختلف (fallback أخير فقط).
-                      const customerId =
-                        review.customer?.customerId ??
-                        review.customerId ??
-                        review.customer?.id ??
-                        null;
-                      if (customerId) navigate(`/profile/customer/${customerId}`);
-                    }}
-                    style={{ cursor: "pointer", textDecoration: "underline" }}
-                    title="عرض بروفايل الزبون"
-                  >
-                    {review.customerName}
-                  </span>
+                  {customerPath ? (
+                    <Link
+                      to={customerPath}
+                      className="rm-review-name rm-review-name--link"
+                      title="عرض بروفايل الزبون"
+                    >
+                      {review.customerName}
+                    </Link>
+                  ) : (
+                    <span className="rm-review-name">{review.customerName}</span>
+                  )}
                   <span className="rm-review-date">{review.createdAt?.slice(0, 10)}</span>
                   {!isCustomerTab && (
                     review.sellerReply
@@ -532,7 +538,26 @@ const handleSubmitEdit = async (id, orderId) => {
                 </div>
 
                 {review.customer?.avatar ? (
-                  <img src={review.customer.avatar} alt={review.customerName} className="rm-avatar-img" />
+                  customerPath ? (
+                    <Link
+                      to={customerPath}
+                      className="rm-avatar-link"
+                      title={`بروفايل ${review.customerName}`}
+                    >
+                      <img src={review.customer.avatar} alt={review.customerName} className="rm-avatar-img" />
+                    </Link>
+                  ) : (
+                    <img src={review.customer.avatar} alt={review.customerName} className="rm-avatar-img" />
+                  )
+                ) : customerPath ? (
+                  <Link
+                    to={customerPath}
+                    className="rm-avatar-link"
+                    title={`بروفايل ${review.customerName}`}
+                    style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                  >
+                    {review.customerName?.charAt(0)}
+                  </Link>
                 ) : (
                   <div className="rm-avatar" style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
                     {review.customerName?.charAt(0)}
@@ -666,7 +691,7 @@ const handleSubmitEdit = async (id, orderId) => {
             );
           })}
 
-          {visibleReviews.length === 0 && (
+          {visibleReviews.length === 0 && !error && (
             <div className="rm-empty">لا توجد تقييمات مطابقة لهذا الفلتر</div>
           )}
         </div>

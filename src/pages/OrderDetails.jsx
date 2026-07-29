@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import LoadingState from "../components/LoadingState";
 import "./OrderDetails.css";
+import { customerProfilePath } from "../utils/sellerHelpers";
 
 // ── Icons ──
 const BackArrowIcon = () => (
@@ -350,9 +351,10 @@ const OrderDetails = () => {
 
   // ── الانتقال لصفحة بروفايل الزبون العام (نفس نمط RatingsManagement) ──
   // ⚠️ الراوت مطابق لـ actionUrl يلي بيرجعه الباك اند: /profile/customer/{CUSTOMER_ID}
+  // ✅ بنستخدم helper `customerProfilePath` اللي بيختار الـ ID الصحيح (actionUrl > customerId > id)
   const handleGoToCustomerProfile = () => {
-    const customerId = order.customer?.id;
-    if (customerId) navigate(`/profile/customer/${customerId}`);
+    const path = customerProfilePath(order.customer);
+    if (path) navigate(path);
   };
 
   return (

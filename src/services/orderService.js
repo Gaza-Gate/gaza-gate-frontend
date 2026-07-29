@@ -168,24 +168,54 @@ export async function cancelOrder(orderId) {
 }
 
 /**
- * GET /api/seller/order
+ * GET /api/order/  (⚠️ لاحظ: بدون seller بالـ path — حسب Postman)
  * طلبات البائع (لوحة التحكم) — للـ seller Dashboard + OrdersManagement
  * يدعم pagination وstatus filter
+ *
+ * ✅ Endpoint الصحيح حسب Postman: GET /api/order/ مع Bearer SELLER_ACCESS_TOKEN
+ *    (مش /api/seller/order — هاي غلط، الباك بيرد 404)
  */
 export async function getSellerOrders(token, { page = 1, status } = {}) {
-  const params = new URLSearchParams({ page });
+  const params = new URLSearchParams();
+  if (page) params.append("page", page);
   if (status) params.append("status", status);
-  const res = await api.get(`/api/seller/order?${params}`);
+  const queryString = params.toString();
+  // ✅ trailing slash مهم — الباك ما بيقبل بدونه
+  const url = `/api/order/${queryString ? `?${queryString}` : ""}`;
+  const res = await api.get(url);
   return res.data;
 }
 
 /**
- * GET /api/seller/order/:id
+ * GET /api/order/:id
  * تفاصيل طلب واحد (لوحة البائع)
+ *
+ * ✅ Endpoint الصحيح حسب Postman: GET /api/order/:id مع Bearer SELLER_ACCESS_TOKEN
  */
 export async function getSellerOrderDetails(orderId) {
   if (!orderId) throw new Error("orderId is required");
-  const res = await api.get(`/api/seller/order/${orderId}`);
+  const res = await api.get(`/api/order/${orderId}`);
+  return res.data?.data?.order ?? res.data?.order ?? res.data?.data ?? res.data;
+}
+
+/**
+ * PATCH /api/order/:id/reject
+ * رفض طلب (البائع)
+ */
+export async function rejectOrder(orderId, reason) {
+  if (!orderId) throw new Error("orderId is required");
+  const res = await api.patch(`/api/order/${orderId}/reject`, { reason });
+  return res.data?.data?.order ?? res.data?.order ?? res.data;
+}
+
+/**
+ * PATCH /api/order/:id/status
+ * تحديث حالة طلب (البائع)
+ */
+export async function updateOrderStatus(orderId, status) {
+  if (!orderId) throw new Error("orderId is required");
+  if (!status) throw new Error("status is required");
+  const res = await api.patch(`/api/order/${orderId}/status`, { status });
   return res.data?.data?.order ?? res.data?.order ?? res.data;
 }
 

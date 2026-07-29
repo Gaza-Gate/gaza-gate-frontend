@@ -1,105 +1,189 @@
-import { useState } from "react";
+// src/pages/ConvertToSeller.jsx
+//
+// صفحة "إنشاء المتجر" — تظهر لمستخدم customer ما عندوش seller profile
+// للحظة إنشائه الأولى (one-time-only).
+//
+// الـ flow:
+//   1) user يدخل storeName + storeDescription
+//   2) ConvertToSeller → useAuth().becomeSeller(form)
+//   3) AuthContext.becomeSeller → roleService.submitBecomeSeller
+//      → POST /api/auth/become-seller
+//   4) عند النجاح:
+//      - AuthContext يحدّث user + currentRole + localStorage فوراً
+//      - Navbar يعمل re-render ويعرض روابط البائع
+//      - الصفحة تعمل navigate("/seller/dashboard")
+//   5) عند الفشل: رسالة واضحة + form يبقى قابل للتعديل
+//
+// ✅ Four states معروضة بوضوح:
+//   - idle      → form قابل للتعديل
+//   - submitting → loading spinner + form معطّل
+//   - success   → checkmark كبير + "جاري التحويل..."
+//   - error     → banner أحمر + رسالة الخطأ
+
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import "./ConvertToSeller.css";
-import { validateStoreName, validateStoreDescription } from "../utils/validators";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Store,
+} from "lucide-react";
+import {
+  validateStoreName,
+  validateStoreDescription,
+} from "../utils/validators";
 import { useAuth } from "../context/AuthContext";
 import { connectSocket, disconnectSocket } from "../utils/socket";
+import "./ConvertToSeller.css";
 
-// ── Icons ──
-const StoreIcon = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-    <line x1="3" y1="6" x2="21" y2="6" />
-    <path d="M16 10a4 4 0 01-8 0" />
-  </svg>
-);
+const SUCCESS_DELAY_MS = 900;
+const CONFLICT_REDIRECT_MS = 800;
+const UNAUTHORIZED_REDIRECT_MS = 1200;
 
-const LocationIcon = () => (
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-    <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
-const SpinnerIcon = () => <span className="cts-spinner" />;
+/**
+ * استخراج رسالة الخطأ من الرد.
+ */
+function getApiErrorMessage(err) {
+  if (!err) return "حدث خطأ غير متوقع";
+  return (
+    err?.response?.data?.data?.message ||
+    err?.response?.data?.message ||
+    (Array.isArray(err?.response?.data?.data?.errors) &&
+      err.response.data.data.errors
+        .map((e) => e?.message)
+        .filter(Boolean)
+        .join(" · ")) ||
+    err?.message ||
+    "حدث خطأ غير متوقع"
+  );
+}
 
 export default function ConvertToSeller() {
   const navigate = useNavigate();
-  const { becomeSeller, hasSellerProfile } = useAuth();
+  const { becomeSeller, hasSellerProfile, isAuthenticated, logout } = useAuth();
 
   const [form, setForm] = useState({
     storeName: "",
     storeDescription: "",
   });
-
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [phase, setPhase] = useState("idle"); // idle | submitting | success
+  const [apiError, setApiError] = useState("");
+  const inputRef = useRef(null);
+  // ✅ بنمنع الإرسال المتكرر (double-click أو re-render)
+  const submitLockRef = useRef(false);
 
-  // ─────────────────────────────────────────────────────────────────
-  // ✅ One-time-only guard:
-  //    هاي الصفحة "معلومات المتجر" لازم تنعرض فقط إذا المستخدم
-  //    ما عندوش seller profile. لو عنده متجر (هاي الصفحة خلصت مرة
-  //    أو الـ state محدّث من تاب تاني)، نحوّله على لوحة البائع فوراً
-  //    بدون عرض الفورم.
-  // ─────────────────────────────────────────────────────────────────
+  /* ── Auto-focus on mount ── */
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  // لو ما في session → نرجّع للـ login
+  if (isAuthenticated === false) {
+    return <Navigate to="/login/customer" replace />;
+  }
+
+  /* ── One-time-only guard: لو عنده متجر بالفعل → لوحة البائع ── */
   if (hasSellerProfile) {
     return <Navigate to="/seller/dashboard" replace />;
   }
 
-  const handleChange = (e) => {
+  function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (apiError) setApiError("");
+  }
 
-  const validate = () => {
+  function validate() {
     const errs = {};
     const storeNameErr = validateStoreName(form.storeName);
     if (storeNameErr) errs.storeName = storeNameErr;
     const descErr = validateStoreDescription(form.storeDescription);
     if (descErr) errs.storeDescription = descErr;
     return errs;
-  };
+  }
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
+
+    // ✅ Lock: بنمنع أي محاولة ثانية حتى تنتهي هاي المحاولة
+    if (submitLockRef.current) return;
+    if (phase !== "idle") return;
+
+    // ── Phase 1: client-side validation ──
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    setLoading(true);
+    submitLockRef.current = true;
+    setPhase("submitting");
     setErrors({});
+    setApiError("");
+
     try {
-      // ✅ AuthContext.becomeSeller صار يتعامل مع 409 شفّاف:
-      //    لو الباك رجّع 409 (state محلي قديم)، بيرجع success مع
-      //    recoveredFrom409=true والـ state ينحدّث تلقائياً.
       const result = await becomeSeller({
         storeName: form.storeName.trim(),
         storeDescription: form.storeDescription.trim(),
       });
 
+      // (اختياري) reconnect socket لو الباك طلب ذلك
       if (result?.reconnectSocket) {
-        disconnectSocket();
-        connectSocket();
+        try {
+          disconnectSocket();
+          connectSocket();
+        } catch {
+          /* socket غير متاح — بنتجاهل */
+        }
       }
 
-      setSuccess(true);
-      // نوجّه على لوحة البائع — هاي الصفحة خلصت دورها (one-time-only)
-      setTimeout(() => navigate("/seller/dashboard", { replace: true }), 1000);
+      // ── Phase 2: success ──
+      setPhase("success");
+      setTimeout(() => navigate("/seller/dashboard", { replace: true }), SUCCESS_DELAY_MS);
     } catch (err) {
-      const backendMsg =
-        err?.response?.data?.data?.message ||
-        err?.response?.data?.message ||
-        err.message ||
-        "حدث خطأ، حاول مرة أخرى";
-      setErrors({ general: backendMsg });
+      // ── Phase 3: error handling ──
+      const status = err?.response?.status;
+
+      if (status === 409) {
+        // الباك يقول "Already a seller" — state محلي قديم، نحوّل مباشرة
+        setApiError("لديك متجر بالفعل. جاري التحويل للوحة البائع...");
+        setTimeout(
+          () => navigate("/seller/dashboard", { replace: true }),
+          CONFLICT_REDIRECT_MS
+        );
+        return;
+      }
+
+      if (status === 401) {
+        // التوكن منتهي (الـ interceptor ما قدر يعمل refresh) → بنطلّعه للـ login
+        setApiError("انتهت جلستك. جاري تحويلك لصفحة تسجيل الدخول...");
+        setTimeout(() => {
+          logout();
+          navigate("/login/customer", { replace: true });
+        }, UNAUTHORIZED_REDIRECT_MS);
+        return;
+      } else if (status === 403) {
+        setApiError("ليس لديك صلاحية لإنشاء متجر. تحقق من حسابك.");
+      } else if (status >= 500) {
+        setApiError("خطأ في الخادم. حاول مرة أخرى بعد قليل.");
+      } else if (err?.message === "Network Error") {
+        setApiError("تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.");
+      } else {
+        setApiError(getApiErrorMessage(err));
+      }
+
+      setPhase("idle");
     } finally {
-      setLoading(false);
+      submitLockRef.current = false;
     }
-  };
+  }
+
+  const submitting = phase === "submitting";
+  const success = phase === "success";
 
   return (
     <div className="cts-root" dir="rtl">
@@ -107,47 +191,88 @@ export default function ConvertToSeller() {
         <p className="cts-breadcrumb">انشاء حساب بائع</p>
         <h1 className="cts-title">معلومات المتجر</h1>
 
-        <form className="cts-card" onSubmit={handleSubmit} noValidate>
-
-          <div className="cts-field">
-            <label>اسم المتجر *</label>
-            <input
-              name="storeName"
-              value={form.storeName}
-              onChange={handleChange}
-              placeholder="مثال: متجر فوكس"
-              className={errors.storeName ? "cts-input-error" : ""}
-            />
-            {errors.storeName && <p className="cts-error">{errors.storeName}</p>}
-          </div>
-
-          <div className="cts-field">
-            <label>وصف المتجر</label>
-            <textarea
-              name="storeDescription"
-              value={form.storeDescription}
-              onChange={handleChange}
-              placeholder="اكتب وصفاً مختصراً لمتجرك"
-              className={errors.storeDescription ? "cts-input-error" : ""}
-            />
-            {errors.storeDescription && (
-              <p className="cts-error">{errors.storeDescription}</p>
-            )}
-          </div>
-
-          {errors.general && <div className="cts-banner-error">{errors.general}</div>}
-          {success && (
-            <div className="cts-banner-success">
-              تم تفعيل متجرك بنجاح، جاري تحويلك...
+        {success ? (
+          /* ── Success state ── */
+          <div className="cts-card cts-success-state" role="status" aria-live="polite">
+            <div className="cts-success-icon-wrap">
+              <CheckCircle2 size={64} className="cts-success-icon" />
             </div>
-          )}
+            <h2 className="cts-success-title">تم تفعيل متجرك بنجاح!</h2>
+            <p className="cts-success-text">
+              {form.storeName} — جاري تحويلك للوحة البائع...
+            </p>
+            <Loader2 size={20} className="cts-spinner" />
+          </div>
+        ) : (
+          <form className="cts-card" onSubmit={handleSubmit} noValidate aria-busy={submitting}>
+            <div className="cts-field">
+              <label htmlFor="cts-storeName">
+                اسم المتجر <span className="cts-required">*</span>
+              </label>
+              <input
+                id="cts-storeName"
+                ref={inputRef}
+                name="storeName"
+                type="text"
+                value={form.storeName}
+                onChange={handleChange}
+                placeholder="مثال: متجر فوكس"
+                className={errors.storeName ? "cts-input-error" : ""}
+                disabled={submitting}
+                maxLength={100}
+                aria-invalid={!!errors.storeName}
+                aria-describedby={errors.storeName ? "cts-storeName-err" : undefined}
+              />
+              {errors.storeName && (
+                <p id="cts-storeName-err" className="cts-error" role="alert">
+                  {errors.storeName}
+                </p>
+              )}
+            </div>
 
-          <button type="submit" className="cts-btn-submit" disabled={loading}>
-            {loading ? <SpinnerIcon /> : <StoreIcon />}
-            {loading ? "جاري التفعيل..." : "تفعيل المتجر"}
-          </button>
+            <div className="cts-field">
+              <label htmlFor="cts-storeDescription">وصف المتجر</label>
+              <textarea
+                id="cts-storeDescription"
+                name="storeDescription"
+                rows={3}
+                value={form.storeDescription}
+                onChange={handleChange}
+                placeholder="اكتب وصفاً مختصراً لمتجرك"
+                className={errors.storeDescription ? "cts-input-error" : ""}
+                disabled={submitting}
+                maxLength={500}
+                aria-invalid={!!errors.storeDescription}
+              />
+              {errors.storeDescription && (
+                <p className="cts-error" role="alert">
+                  {errors.storeDescription}
+                </p>
+              )}
+            </div>
 
-        </form>
+            {apiError && (
+              <div className="cts-api-error" role="alert">
+                <AlertCircle size={16} />
+                <span>{apiError}</span>
+              </div>
+            )}
+
+            <button type="submit" className="cts-btn-submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="cts-spinner cts-spinner--inline" />
+                  جاري التفعيل...
+                </>
+              ) : (
+                <>
+                  <Store size={16} />
+                  تفعيل المتجر
+                </>
+              )}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

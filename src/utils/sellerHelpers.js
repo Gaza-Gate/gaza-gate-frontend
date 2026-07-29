@@ -78,6 +78,59 @@ export function extractSellerName(product) {
 }
 
 /**
+ * استخراج id الزبون (customer) من person object.
+ *
+ * الـ API بترجع person (otherParty / customer / order.customer) بأكثر من شكل:
+ *
+ *   1) New shape (الموصى به):
+ *      { id, customerId: "<uuid>", actionUrl: "/profile/customer/<uuid>" }
+ *
+ *   2) Older shape (بدون customerId):
+ *      { id, actionUrl: "/profile/customer/<uuid>" }
+ *
+ *   3) Oldest shape (قبل إضافة customerProfile support):
+ *      { id: "<some-user-or-participant-id>" }   ← بدون customerId/actionUrl
+ *      ⚠️ الـ id هون ممكن يكون user-id مش customer-id — فالـ API call
+ *         بيوقع بـ 404 في بعض الحالات. هذا هو أفضل اللي عندنا.
+ *
+ * الترتيب: actionUrl > customerId > id (fallback)
+ */
+export function extractCustomerId(person) {
+  if (!person) return null;
+
+  // 1) actionUrl — الـ source of truth
+  if (person.actionUrl && typeof person.actionUrl === "string") {
+    const m = person.actionUrl.match(/\/profile\/customer\/([0-9a-f-]{8,})/i);
+    if (m && m[1]) return m[1];
+    // fallback: آخر segment بعد /
+    const parts = person.actionUrl.split("/").filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last && /^[0-9a-f-]{8,}$/i.test(last)) return last;
+  }
+
+  // 2) customerId — الحقل الصريح
+  if (person.customerId && typeof person.customerId === "string") {
+    return person.customerId;
+  }
+
+  // 3) id — fallback (ممكن يكون user-id)
+  if (person.id && typeof person.id === "string") {
+    return person.id;
+  }
+
+  return null;
+}
+
+/**
+ * Build the customer-profile route (/profile/customer/:id) for a given person.
+ * Returns null لو ما لقى id صالح.
+ */
+export function customerProfilePath(person) {
+  const id = extractCustomerId(person);
+  return id ? `/profile/customer/${id}` : null;
+}
+
+/**
  * Build the store-profile route for a given product (or seller id).
  * يقبل كمان string (id مباشر) أو كائن.
  */

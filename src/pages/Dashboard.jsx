@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import {
   CheckCircle,
   Package,
@@ -8,12 +8,15 @@ import {
   Star,
   ShoppingCart,
   PackagePlus,
+  Loader2,
 } from "lucide-react";
 import SellerNavbar from "../components/SellerNavbar";
 import "./Dashboard.css";
 import { getSellerOrders } from "../services/orderService";
 import { getProducts } from "../services/productService";
 import { getSellerDashboard } from "../services/dashboardService";
+import { customerProfilePath } from "../utils/sellerHelpers";
+import { useAuth } from "../context/AuthContext";
 
 const STATUS_LABELS = {
   pending: "بانتظار",
@@ -33,22 +36,37 @@ const STATUS_CLASS = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { hasSellerProfile, isBootstrapping } = useAuth();
 
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null); // بيانات جاهزة من /api/seller/dashboard إذا توفرت
   const [loading, setLoading] = useState(true);
+  const [fatalError, setFatalError] = useState("");
+
+  // ✅ Defensive guard: لو الـ RequireSeller ما اشتغل (لأي سبب)
+  //    أو الـ state لسا ما تحدّث، نحوّل لصفحة إنشاء المتجر بدل ما نعرض
+  //    dashboard فاضي.
+  // ⚠️ isBootstrapping بنستناه عشان ما نعمل redirect غلط لو الـ AuthContext
+  //    عم يعمل refresh session بهدوء.
+  if (!isBootstrapping && hasSellerProfile === false) {
+    return <Navigate to="/customer/become-seller" replace />;
+  }
 
   useEffect(() => {
+    let isMounted = true;
+
     (async () => {
       try {
         setLoading(true);
+        setFatalError("");
 
         // المحاولة الأولى: الـ endpoint الجديد المخصص (أسرع وأدق - كل شي دفعة وحدة)
         let dashboardOk = false;
         try {
           const dashboardRes = await getSellerDashboard();
+          if (!isMounted) return;
           const d = dashboardRes?.data?.dashboard ?? {};
           const s = d.stats ?? {};
           const r = d.rating ?? {};
@@ -67,14 +85,23 @@ export default function Dashboard() {
           setOrders(Array.isArray(d.recentOrders) ? d.recentOrders : []);
 
           dashboardOk = true;
-        } catch {
+        } catch (err) {
           // الـ endpoint لسا غير جاهز أو صار خطأ → نكمل بالطريقة القديمة تحت
-          setStats(null);
+          if (isMounted) setStats(null);
+          // 401 = token منتهي (الـ interceptor بيعمل refresh، لو فشل رح يطلعنا)
+          // 403 = user مش بائع فعلاً (لازم يذهب لـ become-seller)
+          const status = err?.response?.status;
+          if (status === 403) {
+            setFatalError(
+              "حسابك ما عندوش صلاحية بائع بعد. بنرجّعك لصفحة إنشاء المتجر..."
+            );
+            setTimeout(() => navigate("/customer/become-seller", { replace: true }), 1500);
+            return;
+          }
         }
 
         // لو الـ dashboard endpoint فشل، منجيب البيانات القديمة يدوياً كـ fallback
-        // (لو نجح، ما منعيد جلبها حتى ما نكتب فوق بيانات الداشبورد الصحيحة)
-        if (!dashboardOk) {
+        if (!dashboardOk && isMounted) {
           const [ordersData, productsData] = await Promise.all([
             getSellerOrders().catch(() => ({ orders: [] })),
             getProducts().catch(() => ({ products: [] })),
@@ -89,10 +116,26 @@ export default function Dashboard() {
           );
         }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
+
+  if (fatalError && !loading) {
+    return (
+      <div className="dsh-wrapper">
+        <SellerNavbar />
+        <div className="dsh-content" dir="rtl" style={{ textAlign: "center", padding: "4rem 1rem" }}>
+          <p style={{ color: "#b91c1c", fontSize: 16, marginBottom: "1rem" }}>{fatalError}</p>
+          <Loader2 className="dsh-spinner" />
+        </div>
+      </div>
+    );
+  }
 
   // حساب يدوي (Fallback) - يُستخدم فقط إذا stats من الـ API الجديد غير متوفرة
   const completedCount =
@@ -231,18 +274,37 @@ export default function Dashboard() {
             {reviews.length === 0 ? (
               <p className="dsh-empty-text">لا توجد تقييمات حتى الآن</p>
             ) : (
-              reviews.map((r, idx) => (
+              reviews.map((r, idx) => {
+                // ✅ استخراج الـ customer ID الصحيح (actionUrl > customerId > id)
+                const customerPath = customerProfilePath(r.customer);
+                return (
                 <div className="dsh-review-row" key={idx}>
-                  <div className="dsh-avatar">
-                    {r.avatar ? (
-                      <img src={r.avatar} alt={r.customerName ?? ""} />
-                    ) : (
-                      r.customerName?.[0] ?? "؟"
-                    )}
-                  </div>
+                  {customerPath ? (
+                    <Link to={customerPath} className="dsh-avatar dsh-avatar--link" title={`بروفايل ${r.customerName ?? ""}`}>
+                      {r.avatar ? (
+                        <img src={r.avatar} alt={r.customerName ?? ""} />
+                      ) : (
+                        r.customerName?.[0] ?? "؟"
+                      )}
+                    </Link>
+                  ) : (
+                    <div className="dsh-avatar">
+                      {r.avatar ? (
+                        <img src={r.avatar} alt={r.customerName ?? ""} />
+                      ) : (
+                        r.customerName?.[0] ?? "؟"
+                      )}
+                    </div>
+                  )}
                   <div className="dsh-review-body">
                     <div className="dsh-review-top">
-                      <span className="dsh-review-name">{r.customerName}</span>
+                      {customerPath ? (
+                        <Link to={customerPath} className="dsh-review-name dsh-review-name--link" title="عرض بروفايل الزبون">
+                          {r.customerName}
+                        </Link>
+                      ) : (
+                        <span className="dsh-review-name">{r.customerName}</span>
+                      )}
                       <span className="dsh-review-stars">
                         {"★".repeat(r.rating)}
                         {"☆".repeat(5 - r.rating)}
@@ -251,7 +313,8 @@ export default function Dashboard() {
                     <p className="dsh-review-text">{r.comment}</p>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -274,15 +337,27 @@ export default function Dashboard() {
             <div className="dsh-orders-list">
               {recentOrders.map((order) => {
                 const id = order._id ?? order.id;
+                // ✅ استخراج الـ customer ID الصحيح للـ Link
+                const customerPath = customerProfilePath(order.customer);
                 return (
                   <div className="dsh-order-row" key={id}>
                     <div>
                       <span className="dsh-order-number">
                         {order.orderNumber ?? `ORD-${id?.toString().slice(-3)}`}
                       </span>
-                      <p className="dsh-order-buyer">
-                        {order.customerName ?? "مشتري"}
-                      </p>
+                      {customerPath ? (
+                        <Link
+                          to={customerPath}
+                          className="dsh-order-buyer dsh-order-buyer--link"
+                          title="عرض بروفايل الزبون"
+                        >
+                          {order.customerName ?? "مشتري"}
+                        </Link>
+                      ) : (
+                        <p className="dsh-order-buyer">
+                          {order.customerName ?? "مشتري"}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`dsh-tag ${STATUS_CLASS[order.status] ?? ""}`}

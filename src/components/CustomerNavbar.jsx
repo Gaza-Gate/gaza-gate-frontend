@@ -12,26 +12,39 @@ import {
   X,
   ArrowLeftRight,
   ChevronDown,
-  Bell,
   MessageCircle,
 } from "lucide-react";
-import { clearAuthSession } from "../utils/authSession";
+import { useAuth } from "../context/AuthContext";
+import NotificationBell from "./NotificationBell";
 import "./CustomerNavbar.css";
 
 /**
  * CustomerNavbar — ناف بار موحد لكل صفحات المشتري
  *
- * Props:
- *  logo       {string}   — import الصورة من assets ثم مررها هنا
- *  cartCount  {number}   — عدد عناصر السلة (badge برتقالي)
- *  onLogout   {function} — اختياري، لو ما حطيته بيعمل logout تلقائي
+ * ✅ الإشعارات: معزولة تماماً — يستخدم `NotificationBell role="customer"`
+ *    اللي بدوره يستخدم `useNotificationCount("customer")` →
+ *    العداد يكون 0 إذا الـ currentRole !== "customer" (عزل صارم).
+ *
+ * ✅ التبديل: نص "جاري التحويل..." اتشال — الـ RoleSwitchOverlay العالمي
+ *    هو المسؤول الوحيد عن عرض حالة التحميل أثناء التبديل.
+ *    الزر بيبقى disabled (opacity) فقط، بدون أي نص بديل.
  */
 export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLogout }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const {
+    logout: authLogout,
+    hasSellerProfile,
+    switchRole,
+    currentRole,
+    isSwitchingRole,
+    isBecomingSeller,
+  } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const moreRef = useRef(null);
+  // ✅ الـ RoleSwitchOverlay بيغطي الشاشة أثناء التبديل، نخلي الزر disabled فقط
+  const isConverting = isSwitchingRole || isBecomingSeller;
 
   const navItems = [
     { path: "/home/customer", label: "الرئيسية", Icon: Home },
@@ -39,11 +52,19 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     { path: "/my-orders", label: "طلباتي", Icon: User },
   ];
 
+  // ✅ خانة "التحول لبائع" تتغير حسب حالة المستخدم:
+  //   - عنده متجر → "العودة لوضع البائع" (switchRole)
+  //   - ما عندوش → "التحول لبائع" (navigate to become-seller)
+  //   - بنخبيها بالكامل لمن يكون بالفعل بائع (لتجنب التكرار)
+  const becomeSellerItem = hasSellerProfile
+    ? { path: null, label: "العودة لوضع البائع", Icon: ArrowLeftRight, action: "switch-to-seller" }
+    : { path: "/customer/become-seller", label: "التحول لبائع", Icon: ArrowLeftRight, action: null };
+
   const moreItems = [
     { path: "/profile/customer", label: "الملف الشخصي", Icon: User },
     { path: "/messages", label: "المراسلات", Icon: MessageCircle },
-    { path: "/customer/become-seller", label: "التحول لبائع", Icon: ArrowLeftRight },
-  ];
+    becomeSellerItem,
+  ].filter(Boolean);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -61,9 +82,50 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
       onLogout();
       return;
     }
-    clearAuthSession();
+    // ✅ بنستخدم AuthContext.logout() بدل clearAuthSession()
+    //    عشان:
+    //    1) React state (user) يصفّر
+    //    2) AUTH_CHANGED_EVENT ينطلق → باقي المكونات تنحدّث
+    //    3) RequireSeller/RequireCustomer يعملوا redirect تلقائي
+    authLogout();
     navigate("/login/customer");
   };
+
+  // ✅ handler ذكي للتحول للبائع — يستخدم switch-role إذا عنده متجر
+  //    الدور الموحّد: الـ RoleSwitchOverlay بيدير شاشة الانتظار.
+  //    هنا ما بنعرض أي نص "جاري التحويل" — الزر بيبقى disabled لحظياً.
+  async function handleMoreItemClick(item) {
+    setMobileMenuOpen(false);
+    setShowMore(false);
+
+    if (item.action === "switch-to-seller") {
+      if (isConverting) return; // ✅ بنمنع الضغط المتعدد
+      // عنده متجر → switch-role بدل become-seller
+      // الـ overlay (عالمي) بيظهر تلقائياً لأن AuthContext بيضبط isSwitchingRole
+      try {
+        const result = await switchRole("seller");
+        if (result?.reconnectSocket) {
+          try {
+            const { connectSocket, disconnectSocket } = await import(
+              "../utils/socket"
+            );
+            disconnectSocket();
+            connectSocket();
+          } catch {
+            /* socket غير متاح */
+          }
+        }
+        navigate("/seller/dashboard");
+      } catch (err) {
+        // fallback: navigate to become-seller (في حالة غريبة)
+        console.warn("[CustomerNavbar] switch-role فشل، بنحوّل لصفحة become-seller:", err?.message);
+        navigate("/customer/become-seller");
+      }
+      return;
+    }
+
+    if (item.path) navigate(item.path);
+  }
 
   const goTo = (path) => {
     setMobileMenuOpen(false);
@@ -110,16 +172,20 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
 
             {showMore && (
               <div className="cn-dropdown-menu">
-                {moreItems.map(({ path, label, Icon }) => (
-                  <button
-                    key={path}
-                    className={`cn-dropdown-item ${pathname === path ? "cn-dropdown-item-active" : ""}`}
-                    onClick={() => goTo(path)}
-                  >
-                    <Icon size={15} />
-                    {label}
-                  </button>
-                ))}
+                {moreItems.map((item) => {
+                  const isActive = item.path && pathname === item.path;
+                  return (
+                    <button
+                      key={item.label}
+                      className={`cn-dropdown-item ${isActive ? "cn-dropdown-item-active" : ""}`}
+                      onClick={() => handleMoreItemClick(item)}
+                      disabled={isConverting}
+                    >
+                      <item.Icon size={15} />
+                      {item.label}
+                    </button>
+                  );
+                })}
 
                 {/* ✅ تسجيل الخروج تحت "المزيد" */}
                 <div className="cn-dropdown-divider" />
@@ -154,16 +220,8 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
             {cartCount > 0 && <span className="cn-badge">{cartCount}</span>}
           </button>
 
-          {/* ✅ التنبيهات ظاهرة مباشرة في الـ actions بدل ما تكون مخبّاية في "المزيد" */}
-          <button
-            className={`cn-icon-btn cn-icon-btn--ghost ${pathname === "/notifications" ? "cn-icon-btn--active" : ""}`}
-            onClick={() => navigate("/notifications")}
-            aria-label="التنبيهات"
-          >
-            <Bell size={18} />
-          </button>
-
-          {/* ✅ البروفايل انتقل لـ "المزيد" بدل أيقونة علوية — بيقلل الازدحام */}
+          {/* ✅ جرس الإشعارات المعزول — NotificationBell بيدير كل شي داخلياً */}
+          <NotificationBell role="customer" />
 
           {/* ✅ زر القائمة — ظاهر دائماً، يفتح Drawer جانبي */}
           <button
@@ -215,19 +273,22 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
                 className={`cn-drawer-link ${pathname === "/notifications" ? "active" : ""}`}
                 onClick={() => goTo("/notifications")}
               >
-                <Bell size={16} />
-                التنبيهات
+                <span style={{ flex: 1 }}>التنبيهات</span>
               </button>
-              {moreItems.map(({ path, label, Icon }) => (
-                <button
-                  key={path}
-                  className={`cn-drawer-link ${pathname === path ? "active" : ""}`}
-                  onClick={() => goTo(path)}
-                >
-                  <Icon size={16} />
-                  {label}
-                </button>
-              ))}
+              {moreItems.map((item) => {
+                const isActive = item.path && pathname === item.path;
+                return (
+                  <button
+                    key={item.label}
+                    className={`cn-drawer-link ${isActive ? "active" : ""}`}
+                    onClick={() => handleMoreItemClick(item)}
+                    disabled={isConverting}
+                  >
+                    <item.Icon size={16} />
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="cn-drawer-foot">

@@ -83,7 +83,16 @@ export function checkReviewEligibility(order) {
   // mode === "after" → لازم يمر 5 أيام على دخول الحالة
   const statusDate = getStatusDate(order);
   if (!statusDate) {
-    return { allowed: true, status, mode: "after", noDate: true };
+    // ✅ Fix: ما عندي تاريخ → لا نسمح بالمراجعة (آمن من السماح الغلط)
+    // السبب: الباك بيرفض بـ 400 لو الـ 5 أيام ما مرت. فالسماح الغلط
+    // بيسبب خطأ للمستخدم. بنطلب منو يحدّث الصفحة.
+    return {
+      allowed: false,
+      status,
+      mode: "after",
+      reason: `تعذّر التحقق من تاريخ الطلب. حدّث الصفحة وحاول مرة أخرى.`,
+      noDate: true,
+    };
   }
   const now = Date.now();
   const daysPassed = (now - statusDate.getTime()) / (1000 * 60 * 60 * 24);

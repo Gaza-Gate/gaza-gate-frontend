@@ -972,3 +972,207 @@
   .bprs-skel-line--rating { width: 54px; }
   .bprs-skel-header-stats { width: 90px; height: 32px; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   Clickable user blocks (buyer name / avatar / seller reply)
+   ─────────────────────────────────────────────────────────────
+   الـ name + avatar صاروا قابلين للنقر — بيروحوا على بروفايل
+   المشتري (للـ buyer) أو بروفايل المتجر (للـ seller reply).
+   ما غيّرنا الـ layout، بس أضفنا affordance بصري (cursor + hover
+   state + arrow) عشان المستخدم يفهم إنهم تفاعليون.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Buyer avatar (المشتري صاحب التعليق) ── */
+.bprs-review-avatar--link {
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s ease,
+              outline-color 0.2s ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.bprs-review-avatar--link:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px var(--bprs-primary-soft, #fff7ed),
+              0 2px 8px rgba(249, 115, 22, 0.25);
+}
+
+.bprs-review-avatar--link:active {
+  transform: scale(0.98);
+}
+
+.bprs-review-avatar--link:focus-visible {
+  outline-color: var(--bprs-primary, #f97316);
+}
+
+/* ── Buyer name (المشتري صاحب التعليق) ── */
+.bprs-review-name--link {
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--bprs-text, #111827);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 0% 1.5px;
+  background-position: 0 100%;
+  transition: color 0.2s ease, background-size 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bprs-review-name--link:hover {
+  color: var(--bprs-primary, #f97316);
+  background-size: 100% 1.5px;
+}
+
+.bprs-review-name--link:focus-visible {
+  outline: 2px solid var(--bprs-primary, #f97316);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Trusted buyer badge (يظهر جنب الاسم) ── */
+.bprs-review-trusted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bprs-primary, #f97316);
+  background: var(--bprs-primary-light, #fff7ed);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.bprs-review-trusted:hover {
+  transform: scale(1.12);
+}
+
+/* ── رابط "↗" صغير جنب الاسم للـ affordance البصري ── */
+.bprs-link-arrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bprs-text-mute, #9ca3af);
+  opacity: 0;
+  transform: translateX(-2px);
+  transition: opacity 0.2s ease, transform 0.2s ease,
+              color 0.2s ease;
+  margin-right: 2px;
+}
+
+.bprs-review-name--link:hover .bprs-link-arrow,
+.bprs-review-reply-name--link:hover .bprs-link-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--bprs-primary, #f97316);
+}
+
+.bprs-review-reply-name--link .bprs-link-arrow {
+  margin-right: 4px;
+}
+
+/* ── Seller reply avatar (الرد من المتجر) ── */
+.bprs-review-reply-avatar--link {
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s ease,
+              outline-color 0.2s ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.bprs-review-reply-avatar--link:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15),
+              0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+.bprs-review-reply-avatar--link:active {
+  transform: scale(0.98);
+}
+
+.bprs-review-reply-avatar--link:focus-visible {
+  outline-color: #0d9488;
+}
+
+/* ── Seller reply name ── */
+.bprs-review-reply-name--link {
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--bprs-text, #111827);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 0% 1.5px;
+  background-position: 0 100%;
+  transition: color 0.2s ease, background-size 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bprs-review-reply-name--link:hover {
+  color: #0d9488;
+  background-size: 100% 1.5px;
+}
+
+.bprs-review-reply-name--link:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── شكل جديد للـ verified pill بجنبه hover (لو بائع معروف) ── */
+.bprs-review-reply-meta-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── تحسينات بسيطة في الـ card hover (نربطه مع clickable user) ── */
+.bprs-review-card:has(.bprs-review-name--link:hover) {
+  border-color: var(--bprs-primary-soft, #fed7aa);
+  background: #fffaf5;
+}
+
+.bprs-review-card:has(.bprs-review-name--link:hover) .bprs-review-card-bg {
+  opacity: 0.7;
+}
+
+/* ── مسافات أنظف بين العناصر داخل meta-row ── */
+.bprs-review-user-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bprs-review-user-meta-row .bprs-review-name {
+  max-width: 220px;
+}
+
+/* ── لمسة خفيفة على hover: الـ entire user block يتلون ── */
+.bprs-review-user {
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.bprs-review-user:hover {
+  background: rgba(249, 115, 22, 0.04);
+}

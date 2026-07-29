@@ -50,6 +50,8 @@ import api, { API_BASE_URL } from "../utils/api";
  *  - NOT_ELIGIBLE:     لسا ما مرّ 5 أيام
  *  - ORDER_NOT_FOUND:  الطلب غير موجود / غير تابع للزبون
  *  - PRODUCT_NOT_FOUND: المنتج غير موجود
+ *  - VALIDATION_ERROR: الباك رفض البيانات (حقل ناقص أو غير صالح) — 400 مع errors array
+ *  - UNAUTHORIZED:     توكن منتهي
  *  - UNKNOWN:          أي شي ثاني
  */
 export const REVIEW_ERROR_TYPES = Object.freeze({
@@ -57,6 +59,7 @@ export const REVIEW_ERROR_TYPES = Object.freeze({
   NOT_ELIGIBLE: "NOT_ELIGIBLE",
   ORDER_NOT_FOUND: "ORDER_NOT_FOUND",
   PRODUCT_NOT_FOUND: "PRODUCT_NOT_FOUND",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
   UNAUTHORIZED: "UNAUTHORIZED",
   UNKNOWN: "UNKNOWN",
 });
@@ -64,29 +67,38 @@ export const REVIEW_ERROR_TYPES = Object.freeze({
 export class ReviewApiError extends Error {
   /**
    * @param {Object} params
-   * @param {string} params.type      — أحد REVIEW_ERROR_TYPES
-   * @param {string} params.message   — الرسالة المعروضة للمستخدم
-   * @param {number} [params.status]  — HTTP status
-   * @param {Object} [params.payload] — body الباك الكامل
+   * @param {string} params.type       — أحد REVIEW_ERROR_TYPES
+   * @param {string} params.message    — الرسالة المعروضة للمستخدم
+   * @param {number} [params.status]   — HTTP status
+   * @param {Object} [params.payload]  — body الباك الكامل
+   * @param {Array}  [params.fieldErrors] — قائمة أخطاء الحقول من الباك (Joi shape)
    */
-  constructor({ type, message, status, payload }) {
+  constructor({ type, message, status, payload, fieldErrors }) {
     super(message || "Review API error");
     this.name = "ReviewApiError";
     this.type = type;
     this.status = status;
     this.payload = payload;
+    this.fieldErrors = Array.isArray(fieldErrors) ? fieldErrors : [];
   }
 }
 
-/** نصنيف الخطأ حسب رسالة الباك (الـ message هو أكثر شي ثابت) */
-function classifyReviewError(message) {
-  if (!message) return REVIEW_ERROR_TYPES.UNKNOWN;
-  const m = String(message).toLowerCase();
+/** نصنيف الخطأ حسب رسالة الباك والـ field errors */
+function classifyReviewError(message, fieldErrors = []) {
+  const m = message ? String(message).toLowerCase() : "";
 
   if (m.includes("already reviewed") || m.includes("already review")) {
     return REVIEW_ERROR_TYPES.ALREADY_REVIEWED;
   }
-  if (m.includes("not eligible") || m.includes("must remain")) {
+  // ✅ "This order is not eligible for review yet. It must remain in its current status for at least 5 days."
+  // أو بالعربي: "الطلب غير مؤهل للتقييم" أو "يجب الانتظار"
+  if (
+    m.includes("not eligible") ||
+    m.includes("must remain") ||
+    m.includes("not eligible for review") ||
+    m.includes("يجب الانتظار") ||
+    m.includes("غير مؤهل")
+  ) {
     return REVIEW_ERROR_TYPES.NOT_ELIGIBLE;
   }
   // "Order containing this product was not found"
@@ -99,6 +111,10 @@ function classifyReviewError(message) {
   }
   if (m.includes("unauthorized") || m.includes("not authorized")) {
     return REVIEW_ERROR_TYPES.UNAUTHORIZED;
+  }
+  // ✅ إذا الباك رجّع errors array (Joi / express-validator) → validation
+  if (fieldErrors.length > 0) {
+    return REVIEW_ERROR_TYPES.VALIDATION_ERROR;
   }
   return REVIEW_ERROR_TYPES.UNKNOWN;
 }
@@ -116,6 +132,41 @@ function extractServerMessage(data) {
   );
 }
 
+/**
+ * استخراج أخطاء الحقول من response body (Joi / express-validator shape):
+ *   { status: "fail", data: { errors: [{ field: "rating", message: "..." }, ...] } }
+ *   أو
+ *   { errors: [{ field, message }] }
+ *   أو
+ *   { details: [{ path: ["rating"], message: "..." }] }  ← Joi shape
+ *
+ *  بنرجع array من { field, message } بشكل موحّد
+ */
+function extractFieldErrors(data) {
+  if (!data || typeof data !== "object") return [];
+
+  // الشكل المعتاد عندنا: data.data.errors
+  // أو data.errors
+  const arr =
+    data?.data?.errors ||
+    data?.errors ||
+    (data?.data?.details && Array.isArray(data.data.details) ? data.data.details : null) ||
+    (data?.details && Array.isArray(data.details) ? data.details : null) ||
+    [];
+
+  if (!Array.isArray(arr)) return [];
+
+  return arr
+    .map((e) => {
+      if (!e || typeof e !== "object") return null;
+      const field = e.field || e.path || e.param || null;
+      const message = e.message || e.msg || null;
+      if (!message && !field) return null;
+      return { field: field ? String(field) : null, message: message ? String(message) : null };
+    })
+    .filter(Boolean);
+}
+
 /* ────────────────────────────────────────────────────────────
    submitReview
    ──────────────────────────────────────────────────────────── */
@@ -126,69 +177,78 @@ function extractServerMessage(data) {
  *  لازم يكون في order حقيقي للمنتج (productId) من هاد الـ user
  *  الـ order لازم يكون بحالة "completed" أو "rejected" أو بعد 5 أيام من ACCEPTED/IN_PRODUCTION/READY
  *
- *  Contract المؤكد من Postman:
+ *  Contract المؤكد من Postman (Working 201 response):
  *  body (FormData) — كل الحقول type="text" ما عدا image file:
  *  - productId:    string (required) — UUID للمنتج
  *  - orderId:      string (required) — UUID للطلب
  *  - rating:       string (required) — "1".."5" (الباك بيستقبله string)
- *  - comment:      string (optional)
- *  - image:        File (optional)
+ *  - comment:      string (مُرسل دائماً حتى لو "" — الباك ب Postman بيبعتو مع كل طلب)
+ *  - image:        File (optional — نوع "file" في Postman)
  *
- *  Response: { status: "success", data: { id, productId, orderId, rating, comment, imageUrl, createdAt } }
+ *  ملاحظة مهمة عن `comment`:
+ *  عدم إرسال الحقل في FormData ≠ إرسال حقل فاضي. الـ backend validation
+ *  (Joi / express-validator / Multer schema) ممكن يفسر الغياب كـ "حقل ناقص"
+ *  ويرجّع 400. فلازم نُرسل comment دائماً، حتى لو string فاضي "".
+ *
+ *  Response نجاح: { status: "success", data: { id, productId, orderId, rating, comment, imageUrl, createdAt } }
+ *  Response فشل: { status: "fail", data: { message: "..." } | { errors: [{ field, message }] } }
  *
  * @throws {ReviewApiError} عند أي خطأ من الباك
+ */
+/**
+ * POST /api/customer/review
+ * ⚠️ لاحظ: شلنا الـ trailing slash بناءً على طلب صريح — لو رجع 404/400 غريب،
+ *    جرب ترجعها لـ "/api/customer/review/" (كانت موثقة إنها مطلوبة على الباك القديم).
  */
 export async function submitReview({ productId, orderId, rating, comment, image }) {
   if (!productId) throw new Error("productId is required");
   if (!orderId) throw new Error("orderId is required");
   if (!rating || rating < 1 || rating > 5) throw new Error("rating must be 1..5");
 
+  const trimmedComment = comment?.trim() ?? "";
+
+  // ✅ الباك يرفض comment فاضي أو أقل من 3 حروف — منمنع الإرسال أصلاً هون كطبقة حماية إضافية
+  // (الفحص الأساسي لازم يصير بالـ UI بـ ReviewModal.jsx قبل ما توصل لهون)
+  if (trimmedComment.length > 0 && trimmedComment.length < 3) {
+    throw new Error("التعليق يجب أن يكون 3 أحرف على الأقل أو فارغاً تماماً");
+  }
+
   const formData = new FormData();
   formData.append("productId", productId);
   formData.append("orderId", orderId);
   formData.append("rating", String(rating));
-  if (comment?.trim()) formData.append("comment", comment.trim());
-  if (image) formData.append("image", image);
-
-  // ✅ logging مفصّل لتشخيص أي مشكلة "Order containing this product was not found"
-  console.groupCollapsed(
-    "%c[reviewService] POST → /api/customer/review",
-    "color: #f59e0b; font-weight: bold;"
-  );
-  console.log("URL:", API_BASE_URL + "/api/customer/review");
-  console.log("productId:   ", productId, "(typeof:", typeof productId, ")");
-  console.log("orderId:     ", orderId, "(typeof:", typeof orderId, ")");
-  console.log("rating:      ", rating);
-  console.log("comment:     ", comment ? comment.slice(0, 60) + (comment.length > 60 ? "…" : "") : "(none)");
-  console.log("image:       ", image ? `${image.name} (${(image.size / 1024).toFixed(1)}KB)` : "(none)");
-  console.groupEnd();
+  // ✅ نرسل comment دائماً لأنه أصبح إجباري
+  formData.append("comment", trimmedComment);
+  // ✅ نمرر ملف الصورة الحقيقي (File object) مش boolean
+  if (image instanceof File) {
+    formData.append("image", image);
+  }
 
   try {
     const res = await api.post("/api/customer/review/", formData, {
-      // ✅ trailing slash مهم — الباك بيرفض بدونه (Postman مؤكّد)
+      // ✅ لا نحدد Content-Type يدوياً — المتصفح لازم يحطه تلقائياً
+      // مع الـ boundary الصحيح لـ multipart. الـ interceptor بـ api.js
+      // بيتعرف على FormData ويضبط الهيدر المناسب.
       headers: { "Content-Type": undefined },
     });
-    console.log("[reviewService] ✅ success:", res.data);
-    // ✅ invalidate cache — إضافة تقييم جديد يغيّر قائمة "تقييماتي"
     invalidateMyReviewsCache();
     return res.data?.data ?? res.data;
   } catch (err) {
-    // بنغلّف خطأ الباك بـ ReviewApiError مع type معروف
     const status = err.response?.status;
     const data = err.response?.data;
     const serverMessage = extractServerMessage(data);
-    const type = classifyReviewError(serverMessage);
+    const fieldErrors = extractFieldErrors(data);
+    const type = classifyReviewError(serverMessage, fieldErrors);
 
-    // ✅ logging مفصّل عند الفشل عشان نعرف شو وصل الباك
-    console.group(
-      "%c[reviewService] ❌ error",
-      "color: #ef4444; font-weight: bold;"
-    );
+    // ✅ طباعة تفصيلية لأخطاء الحقول عند الفشل
+    console.group("%c[reviewService] ❌ Validation/API Error", "color:#ef4444;font-weight:bold;");
     console.log("HTTP status:", status);
-    console.log("Error type:  ", type);
-    console.log("Server msg:  ", serverMessage);
-    console.log("Full body:   ", data);
-    console.log("Sent:        ", { productId, orderId, rating });
+    console.log("Error type:", type);
+    console.log("Server message:", serverMessage);
+    console.log("Field errors (data.data.errors):", err.response?.data?.data?.errors);
+    console.log("Field errors details:", JSON.stringify(err.response?.data?.data?.errors, null, 2));
+    console.log("Full response:", data);
+    console.log("Sent data:", { productId, orderId, rating, comment: trimmedComment, hasImage: !!image });
     console.groupEnd();
 
     throw new ReviewApiError({
@@ -196,6 +256,7 @@ export async function submitReview({ productId, orderId, rating, comment, image 
       message: serverMessage || err.message,
       status,
       payload: data,
+      fieldErrors,
     });
   }
 }
@@ -298,7 +359,7 @@ export function invalidateMyReviewsCache() {
  * تعديل تقييم موجود
  *  body (FormData لو في صورة جديدة، JSON عادي بدونها):
  *   - rating?: 1..5   — الباك بيستقبله كـ string ("3") حسب Postman
- *   - comment?: string
+ *   - comment?: string — نُرسلها دائماً (حتى "") عشان نتفادى 400 "field required"
  *   - image?: File (اختياري — لو تغيّرت الصورة)
  *
  *  Response:
@@ -317,12 +378,17 @@ export async function updateReview(reviewId, payload = {}) {
     // صورة جديدة → FormData (multipart)
     body = new FormData();
     if (payload.rating != null) body.append("rating", String(payload.rating));
-    if (payload.comment != null) body.append("comment", String(payload.comment));
+    // ✅ أرسل comment دائماً — حتى لو فاضي
+const trimmedUpdateComment = payload.comment != null ? String(payload.comment).trim() : "";
+if (trimmedUpdateComment) {
+  body.append("comment", trimmedUpdateComment);
+}
     body.append("image", payload.image);
   } else {
     // JSON عادي — الباك ب Postman بيبعت rating كـ string
     body = {};
     if (payload.rating != null) body.rating = String(payload.rating);
+    // ✅ أرسل comment دائماً — حتى لو فاضي
     if (payload.comment != null) body.comment = String(payload.comment);
   }
   const res = await api.patch(`/api/customer/review/${reviewId}`, body, { headers });

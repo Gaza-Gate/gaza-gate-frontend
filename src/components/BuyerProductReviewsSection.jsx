@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import {
   Star,
   Package,
@@ -9,6 +10,7 @@ import {
   MessageSquareQuote,
   ShieldCheck,
   Store,
+  BadgeCheck,
 } from "lucide-react";
 
 import {
@@ -17,6 +19,7 @@ import {
   fetchMissingReplies,
 } from "../services/reviewService";
 import { avatarColor, fullName } from "../utils/chatHelpers";
+import { customerProfilePath, storeProfilePath } from "../utils/sellerHelpers";
 import "./BuyerProductReviewsSection.css";
 
 /* ════════════════════════════════════════════════════════════════
@@ -106,6 +109,32 @@ function buyerInitial(review) {
   if (flat.name) return flat.name[0];
   if (nested.name) return nested.name[0];
   return "?";
+}
+
+/**
+ * استخراج المسار لبروفايل المشتري (customer) من الـ review object.
+ * ✅ حسب Postman collection — الـ shape الجديد بيرجّع:
+ *    customer: { id, firstName, lastName, avatar, actionUrl, isTrustedBuyer }
+ * الأولوية:
+ *   1) customer.actionUrl  (الـ source of truth من الباك)
+ *   2) customer.id         (نبني المسار يدوي)
+ *   3) user.id             (fallback إذا الباك رجّع user.id فقط)
+ * يرجع null لو ما في id صالح.
+ */
+function customerProfileHref(review) {
+  if (!review) return null;
+  // ✅ customerProfilePath من sellerHelpers.js — بيستخرج من actionUrl > customerId > id
+  return customerProfilePath(review.customer) || customerProfilePath(review.user) || null;
+}
+
+/** هل المشتري موثّق (Trusted Buyer)؟ */
+function isBuyerTrusted(review) {
+  return Boolean(
+    review?.customer?.isTrustedBuyer ||
+      review?.customer?.user?.isTrustedBuyer ||
+      review?.user?.isTrustedBuyer ||
+      false
+  );
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -349,6 +378,11 @@ function ReviewCard({ review, index = 0, showProductTag = false, onProductTagCli
   const avatarUrl = buyerAvatarUrl(review);
   const color = avatarColor(displayName);
 
+  // ✅ رابط بروفايل المشتري — قابل للنقر (Clickable)
+  // حسب Postman: review.customer.{id, actionUrl, isTrustedBuyer}
+  const customerHref = customerProfileHref(review);
+  const buyerIsTrusted = isBuyerTrusted(review);
+
   // صورة المراجعة (من الباك غالباً review.image / imageUrl / photo)
   // الباك يرجعها أيضاً في الـ POST response كـ imageUrl
   const reviewImage =
@@ -359,6 +393,19 @@ function ReviewCard({ review, index = 0, showProductTag = false, onProductTagCli
 
   // رد البائع — normalize شامل يدعم كل الأشكال/الأسماء المحتملة من الباك
   const sellerReply = normalizeSellerReply(review);
+
+  // ✅ رابط بروفايل المتجر / البائع
+  // حسب Postman: seller.actionUrl = "/store/:sellerId" أو seller.id
+  const sellerHref = sellerReply
+    ? storeProfilePath({
+        seller: {
+          id: sellerReply.seller?.id,
+          actionUrl:
+            sellerReply.seller?.actionUrl ||
+            (sellerReply.seller?.id ? `/store/${sellerReply.seller.id}` : null),
+        },
+      })
+    : null;
 
   return (
     <article
@@ -371,19 +418,56 @@ function ReviewCard({ review, index = 0, showProductTag = false, onProductTagCli
 
       <header className="bprs-review-head">
         <div className="bprs-review-user">
-          <div
-            className="bprs-review-avatar"
-            style={{ backgroundColor: color }}
-            aria-hidden="true"
-          >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} />
-            ) : (
-              <span>{initial}</span>
-            )}
-          </div>
+          {customerHref ? (
+            <Link
+              to={customerHref}
+              className="bprs-review-avatar bprs-review-avatar--link"
+              style={{ backgroundColor: color }}
+              title={`عرض بروفايل ${displayName}`}
+              aria-label={`عرض بروفايل ${displayName}`}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} loading="lazy" />
+              ) : (
+                <span>{initial}</span>
+              )}
+            </Link>
+          ) : (
+            <div
+              className="bprs-review-avatar"
+              style={{ backgroundColor: color }}
+              aria-hidden="true"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} loading="lazy" />
+              ) : (
+                <span>{initial}</span>
+              )}
+            </div>
+          )}
           <div className="bprs-review-user-meta">
-            <span className="bprs-review-name">{displayName}</span>
+            <div className="bprs-review-user-meta-row">
+              {customerHref ? (
+                <Link
+                  to={customerHref}
+                  className="bprs-review-name bprs-review-name--link"
+                  title={`عرض بروفايل ${displayName}`}
+                >
+                  {displayName}
+                </Link>
+              ) : (
+                <span className="bprs-review-name">{displayName}</span>
+              )}
+              {buyerIsTrusted && (
+                <span
+                  className="bprs-review-trusted"
+                  title="مشتري موثّق"
+                  aria-label="مشتري موثّق"
+                >
+                  <BadgeCheck size={13} />
+                </span>
+              )}
+            </div>
             <span className="bprs-review-time">
               {timeAgo(review.createdAt || review.created_at)}
             </span>
@@ -438,25 +522,64 @@ function ReviewCard({ review, index = 0, showProductTag = false, onProductTagCli
 
           {/* Header: أفاتار + اسم المتجر + verified + الوقت */}
           <div className="bprs-review-reply-head">
-            <div
-              className="bprs-review-reply-avatar"
-              style={{
-                backgroundColor: avatarColor(sellerReply.seller?.name || "المتجر"),
-              }}
-              aria-hidden="true"
-            >
-              {sellerReply.seller?.avatar ? (
-                <img src={sellerReply.seller.avatar} alt={sellerReply.seller.name || "المتجر"} />
-              ) : (
-                <Store size={14} />
-              )}
-            </div>
+            {sellerHref ? (
+              <Link
+                to={sellerHref}
+                className="bprs-review-reply-avatar bprs-review-reply-avatar--link"
+                style={{
+                  backgroundColor: avatarColor(
+                    sellerReply.seller?.name || "المتجر"
+                  ),
+                }}
+                title={`زيارة متجر ${sellerReply.seller?.name || ""}`}
+                aria-label={`زيارة متجر ${sellerReply.seller?.name || ""}`}
+              >
+                {sellerReply.seller?.avatar ? (
+                  <img
+                    src={sellerReply.seller.avatar}
+                    alt={sellerReply.seller.name || "المتجر"}
+                  />
+                ) : (
+                  <Store size={14} />
+                )}
+              </Link>
+            ) : (
+              <div
+                className="bprs-review-reply-avatar"
+                style={{
+                  backgroundColor: avatarColor(
+                    sellerReply.seller?.name || "المتجر"
+                  ),
+                }}
+                aria-hidden="true"
+              >
+                {sellerReply.seller?.avatar ? (
+                  <img
+                    src={sellerReply.seller.avatar}
+                    alt={sellerReply.seller.name || "المتجر"}
+                  />
+                ) : (
+                  <Store size={14} />
+                )}
+              </div>
+            )}
 
             <div className="bprs-review-reply-meta">
               <div className="bprs-review-reply-meta-top">
-                <strong className="bprs-review-reply-name">
-                  {sellerReply.seller?.name || "المتجر"}
-                </strong>
+                {sellerHref ? (
+                  <Link
+                    to={sellerHref}
+                    className="bprs-review-reply-name bprs-review-reply-name--link"
+                    title={`زيارة متجر ${sellerReply.seller?.name || ""}`}
+                  >
+                    {sellerReply.seller?.name || "المتجر"}
+                    <span className="bprs-link-arrow" aria-hidden="true">↗</span>
+                  </Link>
+                ) : (
+                  <strong className="bprs-review-reply-name">
+                    {sellerReply.seller?.name || "المتجر"}
+                  </strong>
+                )}
                 <span className="bprs-review-reply-badge" title="بائع موثّق">
                   <ShieldCheck size={10} />
                   موثّق

@@ -251,3 +251,37 @@
 @media (max-width: 640px) {
   .dsh-content { padding: 1.2rem 1rem 2rem; }
 }
+
+/* ═══════ Customer profile links (avatar + name → /profile/customer/:id) ═══════ */
+.dsh-avatar--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.dsh-avatar--link:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px #f97316;
+}
+.dsh-review-name--link {
+  color: #f97316;
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.dsh-review-name--link:hover {
+  color: #ea580c;
+  border-bottom-color: #ea580c;
+}
+.dsh-order-buyer--link {
+  display: inline-block;
+  color: #f97316;
+  text-decoration: none;
+  font-size: inherit;
+  border-bottom: 1px dashed transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.dsh-order-buyer--link:hover {
+  color: #ea580c;
+  border-bottom-color: #ea580c;
+}

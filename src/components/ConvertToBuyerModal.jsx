@@ -26,8 +26,10 @@ const ConvertToBuyerModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
           <li>لن ترى لوحة البائع أو الطلبات الواردة مؤقتًا.</li>
         </ul>
 
+        {/* ✅ لا نص "جاري التحويل" — الـ RoleSwitchOverlay العالمي هو المسؤول الوحيد
+            الزر بيظهر disabled فقط، الـ overlay بيغطي الشاشة أثناء التبديل */}
         <button className="cbm-confirm-btn" onClick={onConfirm} disabled={isLoading}>
-          {isLoading ? "جاري التحويل..." : "نعم، تحول لمشتري"}
+          نعم، تحول لمشتري
         </button>
       </div>
     </div>

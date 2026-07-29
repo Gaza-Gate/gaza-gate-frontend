@@ -206,15 +206,10 @@ export async function createOrder(orderData) {
   const res = await api.post("/api/customer/order", orderData);
   return res.data?.data?.order || res.data?.order || res.data;
 }
-export const becomeSeller = async (storeData) => {
-  const response = await api.post("/api/auth/become-seller", storeData);
-  const { accessToken, user, reconnectSocket } = response.data.data;
 
-  localStorage.setItem("token", accessToken);
-  localStorage.setItem("user", JSON.stringify(user));
-
-  return { user, reconnectSocket };
-};
+// ⚠️ تم نقل becomeSeller / switchRole / becomeCustomer لـ services/roleService.js
+//    (مصدر واحد للحقيقة — ممنوع التكرار لأنه يسبب state drift)
+//    استخدم imports من "../services/roleService" بدال ذلك.
 // ⚠️ تم حذف submitProductReview — استخدم submitReview من "../services/reviewService" بدلاً منها
 
 // ── مراسلات العميل ──
@@ -285,25 +280,3 @@ export async function clearAllCustomerNotifications() {
   const res = await api.delete("/api/customer/notifications");
   return res.data;
 }
- 
-
-export const switchRole = async (role) => {
-  const response = await api.post("/api/auth/switch-role", { role });
-  const { accessToken, user, reconnectSocket } = response.data.data;
- 
-  // نفس المفتاح "token" المستخدم بباقي المشروع (شفناه بـ handleLogout بـ SellerNavbar)
-  localStorage.setItem("token", accessToken);
-  localStorage.setItem("user", JSON.stringify(user));
- 
-  return { user, reconnectSocket };
-};
-export const becomeCustomer = async () => {
-  const response = await api.post("/api/auth/become-customer");
-  const { accessToken, user, reconnectSocket } = response.data.data;
-
-  localStorage.setItem("token", accessToken);
-  localStorage.setItem("user", JSON.stringify(user));
-
-  return { user, reconnectSocket };
-};
- 

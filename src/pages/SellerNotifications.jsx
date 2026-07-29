@@ -23,21 +23,12 @@ import {
 } from "lucide-react";
 
 import {
-  getCustomerNotifications,
-  markCustomerNotificationRead,
-  markAllCustomerNotificationsRead,
+  getSellerNotifications,
+  markSellerNotificationRead,
+  markAllSellerNotificationsRead,
 } from "../services/notificationService";
 
 import { connectSocket } from "../utils/socket";
-import { resolveNotificationRoute } from "../utils/notificationRoutes";
-import {
-  isCustomerNotification,
-  shouldAcceptCustomerSocketEvent,
-} from "../utils/notificationRoleFilter";
-
-import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext";
 
 import "./NotificationsPage.css";
 
@@ -246,35 +237,94 @@ function isReviewReply(n) {
 }
 
 /**
- * اشتقاق الـ action button من الإشعار.
- * ✅ الآن بيستخدم الـ resolver الموحّد `resolveNotificationRoute`
- *    (من utils/notificationRoutes.js) عشان يضمن التطابق مع Postman contract.
+ * اشتقاق الـ action button من الإشعار — بيجرب:
+ * 1) إشعار "رد على تقييم" → روح على المنتج (مع reviewId لو متوفر)
+ * 2) actionUrl الجاهز من الباك إند
+ * 3) routes محسوبة من order.id
+ * 4) رابط المتجر من sender.id
+
+ * للبائع: routes مختلفة (seller/orders, seller/products)
  */
-function getNotificationActions(n) {
+function getNotificationActions(n, isSeller = true) {
   if (!n) return [];
   const actions = [];
+  const order = getOrder(n);
+  const sender = getSender(n);
 
-  // ✅ مصدر الحقيقة الموحّد: utils/notificationRoutes.js
-  const resolved = resolveNotificationRoute(n, "customer");
-  if (resolved) {
-    actions.push({
-      key: resolved.key,
-      label: resolved.label,
-      icon: ExternalLink,
-      type: normType(n.type),
-      path: resolved.path,
-    });
-    return actions;
+  // ── 1) إشعار "رد على تقييم" → روح على المنتج مباشرة ──
+  if (isReviewReply(n)) {
+    const product = getProduct(n);
+    const review = getReview(n);
+    if (product?.id) {
+      const params = new URLSearchParams();
+      if (review?.id) params.set("reviewId", review.id);
+      const query = params.toString();
+      actions.push({
+        key: "view-review-reply",
+        label: "عرض الرد على التقييم",
+        icon: ExternalLink,
+        type: normType(n.type),
+        path: `/product/${product.id}${query ? `?${query}` : ""}`,
+      });
+      return actions;
+    }
   }
 
-  // fallback نادر — لو الـ resolver رجّع null، نعرض رابط أساسي
-  actions.push({
-    key: "fallback",
-    label: "عرض التفاصيل",
-    icon: ExternalLink,
-    type: normType(n.type),
-    path: "/home/customer",
-  });
+  // ── 2) لو في actionUrl جاهز من الباك إند ──
+  if (n.actionUrl) {
+    let target = n.actionUrl;
+    // ✅ تطبيع المسار للبائع
+    if (isSeller) {
+      if (target.startsWith("/orders/") && !target.startsWith("/seller/orders/")) {
+        target = `/seller/orders${target.replace(/^\/orders/, "")}`;
+      }
+    } else {
+      // للمشتري
+      if (target.startsWith("/orders/") && !target.startsWith("/my-orders/")) {
+        target = `/my-orders${target.replace(/^\/orders/, "")}`;
+      }
+    }
+    let label = "عرض التفاصيل";
+    if (normType(n.type) === "ORDER") label = "عرض تفاصيل الطلب";
+    else if (normType(n.type) === "PROMOTIONAL") label = "عرض العرض";
+    else if (normType(n.type) === "SYSTEM") label = "عرض التفاصيل";
+    actions.push({
+      key: "primary",
+      label,
+      icon: ExternalLink,
+      type: normType(n.type),
+      path: target,
+    });
+    return actions; // الباك إند وفّر الرابط الجاهز
+  }
+
+  // ── 3) fallback: اشتق من order object أو orderId المباشر ──
+  const orderId = getOrderId(n);
+  if (orderId) {
+    const orderPath = isSeller ? `/seller/orders/${orderId}` : `/my-orders/${orderId}`;
+    actions.push({
+      key: "view-order",
+      label: "عرض تفاصيل الطلب",
+      icon: ShoppingBag,
+      type: "ORDER",
+      path: orderPath,
+    });
+  }
+
+  // ── 4) رابط المتجر من sender.id (للمشتري فقط) ──
+  if (!isSeller) {
+    const senderId = sender?.id || sender?._id || n?.senderId;
+    if (senderId && normType(n.type) === "ORDER") {
+      actions.push({
+        key: "view-store",
+        label: "عرض المتجر",
+        icon: ExternalLink,
+        type: "GENERAL",
+        path: `/customer/store/${senderId}`,
+      });
+    }
+  }
+
   return actions;
 }
 
@@ -291,17 +341,22 @@ function formatFullDate(dateStr) {
   });
 }
 
-// ── Main Component ─────────────────────────────────────────
-export default function CustomerNotifications() {
-  const navigate = useNavigate();
-  const { currentRole, isBootstrapping } = useAuth();
-  const { cartCount } = useCart();
-  const { wishlistCount } = useWishlist();
+function getStatusLabel(status) {
+  const statusMap = {
+    pending: "قيد الانتظار",
+    accepted: "مقبول",
+    in_production: "قيد الإنتاج",
+    ready: "جاهز",
+    completed: "مكتمل",
+    rejected: "مرفوض",
+    cancelled: "ملغي",
+  };
+  return statusMap[status] || status;
+}
 
-  // 🔒 حارس صارم: هذه الصفحة للمشتري فقط
-  //    لو الـ currentRole !== "customer" (مثلاً بائع أو admin)
-  //    ما بدنا نعبي الإشعارات أو نعرض بيانات خاطئة
-  const isCustomerMode = currentRole === "customer";
+// ── Main Component ─────────────────────────────────────────
+export default function SellerNotifications() {
+  const navigate = useNavigate();
 
   const [notifs, setNotifs] = useState([]);
   const [stats, setStats] = useState({
@@ -326,8 +381,6 @@ export default function CustomerNotifications() {
   const load = useCallback(
     async (pageNum = 1, append = false) => {
       if (inFlightRef.current) return;
-      // 🔒 حماية: لو مش بوضعية المشتري، ما نطلب شي
-      if (!isCustomerMode) return;
       inFlightRef.current = true;
 
       try {
@@ -335,14 +388,8 @@ export default function CustomerNotifications() {
         else setLoading(true);
         setError(null);
 
-        const data = await getCustomerNotifications(pageNum);
-        const rawList = Array.isArray(data?.notifications)
-          ? data.notifications
-          : [];
-
-        // 🔒 فلتر أمان: حتى لو الـ endpoint بيرجّع إشعار للبائع
-        //    (bug في الباك)، ما نعرضه بواجهة الزبون
-        const list = rawList.filter(isCustomerNotification);
+        const data = await getSellerNotifications(pageNum);
+        const list = Array.isArray(data?.notifications) ? data.notifications : [];
         const s = data?.stats ?? {};
         const p = data?.pagination ?? null;
 
@@ -373,48 +420,22 @@ export default function CustomerNotifications() {
         inFlightRef.current = false;
       }
     },
-    [isCustomerMode]
+    []
   );
 
   useEffect(() => {
-    // 🔒 ما نطلب إلا لما يكون وضع المشتري مؤكد
-    if (isBootstrapping) return;
-    if (!isCustomerMode) {
-      // نفرّغ الإشعارات لو اليوزر تحوّل لبائع
-      setNotifs([]);
-      setStats({
-        total: 0,
-        order: 0,
-        general: 0,
-        system: 0,
-        promotional: 0,
-        unRead: 0,
-      });
-      return;
-    }
     load(1);
-  }, [load, isCustomerMode, isBootstrapping]);
+  }, [load]);
 
   // ── الاستماع لإشعار جديد جاي من السوكت (real-time) ──
   useEffect(() => {
-    // 🔒 ما نشترك بالـ socket إلا بوضعية المشتري
-    if (!isCustomerMode) return undefined;
     const socket = connectSocket();
     const handleNewNotification = (payload) => {
-      // 🔒 فلتر صارم: لو الإشعار للبائع، نتجاهله فوراً
-      if (!shouldAcceptCustomerSocketEvent(payload)) {
-        // debug فقط — بنتجاهل أي إشعار ما يخص المشتري
-        return;
-      }
-
       // الـ payload الجاي بالشكل: { notification: {...}, stats: {... } } أو الإشعار مباشرة
       const notif = payload?.notification ?? payload;
       if (!notif) return;
       const id = notif.id ?? notif._id;
       if (!id) return;
-
-      // 🔒 فلتر ثاني على مستوى العنصر — defense in depth
-      if (!isCustomerNotification(notif)) return;
 
       setNotifs((prev) => {
         const list = Array.isArray(prev) ? prev : [];
@@ -436,7 +457,7 @@ export default function CustomerNotifications() {
     return () => {
       socket.off(NEW_NOTIFICATION_EVENT, handleNewNotification);
     };
-  }, [isCustomerMode]);
+  }, []);
 
   // ── Mark single as read (optimistic) ──
   const markOneRead = useCallback(async (id) => {
@@ -447,7 +468,7 @@ export default function CustomerNotifications() {
     setStats((prev) => ({ ...prev, unRead: Math.max(0, prev.unRead - 1) }));
 
     try {
-      await markCustomerNotificationRead(id);
+      await markSellerNotificationRead(id);
     } catch (err) {
       console.error("Mark read error:", err);
       // rollback على الفشل
@@ -467,7 +488,7 @@ export default function CustomerNotifications() {
     setStats((prev) => ({ ...prev, unRead: 0 }));
 
     try {
-      await markAllCustomerNotificationsRead();
+      await markAllSellerNotificationsRead();
     } catch (err) {
       console.error("Mark all read error:", err);
       // rollback
@@ -481,30 +502,23 @@ export default function CustomerNotifications() {
   }, [markingAll, stats.unRead]);
 
   // ── Tabs (filtering) ──
-  // 🔒 Defense in depth: نطبّق فلتر الدور حتى لو الـ state فيه
-  //    عناصر مش للزبون (مثلاً وصلت من socket قبل ما نضيف الـ guard)
-  const safeNotifs = useMemo(
-    () => (Array.isArray(notifs) ? notifs.filter(isCustomerNotification) : []),
-    [notifs]
-  );
-
   const visible = useMemo(() => {
-    if (activeTab === "all") return safeNotifs;
-    return safeNotifs.filter((n) => normType(n.type) === activeTab);
-  }, [safeNotifs, activeTab]);
+    if (activeTab === "all") return notifs;
+    return notifs.filter((n) => normType(n.type) === activeTab);
+  }, [notifs, activeTab]);
 
-  // عدادات الـ tabs (من اللوكال) — من القائمة الآمنة فقط
+  // عدادات الـ tabs (من اللوكال)
   const tabCounts = useMemo(() => {
-    const local = { all: safeNotifs.filter((n) => !isRead(n)).length };
+    const local = { all: notifs.filter((n) => !isRead(n)).length };
     TABS.forEach((t) => {
       if (t.key === "all") return;
-      const c = safeNotifs.filter(
+      const c = notifs.filter(
         (n) => normType(n.type) === t.key && !isRead(n)
       ).length;
       local[t.key] = c;
     });
     return local;
-  }, [safeNotifs]);
+  }, [notifs]);
 
   // ── فتح التفاصيل + mark read (في نفس الوقت) ──
   const openNotif = useCallback(
@@ -543,31 +557,6 @@ export default function CustomerNotifications() {
     { key: "system", label: "النظام", value: stats.system, icon: Settings, accent: "#475569" },
   ];
 
-  // 🔒 حارس العرض: لو اليوزر مو بوضعية المشتري (مثلاً بائع)
-  //    نعرض شاشة فارغة بدل إشعارات البائع — حماية كاملة
-  if (!isBootstrapping && !isCustomerMode) {
-    return (
-      <div className="np-root" dir="rtl">
-        <main className="np-main">
-          <div className="np-empty" style={{ paddingTop: 80 }}>
-            <div
-              className="np-empty-art"
-              style={{ background: "#fef3c7", color: "#d97706" }}
-            >
-              <Bell size={42} />
-            </div>
-            <h3>إشعارات المشتري فقط</h3>
-            <p>
-              هذه الصفحة تعرض إشعاراتك كـ <strong>مشتري</strong> فقط.
-              <br />
-              بدّل لوضع المشتري لعرض الإشعارات الخاصة بك.
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="np-root" dir="rtl">
       <main className="np-main">
@@ -576,7 +565,7 @@ export default function CustomerNotifications() {
           <div className="np-header-info">
             <h1 className="np-page-title">
               <Bell size={22} />
-              الإشعارات
+              إشعارات البائع
             </h1>
             <p className="np-page-sub">
               {stats.unRead > 0
@@ -794,6 +783,7 @@ export default function CustomerNotifications() {
           notif={selectedNotif}
           onClose={closeNotif}
           onAction={handleActionClick}
+          isSeller={true}
         />
       )}
     </div>
@@ -801,7 +791,7 @@ export default function CustomerNotifications() {
 }
 
 // ── Detail Modal ──────────────────────────────────────────
-function NotificationDetailModal({ notif, onClose, onAction }) {
+function NotificationDetailModal({ notif, onClose, onAction, isSeller = false }) {
   const meta = getMeta(notif.type);
   const Icon = meta.icon;
   const title = getTitle(notif);
@@ -809,7 +799,7 @@ function NotificationDetailModal({ notif, onClose, onAction }) {
   const sender = getSender(notif);
   const order = getOrder(notif);
   const date = getNotifDate(notif);
-  const actions = getNotificationActions(notif);
+  const actions = getNotificationActions(notif, isSeller);
   const read = isRead(notif);
 
   // إغلاق بـ Escape
@@ -966,19 +956,4 @@ function NotificationDetailModal({ notif, onClose, onAction }) {
       </div>
     </div>
   );
-}
-
-// Helper بسيط لتحويل الـ order status → label (نفس الي بستعمله الباقي)
-const STATUS_LABELS = {
-  pending_review: "قيد المراجعة",
-  approved: "تم القبول",
-  preparing: "قيد التحضير",
-  shipped: "قيد الشحن",
-  delivered: "تم التوصيل",
-  completed: "مكتمل",
-  cancelled: "ملغي",
-  canceled: "ملغي",
-};
-function getStatusLabel(s) {
-  return STATUS_LABELS[s] || s;
 }

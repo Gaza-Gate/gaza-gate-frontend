@@ -4,6 +4,12 @@ import "./NotificationsPage.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 import { connectSocket } from "../utils/socket";
+import { resolveNotificationRoute } from "../utils/notificationRoutes";
+import {
+  isSellerNotification,
+  shouldAcceptSellerSocketEvent,
+} from "../utils/notificationRoleFilter";
+import { useAuth } from "../context/AuthContext";
 import LoadingState from "../components/LoadingState";
 
 const IS_API_READY = !!import.meta.env.VITE_API_URL;
@@ -75,25 +81,39 @@ const TABS = [
 // ── ترجمة أنواع الباك اند الحقيقية إلى مفاتيح الواجهة (TABS / TYPE_META) ──
 const BACKEND_TYPE_MAP = {
   order: "order",
+  orders: "order",
   review: "rating",
+  reviews: "rating",
   rating: "rating",
+  ratings: "rating",
   message: "message",
+  messages: "message",
+  chat: "message",
   product: "alert",
+  products: "alert",
   system: "alert",
   general: "alert",
   promotional: "alert",
   alert: "alert",
+  // ✅ vendor-specific types
+  new_order: "order",
+  new_review: "rating",
+  new_message: "message",
+  new_product: "alert",
+  new_rating: "rating",
+  order_update: "order",
+  low_stock: "alert",
+  new_customer: "alert",
 };
 
-//  حل مؤقت (Patch): الباك اند حالياً عم يبعت type: "GENERAL" لإشعارات
-// الرسائل الجديدة بدل "message"، فمنفرّق حسب العنوان كـ fallback.
-// ⚠️ هاد حل مؤقت فقط - لازم يترصلح من الأساس عند الباك اند (نور) بحيث
-// يبعت type: "message" الصحيح لهاد النوع من الإشعارات، وبعدها ممكن
-// نشيل هاد الـ fallback ونرجع نعتمد فقط على BACKEND_TYPE_MAP.
+/**
+ * ✅ بنثق بنوع الباك — بدون title-based fallback.
+ * إذا الباك بعث type مش معروف (مثل "GENERAL" أو null)، بنصنّفها كـ "alert".
+ * هذا يضمن إنو الإشعارات تظهر بنوعها الصحيح حسب ما الباك بعث.
+ */
 const resolveNotifType = (n) => {
-  const rawType = (n?.type ?? "").toLowerCase();
-  const isMessageByTitle = /new message|رسالة جديدة/i.test(n?.title ?? "");
-  if (isMessageByTitle) return "message";
+  const rawType = (n?.type ?? n?.category ?? n?.subType ?? "").toLowerCase().trim();
+  if (!rawType) return "alert";
   return BACKEND_TYPE_MAP[rawType] ?? "alert";
 };
 
@@ -163,6 +183,10 @@ const deleteOneAPI = async (id) => {
 // ── Component ──
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { currentRole, isBootstrapping } = useAuth();
+  // 🔒 حارس صارم: هذه الصفحة للبائع فقط
+  const isSellerMode = currentRole === "seller";
+
   const [notifs, setNotifs]       = useState([]);
   const [loading, setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false); //   تحميل صفحة إضافية
@@ -182,11 +206,17 @@ export default function NotificationsPage() {
 
   // ── تحميل أول صفحة (أول فتح للصفحة) ──
   const loadNotifications = useCallback(async () => {
+    // 🔒 حماية: لو مش بوضعية البائع، ما نطلب شي
+    if (!isSellerMode) return;
     setLoading(true);
     try {
       if (IS_API_READY) {
         const { notifications, pagination } = await fetchNotifications(1);
-        setNotifs(Array.isArray(notifications) ? notifications : []);
+        // 🔒 فلتر أمان: نضمن إنها إشعارات بائع فقط
+        const safe = (Array.isArray(notifications) ? notifications : []).filter(
+          isSellerNotification
+        );
+        setNotifs(safe);
         setPage(1);
         setHasMore(
           pagination ? pagination.currentPage < pagination.totalPages : false
@@ -202,22 +232,36 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSellerMode]);
 
-  useEffect(() => { loadNotifications(); }, [loadNotifications]);
+  useEffect(() => {
+    if (isBootstrapping) return;
+    if (!isSellerMode) {
+      setNotifs([]);
+      setHasMore(false);
+      return;
+    }
+    loadNotifications();
+  }, [loadNotifications, isSellerMode, isBootstrapping]);
 
   // ── تحميل المزيد (الصفحة التالية) ──
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
+    if (!isSellerMode) return; // 🔒
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
       const { notifications, pagination } = await fetchNotifications(nextPage);
 
+      // 🔒 فلتر أمان: بس إشعارات البائع
+      const safe = (Array.isArray(notifications) ? notifications : []).filter(
+        isSellerNotification
+      );
+
       setNotifs((prev) => {
         const list = Array.isArray(prev) ? prev : [];
         const existingIds = new Set(list.map((n) => n._id));
-        const fresh = notifications.filter((n) => !existingIds.has(n._id));
+        const fresh = safe.filter((n) => !existingIds.has(n._id));
         return [...list, ...fresh];
       });
 
@@ -234,17 +278,25 @@ export default function NotificationsPage() {
 
   // ── الاستماع لإشعار جديد جاي من السوكت (real-time، بدون ريفريش) ──
   useEffect(() => {
+    // 🔒 ما نشترك بالـ socket إلا بوضعية البائع
+    if (!isSellerMode) return undefined;
     const socket = connectSocket();
 
-    console.log("🔌 [NotificationsPage] socket connected:", socket.connected, "id:", socket.id);
     socket.on("connect", () => console.log("✅ [NotificationsPage] connected:", socket.id));
     socket.on("connect_error", (err) => console.log("❌ [NotificationsPage] connect_error:", err.message));
 
     const handleNewNotification = (payload) => {
-      console.log("  [NotificationsPage] new notification:", payload);
+      // 🔒 فلتر صارم: لو الإشعار للمشتري، نتجاهله فوراً
+      if (!shouldAcceptSellerSocketEvent(payload)) {
+        return;
+      }
 
       //   الـ payload الحقيقي جاي بالشكل: { notification: {...}, stats: {...} }
       const notif = payload?.notification ?? payload;
+      if (!notif) return;
+
+      // 🔒 Defense in depth: فلتر ثاني على مستوى العنصر
+      if (!isSellerNotification(notif)) return;
 
       const mapped = {
         ...notif,
@@ -265,9 +317,12 @@ export default function NotificationsPage() {
     return () => {
       socket.off(NEW_NOTIFICATION_EVENT, handleNewNotification);
     };
-  }, []);
+  }, [isSellerMode]);
 
-  const safeNotifs = Array.isArray(notifs) ? notifs : [];
+  // 🔒 Defense in depth: نطبّق الفلتر على القائمة قبل العرض
+  const safeNotifs = (Array.isArray(notifs) ? notifs : []).filter(
+    isSellerNotification
+  );
   const visible = safeNotifs.filter((n) => activeTab === "all" || n.type === activeTab);
 
   const markRead = async (id) => {
@@ -284,25 +339,12 @@ export default function NotificationsPage() {
 const openNotif = (n) => {
   if (!n.isRead) markRead(n._id);
 
-  let target = n.actionUrl;
-  console.log("🔎 openNotif →", { type: n.type, actionUrl: n.actionUrl });
+  // ✅ مصدر الحقيقة الموحّد: utils/notificationRoutes.js
+  //    (postman contract: /api/seller/notification, /api/customer/notification)
+  const resolved = resolveNotificationRoute(n, "seller");
+  const target = resolved?.path || "/seller/dashboard";
 
-if (n.type === "alert") {
-     
-    target = "/seller/products";
-  } else if (n.type === "rating") {
-    target = "/seller/ratings";
-  } else if (target) {
-    if (target.startsWith("/conversations/")) {
-      const conversationId = target.replace("/conversations/", "");
-      target = `/seller/messages?conversationId=${conversationId}`;
-    } else if (!target.startsWith("/seller")) {
-      target = `/seller${target}`;
-    }
-  } else {
-    target = FALLBACK_ROUTE_BY_TYPE[n.type] ?? "/seller/dashboard";
-  }
-     console.log("🔎 target final →", target);
+  console.log("🔎 openNotif →", { type: n.type, actionUrl: n.actionUrl, target });
   navigate(target);
 };
   const markAllRead = async () => {
@@ -350,6 +392,25 @@ if (n.type === "alert") {
         <SellerNavbar />
         <main className="np-main">
           <LoadingState message="جاري تحميل الإشعارات…" />
+        </main>
+      </div>
+    );
+  }
+
+  // 🔒 حارس العرض: لو اليوزر مو بوضعية البائع
+  if (!isBootstrapping && !isSellerMode) {
+    return (
+      <div className="np-root" dir="rtl">
+        <SellerNavbar />
+        <main className="np-main">
+          <div className="np-empty" style={{ paddingTop: 80 }}>
+            <h3>إشعارات البائع فقط</h3>
+            <p>
+              هذه الصفحة تعرض إشعاراتك كـ <strong>بائع</strong> فقط.
+              <br />
+              بدّل لوضع البائع لعرض الإشعارات الخاصة بمتجرك.
+            </p>
+          </div>
         </main>
       </div>
     );

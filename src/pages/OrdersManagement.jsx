@@ -1,12 +1,14 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import "./OrdersManagement.css";
 import logo from "../assets/logo.png";
 import SellerNavbar from "../components/SellerNavbar";
 import { getSellerOrders } from "../services/orderService";
 import { getAuthToken } from "../services/authService";
-import { Inbox } from "lucide-react";
-import LoadingState, { EmptyState } from "../components/LoadingState";
+import { Inbox, AlertCircle, LayoutDashboard } from "lucide-react";
+import LoadingState, { EmptyState, ErrorState } from "../components/LoadingState";
+import { customerProfilePath } from "../utils/sellerHelpers";
+import { getApiError } from "../utils/errorMessages";
 
 // ── Icons ──
 const EyeIcon = () => (
@@ -57,15 +59,6 @@ function StatusBadge({ status }) {
   return <span className={`om-badge ${info.className}`}>{info.label}</span>;
 }
 
-// ── Static data fallback - تُستخدم فقط إذا الـ API فشل (خطأ اتصال مثلاً) ──
-const FALLBACK_ORDERS = [
-  { id: "ORD-001", customer: "أحمد محمد علي", date: "2026-06-08", productsCount: 3, total: 150.0, status: "in_production" },
-  { id: "ORD-002", customer: "فاطمة حسن", date: "2026-06-09", productsCount: 5, total: 280.5, status: "accepted" },
-  { id: "ORD-003", customer: "محمود خالد", date: "2026-06-10", productsCount: 2, total: 95.0, status: "pending_review" },
-  { id: "ORD-004", customer: "سارة يوسف", date: "2026-06-07", productsCount: 4, total: 320.0, status: "ready" },
-  { id: "ORD-005", customer: "عمر إبراهيم", date: "2026-06-05", productsCount: 3, total: 180.0, status: "completed" },
-];
-
 const OrdersManagement = () => {
   const navigate = useNavigate();
   const token = getAuthToken();
@@ -81,7 +74,7 @@ const OrdersManagement = () => {
     rejected: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [usedFallback, setUsedFallback] = useState(false);
+  const [error, setError] = useState(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
 
@@ -105,6 +98,9 @@ const OrdersManagement = () => {
             id: o.id ?? o._id,
             orderNumber: o.orderNumber ?? o.order_number ?? o.id,
             customer: o.customerName ?? o.buyerName ?? o.buyer?.name ?? o.customer_name ?? "عميل",
+            // ✅ نحتفظ بكامل object تبع customer (فيه id, actionUrl, avatar)
+            //    لاستخدامه ببروفايل الزبون عند الضغط على اسمه
+            customerObj: o.customer ?? null,
             date: (o.date ?? o.createdAt ?? o.created_at ?? "").slice(0, 10),
             productsCount: o.itemsCount ?? o.productsCount ?? o.items?.length ?? 0,
             total: o.totalPrice ?? o.total ?? o.total_price ?? 0,
@@ -124,12 +120,65 @@ const OrdersManagement = () => {
             rejected: backendStats.rejected ?? 0,
           });
         }
-        setUsedFallback(false);
       } catch (err) {
         console.error("getSellerOrders failed:", err);
-        // فشل الاتصال بالـ API فعلياً (مش مجرد بيانات فاضية) → بنستخدم بيانات ثابتة تجريبية
-        setOrders(FALLBACK_ORDERS);
-        setUsedFallback(true);
+        // ✅ ما بنعرض mock data — بنعرض رسالة خطأ حقيقية + زر retry
+        const errInfo = getApiError(err);
+        setError(errInfo);
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [token]);
+
+  // ✅ دالة retry لإعادة جلب الطلبات
+  const retryLoad = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    // إعادة تشغيل effect يدوياً
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await getSellerOrders(token);
+        const list = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+          ? res.data
+          : res?.data?.orders ?? res?.orders ?? [];
+
+        const backendStats = res?.data?.stats ?? res?.stats ?? null;
+
+        setOrders(
+          list.map((o) => ({
+            id: o.id ?? o._id,
+            orderNumber: o.orderNumber ?? o.order_number ?? o.id,
+            customer: o.customerName ?? o.buyerName ?? o.buyer?.name ?? o.customer_name ?? "عميل",
+            customerObj: o.customer ?? null,
+            date: (o.date ?? o.createdAt ?? o.created_at ?? "").slice(0, 10),
+            productsCount: o.itemsCount ?? o.productsCount ?? o.items?.length ?? 0,
+            total: o.totalPrice ?? o.total ?? o.total_price ?? 0,
+            status: o.status ?? "pending_review",
+          }))
+        );
+
+        if (backendStats) {
+          setStats({
+            total: backendStats.total ?? 0,
+            pendingReview: backendStats.pendingReview ?? 0,
+            accepted: backendStats.accepted ?? 0,
+            inProduction: backendStats.inProduction ?? 0,
+            ready: backendStats.ready ?? 0,
+            completed: backendStats.completed ?? 0,
+            cancelled: backendStats.cancelled ?? 0,
+            rejected: backendStats.rejected ?? 0,
+          });
+        }
+        setError(null);
+      } catch (err) {
+        const errInfo = getApiError(err);
+        setError(errInfo);
+        setOrders([]);
       } finally {
         setLoading(false);
       }
@@ -146,11 +195,12 @@ const OrdersManagement = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // لو ماكو stats من الباك إند (أو عم نستخدم fallback)، نحسبها يدوياً من orders المعروضة
-  const totalOrders = usedFallback ? orders.length : stats.total;
-  const reviewCount = usedFallback ? orders.filter((o) => o.status === "pending_review").length : stats.pendingReview;
-  const approvedCount = usedFallback ? orders.filter((o) => o.status === "accepted").length : stats.accepted;
-  const pendingCount = usedFallback ? orders.filter((o) => o.status === "in_production").length : stats.inProduction;
+  // الإحصائيات: من الباك دائماً (stats.total, stats.pendingReview, etc.)
+  // ما بنحسبها يدوياً من orders لأن الـ pagination ممكن يخفي قسم من البيانات
+  const totalOrders = stats.total;
+  const reviewCount = stats.pendingReview;
+  const approvedCount = stats.accepted;
+  const pendingCount = stats.inProduction;
 
   return (
     <div className="om-root" dir="rtl">
@@ -193,6 +243,44 @@ const OrdersManagement = () => {
             <div className="om-loading-wrap">
               <LoadingState message="جاري تحميل الطلبات…" />
             </div>
+          ) : error ? (
+            <div className="om-error-block">
+              <ErrorState
+                icon={error.isNotFound ? LayoutDashboard : AlertCircle}
+                title={error.title || "تعذّر تحميل الطلبات"}
+                message={error.message}
+                onRetry={error.isNotFound ? null : retryLoad}
+              />
+              {error.isNotFound && (
+                <div className="om-error-hint">
+                  <p>
+                    💡 الباك إند ما عندوش endpoint مخصص لطلبات البائع لحد الآن.
+                    <br />
+                    بيكفي تكمل إعداد ملف متجرك، وأي endpoint جديد رح يظهر تلقائياً هنا.
+                  </p>
+                  <button
+                    type="button"
+                    className="om-dashboard-link-btn"
+                    onClick={() => navigate("/seller/dashboard")}
+                  >
+                    <LayoutDashboard size={16} />
+                    الذهاب للوحة التحكم (آخر الطلبات متاحة هناك)
+                  </button>
+                </div>
+              )}
+              {error.isPermission && (
+                <div className="om-error-hint">
+                  <p>💡 قد تحتاج لإكمال إعداد ملف متجرك أولاً.</p>
+                  <button
+                    type="button"
+                    className="om-dashboard-link-btn"
+                    onClick={() => navigate("/seller/profile/edit")}
+                  >
+                    إكمال ملف المتجر
+                  </button>
+                </div>
+              )}
+            </div>
           ) : orders.length === 0 ? (
             <EmptyState
               icon={Inbox}
@@ -214,14 +302,28 @@ const OrdersManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => (
+                  {orders.map((order) => {
+                    // ✅ استخراج الـ customer ID الصحيح (actionUrl > customerId > id)
+                    const customerPath = customerProfilePath(order.customerObj);
+                    return (
                     <tr key={order.id}>
                       <td className="om-cell-id">{order.orderNumber}</td>
                       <td>
-                        <span className="om-cell-with-icon">
-                          {order.customer}
-                          <UserIcon />
-                        </span>
+                        {customerPath ? (
+                          <Link
+                            to={customerPath}
+                            className="om-cell-with-icon om-cell-customer om-cell-customer--link"
+                            title="عرض بروفايل الزبون"
+                          >
+                            {order.customer}
+                            <UserIcon />
+                          </Link>
+                        ) : (
+                          <span className="om-cell-with-icon">
+                            {order.customer}
+                            <UserIcon />
+                          </span>
+                        )}
                       </td>
                       <td>
                         <span className="om-cell-with-icon">
@@ -246,7 +348,8 @@ const OrdersManagement = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

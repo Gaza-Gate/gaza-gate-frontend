@@ -518,3 +518,117 @@
   .sp-stats { grid-template-columns: 1fr; }
   .sp-info-grid { grid-template-columns: 1fr; }
 }
+
+/* ═══════ Loading state ═══════ */
+.sp-loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 20px;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+.sp-spin {
+  color: var(--orange);
+  animation: sp-rotate 1s linear infinite;
+}
+
+@keyframes sp-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ═══════ Error state ═══════ */
+.sp-error-state {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 56px 24px;
+  margin: 32px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sp-error-state--inline {
+  background: #fef2f2;
+  border-color: #fecaca;
+  padding: 36px 20px;
+  margin: 24px 0;
+}
+
+.sp-error-icon {
+  color: var(--red);
+  flex-shrink: 0;
+}
+
+.sp-error-state h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--gray-900);
+  font-weight: 700;
+}
+
+.sp-error-state p {
+  margin: 0;
+  color: var(--gray-500);
+  font-size: 14px;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+.sp-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.sp-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--orange);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.sp-retry-btn:hover {
+  background: var(--orange-hover);
+}
+
+.sp-retry-btn:active {
+  transform: scale(0.98);
+}
+
+.sp-edit-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--white);
+  color: var(--orange);
+  border: 1px solid var(--orange);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sp-edit-link-btn:hover {
+  background: var(--orange-light);
+}

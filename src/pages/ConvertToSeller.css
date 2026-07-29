@@ -149,16 +149,89 @@
 .cts-btn-submit:disabled { opacity: 0.65; cursor: not-allowed; }
 
 .cts-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: cts-spin 0.7s linear infinite;
+  animation: cts-spin 0.8s linear infinite;
+  color: #f97316;
 }
 @keyframes cts-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 560px) {
   .cts-wrapper { padding: 1.6rem 1rem 3rem; }
   .cts-card { padding: 1.4rem 1.2rem; }
+}
+
+/* ═══════ API error banner (with icon) ═══════ */
+.cts-api-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.cts-api-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ═══════ Required marker ═══════ */
+.cts-required {
+  color: #dc2626;
+  margin-right: 2px;
+}
+
+/* ═══════ Success state ═══════ */
+.cts-success-state {
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 24px;
+  gap: 14px;
+  min-height: 280px;
+}
+
+.cts-success-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #dcfce7;
+  margin-bottom: 4px;
+  animation: cts-success-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cts-success-icon {
+  color: #16a34a;
+}
+
+@keyframes cts-success-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.cts-success-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cts-success-text {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+/* Spinner inside the submit button (white-on-orange) */
+.cts-spinner--inline {
+  color: #ffffff;
 }

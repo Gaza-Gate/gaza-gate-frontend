@@ -63,20 +63,24 @@ api.interceptors.request.use((config) => {
 
   // ✅ إصلاح 400 Bad Request عند إرسال FormData (تقييم بصورة، بروفايل بصورة، ...)
   // السبب: الـ instance عنده Content-Type: application/json كـ default،
-  // و axios 1.x ما بيشيله تلقائياً لما الـ body يكون FormData.
-  // فالمتصفح بيبعت FormData مع Content-Type: application/json
-  // → الباك بيرفض بـ 400 لأنه متوقع multipart/form-data مع boundary.
+  // و axios 1.18.1 (لاحظنا تجريبياً) لما Content-Type ناقص من الـ config
+  // بيُطبّق Content-Type: application/x-www-form-urlencoded
+  // على الـ FormData، والباك بيرفضه لأنه متوقع multipart/form-data مع boundary.
   //
-  // الحل: لو الـ body FormData → نشيل Content-Type تماماً
-  // → المتصفح/axios بيحطّ multipart/form-data; boundary=... تلقائياً.
+  // الحل: نُحدد Content-Type صراحة كـ "multipart/form-data" بدون boundary
+  // → المتصفح بيُضيف الـ boundary تلقائياً.
+  // ملاحظة: ما نمسح Content-Type! نُحدد القيمة الصحيحة.
+  //
+  // ⚠️ تحديث مهم: سابقاً كنا نمسح Content-Type (delete)
+  // لكن axios 1.18.1 بترجم حذف الـ Content-Type إلى "application/x-www-form-urlencoded"
+  // للـ FormData، مما سبّب 400 Bad Request من الباك. الآن نضبط القيمة صراحة.
   if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
-    if (config.headers && typeof config.headers.delete === 'function') {
-      // AxiosHeaders instance (axios 1.x)
-      config.headers.delete('Content-Type')
+    if (config.headers && typeof config.headers.set === 'function') {
+      // AxiosHeaders instance (axios 1.x) — الطريقة الصحيحة
+      config.headers.set('Content-Type', 'multipart/form-data')
     } else if (config.headers) {
       // plain object (احتياط)
-      delete config.headers['Content-Type']
-      delete config.headers['content-type']
+      config.headers['Content-Type'] = 'multipart/form-data'
     }
   }
 

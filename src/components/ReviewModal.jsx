@@ -74,6 +74,7 @@ export default function ReviewModal({
   const [error, setError] = useState(null);
   const [errorInfo, setErrorInfo] = useState(null);
   const [errorType, setErrorType] = useState(null); // REVIEW_ERROR_TYPES
+  const [fieldErrors, setFieldErrors] = useState([]); // list of { field, message } from backend validation
   const [copied, setCopied] = useState(false);
   const [success, setSuccess] = useState(false);
   const [submittedData, setSubmittedData] = useState(null); // response من الباك
@@ -113,6 +114,7 @@ export default function ReviewModal({
       setError(null);
       setErrorInfo(null);
       setErrorType(null);
+      setFieldErrors([]);
       setCopied(false);
       setSuccess(false);
       setAlreadyReviewed(false);
@@ -171,17 +173,24 @@ export default function ReviewModal({
     }
 
     // ==== edit mode ====
-    if (isEditMode) {
-      try {
-        setSubmitting(true);
-        setError(null);
-        setErrorInfo(null);
-        setErrorType(null);
-        const response = await updateReview(existingReview.id, {
-          rating,
-          comment: comment.trim() || undefined,
-          image: imageFile || undefined, // فقط لو اختار صورة جديدة
-        });
+if (isEditMode) {
+  // ✅ نفس فحص طول التعليق
+  const trimmedEditComment = comment.trim();
+  if (trimmedEditComment.length > 0 && trimmedEditComment.length < 3) {
+    setError("لو بدك تكتب تعليق، لازم يكون 3 أحرف على الأقل");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+    setError(null);
+    setErrorInfo(null);
+    setErrorType(null);
+    const response = await updateReview(existingReview.id, {
+      rating,
+      comment: trimmedEditComment ,
+      image: imageFile || undefined,
+    });
         setSubmittedData(response ?? { rating, comment: comment.trim() });
         setSuccess(true);
         setTimeout(() => {
@@ -218,21 +227,30 @@ export default function ReviewModal({
       console.error("[ReviewModal] missing productId for review");
       return;
     }
-    setLoading(true);
-    setError("");
+    // ✅ فحص التعليق: إجباري - لا يسمح بإرسال تقييم بدون تعليق
+const trimmedComment = comment.trim();
+if (!trimmedComment) {
+  setError("comment is required - التعليق مطلوب");
+  return;
+}
+if (trimmedComment.length < 3) {
+  setError("التعليق يجب أن يكون 3 أحرف على الأقل");
+  return;
+}
     setSubmitting(true);
     setError(null);
     setErrorInfo(null);
     setErrorType(null);
 
     try {
-      const response = await submitReview({
-        productId,
-        orderId: order.id,
-        rating,
-        comment: comment.trim() || undefined,
-        image: imageFile || undefined,
-      });
+  const response = await submitReview({
+    productId,
+    orderId: order.id,
+    rating,
+    comment: trimmedComment , 
+    image: imageFile || undefined,        // imageFile هو File object حقيقي أصلاً من useState
+  });
+
       // خزّن رد الباك لعرضه في success state
       setSubmittedData(response ?? { rating, comment: comment.trim() });
       setSuccess(true);
@@ -247,7 +265,34 @@ export default function ReviewModal({
       // ✅ خطأ معروف من الباك (already reviewed / not eligible / order not found / ...)
       if (err instanceof ReviewApiError) {
         setErrorType(err.type);
-        setError(err.message);
+        // خزّن field errors للعرض التفصيلي في الـ UI
+        if (err.fieldErrors?.length) {
+          setFieldErrors(err.fieldErrors);
+        }
+        // ✅ حوّل رسالة الباك للإنجليزية لرسالة عربية واضحة حسب نوع الخطأ
+        if (err.type === REVIEW_ERROR_TYPES.NOT_ELIGIBLE) {
+          setError(
+            "الطلب غير مؤهل للتقييم بعد. عادةً يتطلب الانتظار 5 أيام من قبول الطلب أو اكتماله. حدّث الصفحة وحاول مرة أخرى."
+          );
+        } else if (err.type === REVIEW_ERROR_TYPES.ORDER_NOT_FOUND) {
+          setError("لم يتم العثور على الطلب. قد يكون تم إلغاؤه أو لا ينتمي لحسابك.");
+        } else if (err.type === REVIEW_ERROR_TYPES.PRODUCT_NOT_FOUND) {
+          setError("لم يتم العثور على المنتج. أعد تحميل الصفحة.");
+        } else if (err.type === REVIEW_ERROR_TYPES.VALIDATION_ERROR) {
+          // ✅ الباك رفض البيانات — نعرض الرسالة العامة + تفاصيل الحقول
+          const fieldSummary = (err.fieldErrors || [])
+            .map((fe) => `${fe.field || "?"}: ${fe.message || "غير صالح"}`)
+            .join(" • ");
+          setError(
+            err.message
+              ? `الباك رفض البيانات: ${err.message}${fieldSummary ? ` (${fieldSummary})` : ""}`
+              : `الباك رفض البيانات المُرسلة.${fieldSummary ? ` ${fieldSummary}` : ""}`
+          );
+        } else if (err.type === REVIEW_ERROR_TYPES.ALREADY_REVIEWED) {
+          // لا نعرض الخطأ هنا — بنعرض success-like state تحته
+        } else {
+          setError(err.message || "تعذّر إرسال التقييم");
+        }
         // الـ "already reviewed" حالة خاصة — بنعرض success-like state
         // ونُعلم الأب حتى يُحدّث قائمة المنتجات المُقيَّمة
         if (err.type === REVIEW_ERROR_TYPES.ALREADY_REVIEWED) {

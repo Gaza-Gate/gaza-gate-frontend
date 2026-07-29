@@ -1,3 +1,629 @@
-/* CSS placeholder for CustomerProfilePage — مقبول أن يكون فارغ، الـ component بسيط */
-.cpp-page { padding: 20px; }
-.cpp-error { color: #ef4444; padding: 20px; }
+/* ════════════════════════════════════════════════════════════════
+   Customer Profile Page — Native CSS
+   Design tokens
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --cpp-orange: #f97316;
+  --cpp-orange-deep: #ea580c;
+  --cpp-orange-soft: #fff7ed;
+  --cpp-amber: #f59e0b;
+  --cpp-green: #16a34a;
+  --cpp-green-soft: #dcfce7;
+  --cpp-teal: #0d9488;
+  --cpp-teal-soft: #ccfbf1;
+  --cpp-amber-soft: #fef3c7;
+  --cpp-bg: #f9fafb;
+  --cpp-card: #ffffff;
+  --cpp-border: #e5e7eb;
+  --cpp-text: #111827;
+  --cpp-text-soft: #6b7280;
+  --cpp-text-mute: #9ca3af;
+  --cpp-danger: #ef4444;
+  --cpp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --cpp-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --cpp-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --cpp-radius: 12px;
+  --cpp-radius-lg: 16px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Page container
+   ════════════════════════════════════════════════════════════════ */
+.cpp-page {
+  background: var(--cpp-bg);
+  /* ✅ الصفحة صارت standalone (برّا CustomerLayout) — فبالدل ما نخصم 64px
+     تبع الناف بار، مناخد طول الشاشة كامل. لو رجعنا نلفّها بـ layout
+     بوفّر --navbar-height متغيّر وبظبط المعادلة. */
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  font-family: inherit;
+}
+
+.cpp-container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ── Topbar (standalone back button) ── */
+.cpp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+}
+
+.cpp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--cpp-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cpp-text-soft);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.cpp-back-btn:hover {
+  background: var(--cpp-orange-soft);
+  color: var(--cpp-orange-deep);
+  border-color: var(--cpp-orange);
+}
+
+.cpp-back-btn:active {
+  transform: scale(0.97);
+}
+
+.cpp-back-btn:focus-visible {
+  outline: 2px solid var(--cpp-orange);
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Top: stats grid + orange profile card
+   ════════════════════════════════════════════════════════════════ */
+.cpp-top-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .cpp-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Stats grid ── */
+.cpp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .cpp-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.cpp-stat-card {
+  background: var(--cpp-card);
+  border: 1px solid var(--cpp-border);
+  border-radius: var(--cpp-radius);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  box-shadow: var(--cpp-shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cpp-stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cpp-shadow-md);
+}
+
+.cpp-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cpp-icon-orange {
+  background: var(--cpp-orange-soft);
+  color: var(--cpp-orange);
+}
+
+.cpp-icon-amber {
+  background: var(--cpp-amber-soft);
+  color: var(--cpp-amber);
+}
+
+.cpp-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cpp-text);
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
+.cpp-stat-label {
+  font-size: 12px;
+  color: var(--cpp-text-soft);
+  font-weight: 500;
+}
+
+/* ── Orange profile card ── */
+.cpp-profile-card {
+  background: linear-gradient(135deg, var(--cpp-orange) 0%, var(--cpp-orange-deep) 100%);
+  color: #ffffff;
+  border-radius: var(--cpp-radius-lg);
+  padding: 22px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 6px 16px -4px rgba(249, 115, 22, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.cpp-profile-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+.cpp-profile-avatar-wrap {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.cpp-profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.2);
+  display: block;
+}
+
+.cpp-profile-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cpp-profile-info {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.cpp-profile-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.cpp-profile-since {
+  font-size: 13px;
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cpp-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cpp-skeleton-card {
+  background: #ffffff;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Generic section card
+   ════════════════════════════════════════════════════════════════ */
+.cpp-section {
+  background: var(--cpp-card);
+  border: 1px solid var(--cpp-border);
+  border-radius: var(--cpp-radius-lg);
+  padding: 20px 22px;
+  margin-top: 16px;
+  box-shadow: var(--cpp-shadow-sm);
+}
+
+.cpp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--cpp-border);
+  margin-bottom: 14px;
+}
+
+.cpp-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cpp-text);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cpp-section-icon {
+  color: var(--cpp-orange);
+}
+
+.cpp-last-order {
+  font-size: 13px;
+  color: var(--cpp-text-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Shopping section
+   ════════════════════════════════════════════════════════════════ */
+.cpp-shopping-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cpp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.cpp-pill--green {
+  background: var(--cpp-green-soft);
+  color: var(--cpp-green);
+  border-color: rgba(22, 163, 74, 0.2);
+}
+
+.cpp-pill--teal {
+  background: var(--cpp-teal-soft);
+  color: var(--cpp-teal);
+  border-color: rgba(13, 148, 136, 0.2);
+}
+
+.cpp-pill--amber {
+  background: var(--cpp-amber-soft);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.cpp-top-categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cpp-top-cat-label {
+  font-size: 13px;
+  color: var(--cpp-text-soft);
+  margin-left: 4px;
+}
+
+.cpp-top-cat-tag {
+  background: var(--cpp-orange-soft);
+  color: var(--cpp-orange-deep);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Reviews section
+   ════════════════════════════════════════════════════════════════ */
+.cpp-reviews-header {
+  padding-bottom: 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.cpp-reviews-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cpp-reviews-summary {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cpp-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cpp-reviews-count {
+  font-size: 13px;
+  color: var(--cpp-text-soft);
+  font-weight: 500;
+}
+
+.cpp-reviews-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.cpp-review-item {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fcfcfd;
+  border: 1px solid var(--cpp-border);
+  border-radius: 10px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cpp-review-item:hover {
+  background: #ffffff;
+  border-color: var(--cpp-orange);
+}
+
+.cpp-review-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cpp-review-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--cpp-text-soft);
+}
+
+.cpp-review-date {
+  color: var(--cpp-text-mute);
+  font-size: 12px;
+}
+
+.cpp-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.cpp-review-seller {
+  display: flex;
+  align-items: center;
+}
+
+.cpp-review-seller-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.cpp-review-seller-link:hover {
+  background: var(--cpp-orange-soft);
+}
+
+.cpp-review-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--cpp-border);
+  flex-shrink: 0;
+}
+
+.cpp-review-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.cpp-review-store-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cpp-text);
+}
+
+.cpp-review-seller-link:hover .cpp-review-store-name {
+  color: var(--cpp-orange-deep);
+}
+
+.cpp-review-comment {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--cpp-text);
+}
+
+/* ── Product chip on the right ── */
+.cpp-review-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid var(--cpp-border);
+  border-radius: 8px;
+  padding: 6px 10px 6px 12px;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+  max-width: 220px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cpp-review-product:hover {
+  border-color: var(--cpp-orange);
+  background: var(--cpp-orange-soft);
+}
+
+.cpp-review-product-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--cpp-orange-soft);
+  flex-shrink: 0;
+}
+
+.cpp-review-product-img--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cpp-orange);
+}
+
+.cpp-review-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cpp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .cpp-review-item {
+    flex-direction: column;
+  }
+  .cpp-review-product {
+    align-self: flex-start;
+    max-width: 100%;
+  }
+}
+
+/* ── Empty reviews state ── */
+.cpp-empty-reviews {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--cpp-text-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cpp-empty-icon {
+  color: var(--cpp-text-mute);
+  opacity: 0.6;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Error state
+   ════════════════════════════════════════════════════════════════ */
+.cpp-error-state {
+  background: var(--cpp-card);
+  border: 1px solid var(--cpp-border);
+  border-radius: var(--cpp-radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--cpp-shadow-sm);
+}
+
+.cpp-error-icon {
+  color: var(--cpp-danger);
+}
+
+.cpp-error-state h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--cpp-text);
+}
+
+.cpp-error-state p {
+  margin: 0;
+  color: var(--cpp-text-soft);
+  font-size: 14px;
+  max-width: 480px;
+}
+
+.cpp-retry-btn {
+  margin-top: 12px;
+  background: var(--cpp-orange);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cpp-retry-btn:hover {
+  background: var(--cpp-orange-deep);
+}
+
+.cpp-retry-btn:active {
+  transform: scale(0.98);
+}
