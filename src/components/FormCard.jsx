@@ -3,7 +3,18 @@ import { Link } from "react-router-dom";
 export function FormCard({ children }) {
   return (
     <div style={{ background: 'var(--orange-light)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
-      <div className="fade-up" style={{ background: '#fff', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', padding: '2.5rem 2rem', width: '100%', maxWidth: 480 }}>
+      <div
+        className="fade-up"
+        style={{
+          position: 'relative', // 🆕 عشان أي عنصر position: absolute جواها (زي سهم الرجوع) يتمركز بالنسبة للكارد نفسه مش الصفحة كلها
+          background: '#fff',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-card)',
+          padding: '2.5rem 2rem',
+          width: '100%',
+          maxWidth: 480,
+        }}
+      >
         {children}
       </div>
     </div>

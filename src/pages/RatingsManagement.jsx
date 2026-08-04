@@ -23,6 +23,32 @@ const customerReviewUrl = (id) => `/api/seller/review/customer/${id}`;
 //   مدة بقاء الهايلايت المؤقت على التقييم المستهدف (بالميلي ثانية)
 const HIGHLIGHT_DURATION_MS = 2500;
 
+// ══════════════════════════════════════════════════
+//  🆕 مفتاح هوية بديل للتقييم (بما إنه الـ backend ما بيرجع _id/id
+//  للتقييمات لا بالـ Dashboard ولا بـ /api/seller/review) — مبني من
+//  (customer.id + rating + التاريخ + أول 60 حرف من التعليق). هاي التركيبة
+//  عملياً فريدة لكل تقييم، وبتُستخدم فقط للتعرّف/السكرول/الهايلايت،
+//  مش لأي إجراء حقيقي على السيرفر (تعديل/حذف بيستخدموا الـ id الحقيقي
+//  الموجود بتبويب "تقييماتي للزبائن" لو موجود).
+// ══════════════════════════════════════════════════
+const buildReviewMatchKey = ({ customerId, rating, comment, date }) => {
+  const dateStr = (date || "").toString().slice(0, 10);
+  const commentStr = (comment || "").toString().trim().slice(0, 60);
+  return `${customerId || ""}|${rating || ""}|${dateStr}|${commentStr}`;
+};
+
+// يرجع هوية التقييم: الـ id الحقيقي لو موجود، وإلا المفتاح المركّب كبديل
+const getReviewIdentity = (review) => {
+  const realId = review._id ?? review.id;
+  if (realId) return String(realId);
+  return buildReviewMatchKey({
+    customerId: review.customer?.id,
+    rating: review.rating,
+    comment: review.comment,
+    date: review.createdAt ?? review.date,
+  });
+};
+
 // ── Icons ──
 const StarIcon = ({ filled }) => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? "#f97316" : "none"} stroke="#f97316" strokeWidth="1.5">
@@ -182,7 +208,7 @@ const RatingsManagement = () => {
   const [deletingId, setDeletingId]           = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  //   دعم فتح تقييم محدد عبر الرابط (?reviewId=...) — بينطبق بس على تبويب المنتجات
+  //   دعم فتح تقييم محدد عبر الرابط (?reviewKey=...) — بينطبق بس على تبويب المنتجات
   const [highlightedReviewId, setHighlightedReviewId] = useState(null);
   const reviewRefs = useRef({});
   const highlightTimeoutRef = useRef(null);
@@ -247,24 +273,26 @@ const RatingsManagement = () => {
 
   const reviews = activeTab === "productReviews" ? productReviews : customerReviews;
 
-  //   لمّا يوصل ?reviewId= بالرابط: بينطبق بس على تبويب تقييمات المنتجات
+  //   لمّا يوصل ?reviewKey= بالرابط (جاي من Dashboard): بينطبق بس على تبويب
+  //   تقييمات المنتجات. بما إنه ما في id حقيقي للتقييم بالـ backend، منقارن
+  //   عن طريق getReviewIdentity (الـ id الحقيقي لو موجود، وإلا المفتاح المركّب).
   useEffect(() => {
     if (activeTab !== "productReviews") return;
-    const reviewId = searchParams.get("reviewId");
-    if (!reviewId || loading) return;
-    if (handledReviewIdRef.current === reviewId) return;
+    const reviewKeyParam = searchParams.get("reviewKey");
+    if (!reviewKeyParam || loading) return;
+    if (handledReviewIdRef.current === reviewKeyParam) return;
 
-    const targetExists = reviews.some((r) => String(r._id ?? r.id) === String(reviewId));
-    if (!targetExists) return;
+    const target = reviews.find((r) => getReviewIdentity(r) === reviewKeyParam);
+    if (!target) return;
 
-    handledReviewIdRef.current = reviewId;
+    handledReviewIdRef.current = reviewKeyParam;
     setActiveFilter("all");
 
     const scrollTimer = setTimeout(() => {
-      const node = reviewRefs.current[reviewId];
+      const node = reviewRefs.current[reviewKeyParam];
       if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      setHighlightedReviewId(reviewId);
+      setHighlightedReviewId(reviewKeyParam);
       if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
       highlightTimeoutRef.current = setTimeout(() => setHighlightedReviewId(null), HIGHLIGHT_DURATION_MS);
     }, 150);
@@ -496,8 +524,14 @@ const handleSubmitEdit = async (id, orderId) => {
         {/* Reviews list */}
         <div className="rm-reviews-list">
           {visibleReviews.map((review, i) => {
+            // 🆕 identityKey: id حقيقي لو موجود (تبويب تقييماتي للزبائن)،
+            // وإلا مفتاح مركّب بديل (تبويب تقييمات الزبائن لي، اللي ما فيه id
+            // بالـ backend). يُستخدم فقط لـ key/ref/هايلايت — مش لأي API call.
+            const identityKey = getReviewIdentity(review);
+            // reviewId: يبقى id حقيقي فقط (أو undefined) — يُستخدم حصراً
+            // لإجراءات حقيقية على السيرفر (تعديل/حذف/رد)
             const reviewId = review._id ?? review.id;
-            const isHighlighted = highlightedReviewId === reviewId;
+            const isHighlighted = highlightedReviewId === identityKey;
             const isCustomerTab = activeTab === "customerReviews";
             const isEditing = editingReviewId === reviewId;
 
@@ -506,8 +540,8 @@ const handleSubmitEdit = async (id, orderId) => {
             return (
             <div
               className="rm-review-card"
-              key={reviewId}
-              ref={(el) => { reviewRefs.current[reviewId] = el; }}
+              key={identityKey}
+              ref={(el) => { reviewRefs.current[identityKey] = el; }}
               style={{
                 transition: "background-color 0.6s ease, box-shadow 0.6s ease",
                 ...(isHighlighted

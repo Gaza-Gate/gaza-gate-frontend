@@ -9,6 +9,15 @@ import { useNavigate, useLocation } from "react-router-dom";
  * الاستخدام: بعد الـ Register ، navigate إلى "/verify-otp" مع تمرير الإيميل:
  *   navigate("/verify-otp", { state: { email: "user@example.com" } });
  */
+
+// ── سهم الرجوع ──
+const BackArrowIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+
 export default function VerifyOTP() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,7 +89,28 @@ export default function VerifyOTP() {
 
   return (
     <div className="fp-wrapper">
-      <div className="fp-card">
+      <div className="fp-card" style={{ position: "relative" }}>
+        {/* 🆕 سهم الرجوع - يرجع للصفحة يلي قبلها */}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          aria-label="رجوع"
+          title="رجوع"
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 20,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#111827",
+            padding: 4,
+            display: "flex",
+          }}
+        >
+          <BackArrowIcon />
+        </button>
+
         {/* Header */}
         <div className="fp-header">
           <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>📬</div>

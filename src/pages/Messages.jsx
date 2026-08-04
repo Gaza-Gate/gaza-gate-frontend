@@ -178,6 +178,35 @@ export default function Messages() {
     return () => s.off("connect", joinCurrent);
   }, [token, selectedId]);
 
+  // 🆕 دمج رسالة جاية من الـ socket (new_message / message_sent) مع القائمة
+  // الحالية بدل ما نضيفها دايماً كعنصر جديد. المشكلة الأصلية: لما ترسلي
+  // رسالة، منضيف نسخة "optimistic" فوراً (id مؤقت tmp-...)، وبنفس الوقت
+  // بيوصل REST response وكمان event عبر الـ socket لنفس الرسالة (خصوصاً
+  // إشعار الإرسال يوصل أحياناً قبل رد الـ REST نفسه). فإذا الـ socket وصل
+  // أول، كان عم يضيف نسخة جديدة، وبعدين لما يرجع رد الـ REST كان عم يستبدل
+  // الـ optimistic بنسخة ثانية — فيصير عندك نفس الرسالة مرتين.
+  // الحل: قبل ما نضيف رسالة جاية من السيرفر، ندوّر أول عن رسالة optimistic
+  // بنفس المرسل ونفس المحتوى وما زالت موجودة، ونستبدلها بدل ما نضيف نسخة
+  // جديدة جنبها. أي مصدر (REST أو socket) يوصل أول بياخد مكان الـ optimistic،
+  // والتاني ما بيضيف تكرار (addMessageUnique أصلاً بتدي ديدوب حسب id الحقيقي).
+  const reconcileIncomingMessage = useCallback((msg) => {
+    if (!msg || !sameId(msg.conversationId, selectedIdRef.current)) return;
+    setMessages((prev) => {
+      const optimisticIdx = prev.findIndex(
+        (m) =>
+          m._optimistic &&
+          sameId(m.senderId, msg.senderId) &&
+          m.content === msg.content
+      );
+      if (optimisticIdx !== -1) {
+        const next = [...prev];
+        next[optimisticIdx] = msg;
+        return next;
+      }
+      return addMessageUnique(prev, msg);
+    });
+  }, []);
+
   // ── socket: listeners ──
   useEffect(() => {
     if (!token) return;
@@ -191,7 +220,7 @@ export default function Messages() {
       const msg = unwrap(payload);
       if (!msg) return;
       if (sameId(msg.conversationId, selectedIdRef.current)) {
-        setMessages((prev) => addMessageUnique(prev, msg));
+        reconcileIncomingMessage(msg);
         s.emit("mark_read", { conversationId: msg.conversationId });
       }
     }
@@ -199,9 +228,7 @@ export default function Messages() {
     function handleMessageSent(payload) {
       const msg = unwrap(payload);
       if (!msg) return;
-      if (sameId(msg.conversationId, selectedIdRef.current)) {
-        setMessages((prev) => addMessageUnique(prev, msg));
-      }
+      reconcileIncomingMessage(msg);
     }
 
     function handleConversationUpdated(payload) {
@@ -215,7 +242,7 @@ export default function Messages() {
           );
         });
         if (conv.lastMessage && sameId(conv.id, selectedIdRef.current)) {
-          setMessages((prev) => addMessageUnique(prev, conv.lastMessage));
+          reconcileIncomingMessage(conv.lastMessage);
         }
         return;
       }
@@ -229,7 +256,7 @@ export default function Messages() {
         )
       );
       if (lastMessage && sameId(conversationId, selectedIdRef.current)) {
-        setMessages((prev) => addMessageUnique(prev, lastMessage));
+        reconcileIncomingMessage(lastMessage);
       }
     }
 
@@ -278,7 +305,7 @@ export default function Messages() {
       s.off("message_updated_ack", handleMessageEdited);
       s.off("error", handleSocketError);
     };
-  }, [token]);
+  }, [token, reconcileIncomingMessage]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -331,9 +358,15 @@ export default function Messages() {
         });
         const officialMsg = sent?.data?.data?.message;
         if (officialMsg) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === tempId ? { ...officialMsg } : m))
-          );
+          setMessages((prev) => {
+            // 🆕 لو الـ socket سبق ووصل ورجّع نفس الرسالة (استبدل الـ optimistic
+            // فعلياً بنفسه عبر reconcileIncomingMessage)، ما عاد فيه عنصر بـ
+            // tempId أصلاً، فالـ map هون ما رح يغيّر شي (ما رح يصير تكرار).
+            // لو لسا الـ optimistic موجود (REST رجع أول)، منستبدله زي العادة.
+            const tempExists = prev.some((m) => m.id === tempId);
+            if (!tempExists) return prev;
+            return prev.map((m) => (m.id === tempId ? { ...officialMsg } : m));
+          });
         }
       } catch (err) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));

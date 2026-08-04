@@ -3,6 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { FormCard, CardHeader, PrimaryBtn, ApiError } from '../components/FormCard'
 import { verifyEmail, resendVerificationCode } from '../services/authService'
 
+// ── سهم الرجوع (نفس ستايل السهم بصفحة اللوغين) ──
+const BackArrowIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+)
+
 export default function VerifyOTP() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -89,6 +97,27 @@ export default function VerifyOTP() {
 
   return (
     <FormCard>
+      {/* 🆕 سهم الرجوع - نفس مكان وستايل السهم بصفحة اللوغين */}
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        aria-label="رجوع"
+        title="رجوع"
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-dark)',
+          padding: 4,
+          display: 'flex',
+        }}
+      >
+        <BackArrowIcon />
+      </button>
+
       <CardHeader icon="📬" subtitle={`أرسلنا رمزاً إلى ${email}`} />
 
       <form onSubmit={handleSubmit} noValidate>

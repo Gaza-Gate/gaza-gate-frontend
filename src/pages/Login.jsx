@@ -66,8 +66,13 @@ export default function Login() {
           initialValues: result.initialValues,
         },
       })
-    } catch (err) {
-      setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
+   } catch (err) {
+      setApiError(
+        err?.response?.data?.data?.message ||
+          err?.response?.data?.message ||
+          err.message ||
+          'فشل تسجيل الدخول بجوجل'
+      )
     } finally {
       setGoogleLoading(false)
     }

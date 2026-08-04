@@ -371,3 +371,41 @@
 .om-dashboard-link-btn:active {
   transform: scale(0.98);
 }
+.om-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+}
+
+.om-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.om-filter-label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.om-filter-select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+.om-filter-count {
+  margin-inline-start: auto;
+  font-size: 13px;
+  color: #999;
+}

@@ -91,18 +91,13 @@ export async function prepareSellerGoogleRegistration(credential) {
  */
 export async function resolveSellerGoogleLogin(credential, remember = true) {
   try {
-    return await authenticateSellerWithGoogle(credential, remember);
+    return await authenticateSellerWithGoogle(credential, remember)
   } catch (loginError) {
     try {
-      const registration = await prepareSellerGoogleRegistration(credential);
-      return {
-        mode: "register",
-        user: null,
-        accessToken: null,
-        ...registration,
-      };
-    } catch {
-      throw loginError;
+      const registration = await prepareSellerGoogleRegistration(credential)
+      return { mode: 'register', user: null, accessToken: null, ...registration }
+    } catch (registerError) {
+      throw registerError   
     }
   }
 }

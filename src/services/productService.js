@@ -160,8 +160,8 @@ export async function getPublicCategories() {
 // ──────────────────────────────────────────────
 
 // جلب تقييمات منتج معين
-export const getProductReviews = async (productId) => {
-  const res = await api.get(`/api/review/product/${productId}`);
+export const getProductReviews = async (productId, page = 1) => {
+  const res = await api.get(`/api/review/product/${productId}?page=${page}`);
   return res.data;
 };
 

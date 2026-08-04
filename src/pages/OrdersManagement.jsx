@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./OrdersManagement.css";
 import logo from "../assets/logo.png";
@@ -41,6 +41,12 @@ const CurrencyIcon = () => (
   </svg>
 );
 
+const FilterIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+);
+
 // ── Status badge ──
 // ✅ هاي القيم مطابقة تماماً لعمود status بقاعدة البيانات (enum):
 // pending_review, accepted, rejected, in_production, ready, completed, cancelled
@@ -58,6 +64,25 @@ function StatusBadge({ status }) {
   const info = STATUS_MAP[status] || { label: status || "غير معروف", className: "om-badge-blue" };
   return <span className={`om-badge ${info.className}`}>{info.label}</span>;
 }
+
+// ── خيارات الفلترة والترتيب ──
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "كل الحالات" },
+  { value: "pending_review", label: "بانتظار المراجعة" },
+  { value: "accepted", label: "موافق عليه" },
+  { value: "in_production", label: "قيد التنفيذ" },
+  { value: "ready", label: "جاهز" },
+  { value: "completed", label: "مكتمل" },
+  { value: "rejected", label: "مرفوض" },
+  { value: "cancelled", label: "ملغي" },
+];
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "الأحدث أولاً" },
+  { value: "oldest", label: "الأقدم أولاً" },
+  { value: "price_high", label: "الأعلى سعراً" },
+  { value: "price_low", label: "الأقل سعراً" },
+];
 
 const OrdersManagement = () => {
   const navigate = useNavigate();
@@ -77,6 +102,10 @@ const OrdersManagement = () => {
   const [error, setError] = useState(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
+
+  // ✅ فلترة وترتيب
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
     (async () => {
@@ -202,6 +231,33 @@ const OrdersManagement = () => {
   const approvedCount = stats.accepted;
   const pendingCount = stats.inProduction;
 
+  // ✅ تطبيق الفلترة حسب الحالة ثم الترتيب حسب السعر/التاريخ
+  const displayedOrders = useMemo(() => {
+    let result = [...orders];
+
+    if (statusFilter !== "all") {
+      result = result.filter((o) => o.status === statusFilter);
+    }
+
+    switch (sortBy) {
+      case "oldest":
+        result.sort((a, b) => new Date(a.date) - new Date(b.date));
+        break;
+      case "price_high":
+        result.sort((a, b) => Number(b.total) - Number(a.total));
+        break;
+      case "price_low":
+        result.sort((a, b) => Number(a.total) - Number(b.total));
+        break;
+      case "newest":
+      default:
+        result.sort((a, b) => new Date(b.date) - new Date(a.date));
+        break;
+    }
+
+    return result;
+  }, [orders, statusFilter, sortBy]);
+
   return (
     <div className="om-root" dir="rtl">
 
@@ -234,6 +290,52 @@ const OrdersManagement = () => {
             <p className="om-stat-value">{loading ? "—" : pendingCount}</p>
           </div>
         </div>
+
+        {/* ✅ Filters bar */}
+        {!loading && !error && orders.length > 0 && (
+          <div className="om-filters-bar">
+            <div className="om-filter-group">
+              <FilterIcon />
+              <label htmlFor="om-status-filter" className="om-filter-label">
+                الحالة
+              </label>
+              <select
+                id="om-status-filter"
+                className="om-filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                {STATUS_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="om-filter-group">
+              <label htmlFor="om-sort-filter" className="om-filter-label">
+                الترتيب
+              </label>
+              <select
+                id="om-sort-filter"
+                className="om-filter-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <span className="om-filter-count">
+              {displayedOrders.length} من {orders.length} طلب
+            </span>
+          </div>
+        )}
 
         {/* Orders table */}
         <div className="om-table-card">
@@ -287,6 +389,12 @@ const OrdersManagement = () => {
               title="لا توجد طلبات بعد"
               description="ستظهر طلبات المشترين هنا عند وصولها"
             />
+          ) : displayedOrders.length === 0 ? (
+            <EmptyState
+              icon={Inbox}
+              title="لا توجد طلبات مطابقة"
+              description="جرّب تغيير الفلتر لعرض نتائج مختلفة"
+            />
           ) : (
             <div className="om-table-wrap">
               <table className="om-table">
@@ -302,7 +410,7 @@ const OrdersManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => {
+                  {displayedOrders.map((order) => {
                     // ✅ استخراج الـ customer ID الصحيح (actionUrl > customerId > id)
                     const customerPath = customerProfilePath(order.customerObj);
                     return (

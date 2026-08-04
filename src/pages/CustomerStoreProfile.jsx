@@ -420,9 +420,11 @@ export default function CustomerStoreProfile() {
                     {initialToShow}
                   </div>
                 )}
+               {store?.isTrustedSeller && (
                 <span className="csp-verified-badge" title="متجر موثّق">
                   <CheckCircle2 size={14} />
                 </span>
+              )}
               </div>
 
               <div className="csp-hero-info">
@@ -481,16 +483,20 @@ export default function CustomerStoreProfile() {
 
         {/* ═══════ Trust strip — under the hero ═══════ */}
         <section className="csp-trust-strip">
-          <div className="csp-trust-item">
-            <span className="csp-trust-icon csp-trust-icon--orange">
-              <ShieldCheck size={16} />
-            </span>
-            <div className="csp-trust-text">
-              <strong>متجر موثّق</strong>
-              <small>تم التحقق من هويته</small>
-            </div>
-          </div>
-          <div className="csp-trust-divider" />
+          {store?.isTrustedSeller && (
+            <>
+              <div className="csp-trust-item">
+                <span className="csp-trust-icon csp-trust-icon--orange">
+                  <ShieldCheck size={16} />
+                </span>
+                <div className="csp-trust-text">
+                  <strong>متجر موثّق</strong>
+                  <small>تم التحقق من هويته</small>
+                </div>
+              </div>
+              <div className="csp-trust-divider" />
+            </>
+          )}
           <div className="csp-trust-item">
             <span className="csp-trust-icon csp-trust-icon--green">
               <TrendingUp size={16} />
@@ -926,17 +932,17 @@ export default function CustomerStoreProfile() {
                       <span className="csp-info-value">{shippingTime}</span>
                     </div>
                   </div>
-                  <div className="csp-info-item">
-                    <span className="csp-info-icon">
-                      <ShieldCheck size={15} />
+                <div className="csp-info-item">
+                  <span className="csp-info-icon">
+                    <ShieldCheck size={15} />
+                  </span>
+                  <div>
+                    <span className="csp-info-label">حالة المتجر</span>
+                    <span className={`csp-info-value ${store?.isTrustedSeller ? "csp-info-value--ok" : ""}`}>
+                      {store?.isTrustedSeller ? "موثّق" : "غير موثّق"}
                     </span>
-                    <div>
-                      <span className="csp-info-label">حالة المتجر</span>
-                      <span className="csp-info-value csp-info-value--ok">
-                        موثّق
-                      </span>
-                    </div>
                   </div>
+                </div>
                 </div>
               )}
 

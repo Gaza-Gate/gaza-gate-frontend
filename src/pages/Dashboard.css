@@ -285,3 +285,13 @@
   color: #ea580c;
   border-bottom-color: #ea580c;
 }
+.dsh-row--clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.dsh-row--clickable:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+
+

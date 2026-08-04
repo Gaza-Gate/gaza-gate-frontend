@@ -356,3 +356,103 @@
     overflow-y: visible;
   }
 }
+.pdm-seller-reply {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.pdm-seller-reply-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+.pdm-seller-reply-text {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #374151;
+}
+
+.pdm-reply-box {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.pdm-reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.pdm-edit-reply {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #f97316;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.pdm-reply-text {
+  margin: 0;
+  font-size: 13px;
+  color: #374151;
+}
+.pdm-btn-reply {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.pdm-reply-form {
+  margin-top: 8px;
+}
+.pdm-reply-textarea {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+.pdm-reply-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.pdm-btn-submit-reply {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pdm-btn-submit-reply:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pdm-btn-cancel-reply {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+}

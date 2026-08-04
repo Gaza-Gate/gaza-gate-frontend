@@ -63,6 +63,13 @@ const SuccessIcon = () => (
   </svg>
 );
 
+// أيقونة "زبون موثوق"
+const TrustedBadgeIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="#16a34a" stroke="#16a34a" strokeWidth="1">
+    <path d="M12 2l2.39 4.84 5.34.78-3.87 3.77.91 5.32L12 14.27l-4.77 2.44.91-5.32L4.27 7.62l5.34-.78L12 2z" />
+  </svg>
+);
+
 // نجمة قابلة للضغط - لاستخدامها بفورم تقييم الزبون
 const RatingStarIcon = ({ filled }) => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill={filled ? "#f97316" : "none"} stroke="#f97316" strokeWidth="1.5">
@@ -98,12 +105,19 @@ const STATIC_ORDER = {
   date: "2026-06-10",
   time: "14:30",
   status: "pending_review",
-  customer: { name: "أحمد محمد علي", phone: "+970599123456", address: "غزة، حي الرمال، شارع الجلاء" },
+  customer: {
+    name: "أحمد محمد علي",
+    phone: "+970599123456",
+    address: "غزة، حي الرمال، شارع الجلاء",
+    avatar: null,
+    isTrustedBuyer: false,
+  },
   products: [
     { name: "زيت زيتون فلسطيني", qty: 2, price: 45, total: 90 },
     { name: "صابون نابلسي",       qty: 4, price: 15, total: 60 },
   ],
   subtotal: 150,
+  discountAmount: 0,
   shipping: 10,
   total: 160,
 };
@@ -151,10 +165,13 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
   const date = createdAt ? createdAt.slice(0, 10) : "";
   const time = createdAt ? createdAt.slice(11, 16) : "";
 
-  const firstName = raw.customer?.user?.firstName ?? "";
-  const lastName = raw.customer?.user?.lastName ?? "";
+  // ✅ حقول الزبون جايه مباشرة تحت raw.customer (مش جوا raw.customer.user)
+  const firstName = raw.customer?.firstName ?? "";
+  const lastName = raw.customer?.lastName ?? "";
   const fullName = `${firstName} ${lastName}`.trim() || "عميل";
-  const phone = raw.customer?.user?.phone ?? "غير متوفر";
+  const phone = raw.customer?.phone ?? "غير متوفر";
+  const avatar = raw.customer?.avatar ?? null;
+  const isTrustedBuyer = raw.customer?.isTrustedBuyer ?? false;
 
   // ⚠️ مهم: نعطي الأولوية لحقل customerId (سواء جوا customer أو على المستوى الأعلى)
   // لأنه اكتشفنا بصفحة الرسائل إنه raw.customer?.id ممكن يكون ID مختلف عن الـ customerId
@@ -176,8 +193,15 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
     total: p.total ?? (Number(p.qty ?? p.quantity ?? 0) * Number(p.price ?? p.unitPrice ?? 0)),
   }));
 
-  // 🆕 الباك اند مش عم يبعت subtotal أبداً، فمنحسبه بنفسنا من مجموع (سعر × كمية) كل منتج
+// ✅ الباك اند صلّح الباغ وصار يرجّع subtotal و totalPrice صحيحين، فبنستخدمهم
+  // مباشرة من الـ API. بنسيب الحساب اليدوي (computedSubtotal) بس كـ fallback
+  // احتياطي، للحالة النادرة يلي الباك اند ما يرجع فيها الحقل أبداً (undefined/null).
   const computedSubtotal = products.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  const subtotal =
+    raw.subtotal != null ? Number(raw.subtotal) : computedSubtotal;
+
+  // مبلغ الخصم (لو موجود بالطلب)
+  const discountAmount = Number(raw.discountAmount ?? raw.discount_amount ?? 0);
 
   return {
     id: raw.id ?? fallbackId,
@@ -185,11 +209,19 @@ const normalizeOrder = (apiResponseData, fallbackId) => {
     date,
     time,
     status: raw.status ?? "pending_review",
-    customer: { name: fullName, phone, address, id: customerId },
+    customer: {
+      name: fullName,
+      phone,
+      address,
+      id: customerId,
+      avatar,
+      isTrustedBuyer,
+    },
     products,
-    subtotal: computedSubtotal, // 🆕 بدل raw.subtotal ?? 0
+    subtotal,        // ✅ من الباك اند مباشرة (السعر قبل الخصم ورسوم التوصيل)
+    discountAmount,
     shipping: raw.shippingFee ?? raw.shipping_fee ?? 0,
-    total: raw.totalPrice ?? raw.total_price ?? 0,
+    total: raw.totalPrice ?? raw.total_price ?? 0, // ✅ من الباك اند مباشرة (السعر بعد الخصم + رسوم التوصيل)
   };
 };
 
@@ -572,21 +604,53 @@ const OrderDetails = () => {
                 <span>معلومات العميل</span>
                 <UserIcon />
               </div>
-              <div className="od-info-rows">
-                <div className="od-info-row od-info-row-single">
+
+              {/* 🆕 صورة الزبون + شارة "زبون موثوق" */}
+              <div className="od-customer-identity" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                {order.customer?.avatar ? (
+                  <img
+                    src={order.customer.avatar}
+                    alt={order.customer?.name}
+                    className="od-customer-avatar"
+                    style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    className="od-customer-avatar-placeholder"
+                    style={{
+                      width: 40, height: 40, borderRadius: "50%",
+                      background: "#f3f4f6", display: "flex",
+                      alignItems: "center", justifyContent: "center", color: "#9ca3af",
+                    }}
+                  >
+                    <UserIcon />
+                  </div>
+                )}
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   <span
                     className="od-info-value"
                     onClick={handleGoToCustomerProfile}
                     style={{
                       cursor: order.customer?.id ? "pointer" : "default",
                       textDecoration: order.customer?.id ? "underline" : "none",
+                      fontWeight: 600,
                     }}
                     title="عرض بروفايل الزبون"
                   >
                     {order.customer?.name}
                   </span>
-                  <UserIcon />
+                  {order.customer?.isTrustedBuyer && (
+                    <span
+                      className="od-trusted-badge"
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#16a34a" }}
+                    >
+                      <TrustedBadgeIcon /> زبون موثوق
+                    </span>
+                  )}
                 </div>
+              </div>
+
+              <div className="od-info-rows">
                 <div className="od-info-row od-info-row-single">
                   <span className="od-info-value">{order.customer?.phone}</span>
                   <PhoneIcon />
@@ -631,6 +695,13 @@ const OrderDetails = () => {
               <span>₪{order.subtotal}</span>
               <span className="od-summary-key">المجموع الفرعي:</span>
             </div>
+            {/* 🆕 يظهر بس لو في خصم فعلي على الطلب */}
+            {order.discountAmount > 0 && (
+              <div className="od-summary-row">
+                <span>-₪{order.discountAmount}</span>
+                <span className="od-summary-key">الخصم:</span>
+              </div>
+            )}
             <div className="od-summary-row">
               <span>₪{order.shipping}</span>
               <span className="od-summary-key">رسوم التوصيل:</span>
