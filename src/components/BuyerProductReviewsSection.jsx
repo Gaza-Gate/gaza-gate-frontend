@@ -6,6 +6,8 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Camera,
   MessageSquareQuote,
   ShieldCheck,
@@ -16,7 +18,6 @@ import {
 import {
   getProductReviews,
   getSellerProductReviews,
-  fetchMissingReplies,
 } from "../services/reviewService";
 import { avatarColor, fullName } from "../utils/chatHelpers";
 import { customerProfilePath, storeProfilePath } from "../utils/sellerHelpers";
@@ -70,21 +71,24 @@ function timeAgo(dateStr) {
 }
 
 /** اسم العميل المعروض (نحترم خصوصيته)
- *  الباك الفعلي يرجع customer كـ flat object: { id, firstName, lastName, avatar }
- *  لكن بعض الـ endpoints (مثل /api/seller/review) ترجع customer nested: { id, user: {...} }
+ *  ✅ الباك الفعلي (من Postman NEW responses) يرجع customer كـ flat object:
+ *     { id, firstName, lastName, avatar, actionUrl, isTrustedBuyer }
+ *  لكن بعض الـ endpoints القديمة (مثل أول deployment) ترجع customer nested:
+ *     { id, user: { firstName, lastName, avatar } }
  *  نتعامل مع كل الـ shapes.
  */
 function buyerDisplayName(review) {
+  if (!review) return "مشتري";
   const flat = review.customer || {};
   const nested = flat.user || review.user || {};
-  // أولوية للـ flat shape
+  // أولوية للـ flat shape (الموصى به حالياً من الباك)
   if (flat.firstName || flat.lastName) {
     return fullName(
       { firstName: flat.firstName, lastName: flat.lastName },
       "مشتري"
     );
   }
-  // بعدها nested
+  // بعدها nested (للتوافق مع الإصدارات القديمة)
   if (nested.firstName || nested.lastName) return fullName(nested, "مشتري");
   // بعض الـ APIs ترجع اسم مختصر
   if (flat.name) return flat.name;
@@ -93,6 +97,7 @@ function buyerDisplayName(review) {
 }
 
 function buyerAvatarUrl(review) {
+  if (!review) return null;
   return (
     review.customer?.avatar ||
     review.customer?.user?.avatar ||
@@ -138,150 +143,66 @@ function isBuyerTrusted(review) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   Seller Reply Normalization
+   Seller Reply Normalization (محدّث من Postman NEW contract)
    ─────────────────────────────────────────────────────────────
-   الباك ممكن يرجّع رد البائع بأشكال/أسماء مختلفة.
-   هدول بنغطوا أكثر الاحتمالات:
-
-   الأسماء المحتملة للحقل (نبحث بالترتيب):
-     - sellerReply, reply, response, storeReply, sellerResponse,
-       replyText, ownerReply, vendorReply, merchantReply
-
-   الأشكال المحتملة للقيمة:
-     1) string خام:  "شكراً لتقييمك"
-     2) object فيه text:  { text: "شكراً", createdAt: "..." }
-     3) object فيه reply: { reply: "شكراً", replyAt: "..." }
-     4) object كامل:    { text, createdAt, updatedAt, seller: {...} }
-
-   التواريخ المحتملة:
-     - createdAt, replyCreatedAt, repliedAt, replyAt, updatedAt
-   ════════════════════════════════════════════════════════════════ */
-const SELLER_REPLY_FIELD_CANDIDATES = [
-  "sellerReply",
-  "reply",
-  "response",
-  "storeReply",
-  "sellerResponse",
-  "replyText",
-  "ownerReply",
-  "vendorReply",
-  "merchantReply",
-];
-
-const SELLER_REPLY_DATE_CANDIDATES = [
-  "createdAt",
-  "replyCreatedAt",
-  "repliedAt",
-  "replyAt",
-  "updatedAt",
-  "created_at",
-];
-
-/** يلقط أول حقل موجود من قائمة المرشحين */
-function pickField(obj, candidates) {
-  if (!obj || typeof obj !== "object") return null;
-  for (const key of candidates) {
-    if (obj[key] !== undefined && obj[key] !== null) {
-      return { key, value: obj[key] };
-    }
-  }
-  return null;
-}
-
-/**
- * تطبيع رد البائع — يرجع null لو ما في رد، أو:
- *   {
- *     text: string,
- *     createdAt: string | null,
- *     seller: { id?, name?, avatar? } | null,
- *     raw: object  // الـ object الأصلي للتطوير/debugging
+   الباك الآن يرجّع الرد بشكل موحّد وبسيط (Postman NEW responses):
+     review = {
+ *     id, rating, comment, imageUrl, createdAt,
+ *     sellerReply:    "string" | null,        ← نص مباشر (مش object)
+ *     sellerRepliedAt: "ISO date" | null,     ← تاريخ الرد منفصل
+ *     customer: { id, firstName, lastName, avatar, actionUrl, isTrustedBuyer },
+ *     product?: { id, name }
  *   }
- */
+
+   هون بنحوّلهم لشكل موحّد للاستخدام داخل الـ UI:
+     { text: "string", createdAt: "ISO date", seller: { id?, name?, avatar? } | null }
+
+   الـ seller info (اسم + أفاتار) بنجيبها من review.seller (لو الباك رجّعه)
+   أو من product.seller عبر الـ product object.
+   ════════════════════════════════════════════════════════════════ */
 function normalizeSellerReply(review) {
   if (!review || typeof review !== "object") return null;
 
-  // ✅ الحالة 1: الباك يرجّع الرد كحقل top-level بالـ review
-  const topLevel = pickField(review, SELLER_REPLY_FIELD_CANDIDATES);
-  if (topLevel) {
-    const reply = parseReplyValue(topLevel.value, review);
-    if (reply) {
-      // ✅ debug log — مؤقت: اطبع اسم الحقل الفعلي اللي لقيناه
-      if (typeof console !== "undefined" && !window.__bprs_reply_logged) {
-        window.__bprs_reply_logged = true;
-        console.log(
-          "%c[BuyerProductReviewsSection] ✅ Found seller reply at field:",
-          "color: #10b981; font-weight: bold;",
-          topLevel.key,
-          "→",
-          reply
-        );
-      }
-      return reply;
-    }
-  }
+  // ✅ NEW shape: sellerReply كنص top-level + sellerRepliedAt منفصل
+  const rawText = review.sellerReply;
+  if (typeof rawText !== "string" || !rawText.trim()) return null;
 
-  // ✅ الحالة 2: الرد جوا seller/store object بالـ review
-  const sellerObj = review.seller || review.store || review.vendor;
-  if (sellerObj && typeof sellerObj === "object") {
-    const nested = pickField(sellerObj, SELLER_REPLY_FIELD_CANDIDATES);
-    if (nested) {
-      const reply = parseReplyValue(nested.value, sellerObj);
-      if (reply) {
-        if (typeof console !== "undefined" && !window.__bprs_reply_logged) {
-          window.__bprs_reply_logged = true;
-          console.log(
-            "%c[BuyerProductReviewsSection] ✅ Found seller reply at seller.",
-            "color: #10b981; font-weight: bold;",
-            nested.key,
-            "→",
-            reply
-          );
-        }
-        return reply;
-      }
-    }
-  }
-
-  return null;
+  return {
+    text: rawText.trim(),
+    createdAt: review.sellerRepliedAt ?? null,
+    seller: extractReviewSeller(review),
+    raw: { sellerReply: rawText, sellerRepliedAt: review.sellerRepliedAt },
+  };
 }
 
-function parseReplyValue(value, contextObj) {
-  if (!value) return null;
-
-  // string خام
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    return {
-      text: trimmed,
-      createdAt: pickField(contextObj, SELLER_REPLY_DATE_CANDIDATES)?.value ?? null,
-      seller: extractSellerInfo(contextObj),
-      raw: value,
-    };
+/**
+ * تطبيع seller object من الـ review
+ *
+ * حسب Postman (NEW response):
+ *   review = {
+ *     id, rating, comment, imageUrl, sellerReply, sellerRepliedAt, createdAt,
+ *     customer: { id, firstName, lastName, avatar, actionUrl, isTrustedBuyer },
+ *     product?: { id, name }
+ *   }
+ *
+ * ممكن الـ seller info تجي من:
+ *   1) review.seller / review.store (نادر — من زاوية المشتري عادةً مش موجود)
+ *   2) review.product.seller (لو الباك أرجعها مع المنتج)
+ */
+function extractReviewSeller(review) {
+  if (!review) return null;
+  // 1) من review.seller (لو الباك رجّعه مباشرة)
+  if (review.seller) {
+    return extractSellerInfo({ seller: review.seller });
   }
-
-  // object
-  if (typeof value === "object") {
-    // ممكن الرد جوا object تاني (text / reply / message)
-    const inner = pickField(value, ["text", "reply", "message", "content", "body"]);
-    const text = inner?.value;
-    if (!text || typeof text !== "string" || !text.trim()) return null;
-
-    const date = pickField(value, SELLER_REPLY_DATE_CANDIDATES)?.value
-      ?? pickField(contextObj, SELLER_REPLY_DATE_CANDIDATES)?.value
-      ?? null;
-
-    // ممكن الـ seller info جوا الـ reply object
-    const seller = extractSellerInfo(value) || extractSellerInfo(contextObj);
-
-    return {
-      text: text.trim(),
-      createdAt: date,
-      seller,
-      raw: value,
-    };
+  // 2) من review.store (alias قديم)
+  if (review.store) {
+    return extractSellerInfo({ seller: review.store });
   }
-
+  // 3) من review.product.seller (لو الباك أرجع البائع مع المنتج)
+  if (review.product?.seller) {
+    return extractSellerInfo({ seller: review.product.seller });
+  }
   return null;
 }
 
@@ -290,7 +211,7 @@ function extractSellerInfo(obj) {
   const sellerObj = obj.seller || obj.store || obj.vendor || null;
   if (!sellerObj) return null;
 
-  const id = sellerObj.id ?? sellerObj._id ?? null;
+  const id = sellerObj.id ?? sellerObj._id ?? sellerObj.sellerId ?? null;
   const avatar =
     sellerObj.avatar ||
     sellerObj.logo ||
@@ -298,33 +219,41 @@ function extractSellerInfo(obj) {
     sellerObj.image ||
     null;
 
+  // ✅ الباك قد يرجع:
+  //    - { storeName, avatar, actionUrl }  (POSTMAN شكل أساسي)
+  //    - { firstName, lastName, avatar }   (flat من /api/review/seller/.../product-reviews)
+  //    - { user: { firstName, lastName, avatar } }  (nested قديم)
   let name =
     sellerObj.storeName ||
     sellerObj.name ||
-    [sellerObj.user?.firstName, sellerObj.user?.lastName].filter(Boolean).join(" ") ||
-    sellerObj.firstName ||
+    [sellerObj.user?.firstName, sellerObj.user?.lastName].filter(Boolean).join(" ").trim() ||
+    [sellerObj.firstName, sellerObj.lastName].filter(Boolean).join(" ").trim() ||
     null;
 
   if (!name && typeof sellerObj === "object") {
     name = "المتجر";
   }
 
-  return { id, name, avatar };
+  return { id, name, avatar, actionUrl: sellerObj.actionUrl || null };
 }
 
 /**
  * استخراج قائمة المراجعات من أي shape يرجعها الباك
- * — ليش القائمة ممكن تكون data.list / data.reviews / data.items / array مباشرة
+ * — القائمة ممكن تكون data.list / data.reviews / data.items / array مباشرة
  */
 function extractList(data) {
   if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.list)) return data.list;
-  if (Array.isArray(data?.reviews)) return data.reviews;
-  if (Array.isArray(data?.items)) return data.items;
+  if (!data || typeof data !== "object") return [];
+  if (Array.isArray(data.list)) return data.list;
+  if (Array.isArray(data.reviews)) return data.reviews;
+  if (Array.isArray(data.items)) return data.items;
   return [];
 }
 
 function extractMeta(data, fallbackTotal) {
+  if (!data || typeof data !== "object") {
+    return { average: 0, total: fallbackTotal || 0, distribution: null, pagination: null };
+  }
   return {
     average: Number(
       data?.average ?? data?.avgRating ?? data?.averageRating ?? 0
@@ -332,7 +261,7 @@ function extractMeta(data, fallbackTotal) {
     total: Number(
       data?.total ?? data?.totalReviews ?? data?.count ?? fallbackTotal ?? 0
     ),
-    distribution: data?.distribution ?? null, // { 1:n, 2:n, ... } — keys ممكن تكون strings أو numbers
+    distribution: data?.distribution ?? null,
     pagination: data?.pagination ?? null,
   };
 }
@@ -372,7 +301,13 @@ function DistributionBars({ distribution, total }) {
 
 /* ── Single Review Card ─────────────────────────────────── */
 
-function ReviewCard({ review, index = 0, showProductTag = false, onProductTagClick = null }) {
+function ReviewCard({
+  review,
+  index = 0,
+  showProductTag = false,
+  onProductTagClick = null,
+  isHighlighted = false,
+}) {
   const displayName = buyerDisplayName(review);
   const initial = buyerInitial(review);
   const avatarUrl = buyerAvatarUrl(review);
@@ -409,7 +344,7 @@ function ReviewCard({ review, index = 0, showProductTag = false, onProductTagCli
 
   return (
     <article
-      className="bprs-review-card"
+      className={`bprs-review-card ${isHighlighted ? "bprs-review-card--highlight" : ""}`}
       data-review-id={review.id}
       id={review.id ? `review-${review.id}` : undefined}
       style={{ animationDelay: `${Math.min(index, 8) * 0.05}s` }}
@@ -665,6 +600,18 @@ export default function BuyerProductReviewsSection({
    *   { total, average, distribution } حتى الـ parent يقدر يحدّث عدّاد (مثل badge).
    */
   onCountLoaded = null,
+  /**
+   * highlightReviewId — ID تقييم نحتاج نسلّط الضوء عليه (مثال: لما يفوت
+   *   اليوزر من إشعار "رد على تقييمك").
+   *   - لو التقييم موجود بالقائمة: بنعمل scroll + highlight animation + ننادي onHighlighted
+   *   - لو مش ظاهر (بسبب initialLimit): بنفتح showAll تلقائياً وننتظر التحميل
+   */
+  highlightReviewId = null,
+  /**
+   * onHighlighted — callback يُستدعى لما التقييم المحدد يصير ظاهر فعلاً.
+   *   الـ parent بيستخدمه ليشيل ?reviewId=xxx من URL أو يعمل أي cleanup.
+   */
+  onHighlighted = null,
 }) {
   const [reviews, setReviews] = useState(() => extractList(initialData));
   const [meta, setMeta] = useState(() =>
@@ -674,14 +621,27 @@ export default function BuyerProductReviewsSection({
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
+  // ✅ ID التقييم اللي بنسلّط عليه الضوء (للأنيميشن)
+  const [highlightedId, setHighlightedId] = useState(null);
 
   // الـ entity اللي بنجلب تقييماتها — يتغير حسب الـ mode
   const entityId = mode === "seller" ? sellerId : productId;
-  const isValid = Boolean(entityId) && (mode === "seller" ? Boolean(sellerId) : Boolean(productId));
+  // ✅ isValid واضح ومباشر: لازم يكون عندنا ID صالح حسب الـ mode
+  const isValid =
+    (mode === "seller" && Boolean(sellerId)) ||
+    (mode === "product" && Boolean(productId));
 
   const fetchPage = useCallback(
     async (pageNum = 1) => {
-      if (!isValid) return;
+      if (!isValid) {
+        // ✅ log واضح: لو الـ sellerId أو productId ناقص
+        if (typeof console !== "undefined") {
+          console.warn(
+            `[BuyerProductReviewsSection] ⚠️ Skipped fetch — mode="${mode}", sellerId=${sellerId}, productId=${productId}`
+          );
+        }
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
@@ -692,6 +652,19 @@ export default function BuyerProductReviewsSection({
         const data = await fetcher();
         const list = extractList(data);
         const m = extractMeta(data, list.length);
+
+        // ✅ log للتشخيص: بنطبع الـ URL والـ response الأول
+        if (typeof console !== "undefined" && !window.__bprs_load_logged) {
+          window.__bprs_load_logged = true;
+          const url = mode === "seller"
+            ? `/api/review/seller/${sellerId}/product-reviews?page=${pageNum}&pageSize=10`
+            : `/api/review/product/${productId}?page=${pageNum}&pageSize=10`;
+          console.log(
+            `%c[BuyerProductReviewsSection] ✅ Loaded ${list.length} reviews`,
+            "color: #10b981; font-weight: bold;",
+            { url, total: m.total, average: m.average, firstReview: list[0] || null }
+          );
+        }
 
         // ✅ debug log — مؤقت: نطبع شكل الـ review object عشان نعرف شو اسم حقل الرد
         if (list.length > 0 && typeof console !== "undefined" && !window.__bprs_review_keys_logged) {
@@ -720,45 +693,6 @@ export default function BuyerProductReviewsSection({
         setReviews(pageNum === 1 ? list : (prev) => [...prev, ...list]);
         setMeta(m);
         setPage(pageNum);
-
-        // ✅ Fallback: لو الرد ناقص من list response (الباك ما رجّعه مع القائمة)
-        // بنسحبه من endpoint منفصل (GET /api/review/:id/reply أو /api/review/:id)
-        // بصمت — لو الـ endpoints مش موجودة عند الباك بنتجاهلها بدون error للمستخدم.
-        const reviewsNeedingReply = list.filter(
-          (r) => r && r.id && !normalizeSellerReply(r)
-        );
-        if (reviewsNeedingReply.length > 0) {
-          // بنشتغل بالخلفية — ما نعرض loading إضافي
-          const replyIds = reviewsNeedingReply.map((r) => r.id);
-          fetchMissingReplies(replyIds)
-            .then((repliesMap) => {
-              if (repliesMap.size === 0) return;
-              // ✅ log للتشخيص
-              if (typeof console !== "undefined") {
-                console.log(
-                  `%c[BuyerProductReviewsSection] ✅ Fetched ${repliesMap.size}/${replyIds.length} missing replies via fallback endpoints`,
-                  "color: #10b981; font-weight: bold;"
-                );
-              }
-              setReviews((prev) =>
-                prev.map((r) => {
-                  if (repliesMap.has(String(r.id))) {
-                    return { ...r, sellerReply: repliesMap.get(String(r.id)) };
-                  }
-                  return r;
-                })
-              );
-            })
-            .catch((err) => {
-              // بنسكت عن 404 — يعني الباك ما عنده الـ endpoints
-              if (err?.response?.status !== 404 && err?.response?.status !== 405) {
-                console.warn(
-                  "[BuyerProductReviewsSection] fetchMissingReplies error:",
-                  err?.message
-                );
-              }
-            });
-        }
       } catch (err) {
         console.error("[BuyerProductReviewsSection] fetch error:", err);
         setError(
@@ -796,6 +730,54 @@ export default function BuyerProductReviewsSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta.total, meta.average, loading, onCountLoaded]);
 
+  // ✅ Highlight logic: لو وصلنا highlightReviewId من URL (?reviewId=xxx)
+  //    وانتهى التحميل، نفعّل الـ highlight + scroll + onHighlighted callback
+  useEffect(() => {
+    if (!highlightReviewId) return;
+    if (loading) return;
+    if (reviews.length === 0) return;
+
+    // 1) تأكد أن التقييم موجود فعلياً
+    const exists = reviews.some(
+      (r) => String(r.id) === String(highlightReviewId)
+    );
+    if (!exists) {
+      // التقييم مش بالصفحة الحالية — ممكن يكون بالصفحات التالية
+      if (meta.pagination?.hasNextPage) {
+        // بنحاول نزيد الصفحة (بتحميل lazy)
+        fetchPage(page + 1);
+      }
+      return;
+    }
+
+    // 2) التقييم موجود — بنفعّل الـ highlight
+    setHighlightedId(highlightReviewId);
+    setShowAll(true); // لو في limit، نفتحه
+
+    // 3) نعطي DOM وقت يرسم الكروت، ثم scroll
+    const t = setTimeout(() => {
+      const el = document.getElementById(`review-${highlightReviewId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      // 4) ننادي الـ parent callback (الـ parent بيشيل الـ query param)
+      if (typeof onHighlighted === "function") {
+        onHighlighted();
+      }
+    }, 80);
+
+    // 5) بعد 3 ثواني، نشيل الـ highlight (الأنيميشن بيلعب مرة واحدة)
+    const tClear = setTimeout(() => {
+      setHighlightedId(null);
+    }, 3000);
+
+    return () => {
+      clearTimeout(t);
+      clearTimeout(tClear);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightReviewId, loading, reviews.length, meta.pagination?.hasNextPage]);
+
   /* ── derived ── */
   const visibleReviews = useMemo(() => {
     if (initialLimit == null) return reviews;
@@ -805,6 +787,14 @@ export default function BuyerProductReviewsSection({
   const hasMore =
     (initialLimit != null && reviews.length > initialLimit) ||
     Boolean(meta.pagination?.hasNextPage);
+
+  // ✅ pagination props من الباك (لأزرار Prev/Next)
+  const currentPage = Number(meta.pagination?.currentPage ?? page ?? 1);
+  const totalPages = Number(meta.pagination?.totalPages ?? 1);
+  const totalItems = Number(meta.pagination?.totalItems ?? meta.total ?? reviews.length);
+  const hasPrevPage = Boolean(meta.pagination?.hasPreviousPage ?? currentPage > 1);
+  const hasNextPage = Boolean(meta.pagination?.hasNextPage ?? currentPage < totalPages);
+  const showPageNav = totalPages > 1;
 
   const showSummary = !compact;
 
@@ -925,38 +915,71 @@ export default function BuyerProductReviewsSection({
                 index={idx}
                 showProductTag={showProductTag}
                 onProductTagClick={onProductTagClick}
+                isHighlighted={highlightedId === String(r.id)}
               />
             ))}
           </div>
 
           {hasMore && (
             <div className="bprs-more-wrap">
-              <button
-                type="button"
-                className="bprs-more-btn"
-                onClick={() => {
-                  if (showAll) {
-                    setShowAll(false);
-                  } else if (initialLimit != null && reviews.length > initialLimit) {
-                    setShowAll(true);
-                  } else if (meta.pagination?.hasNextPage) {
-                    fetchPage((meta.pagination?.currentPage ?? page) + 1);
-                  }
-                }}
-              >
-                {showAll
-                  ? "عرض أقل"
-                  : meta.pagination?.hasNextPage
-                  ? `تحميل المزيد (${meta.total - reviews.length}+)`
-                  : `عرض الكل (${reviews.length})`}
-                <ChevronDown
-                  size={14}
-                  style={{
-                    transform: showAll ? "rotate(180deg)" : "none",
-                    transition: "transform .2s",
-                  }}
-                />
-              </button>
+              {/* ── "Load more" / "Show all" — فقط لما في initialLimit ── */}
+              {initialLimit != null && reviews.length > initialLimit && !showAll && (
+                <button
+                  type="button"
+                  className="bprs-more-btn"
+                  onClick={() => setShowAll(true)}
+                >
+                  عرض الكل ({reviews.length})
+                  <ChevronDown size={14} />
+                </button>
+              )}
+
+              {initialLimit != null && showAll && (
+                <button
+                  type="button"
+                  className="bprs-more-btn"
+                  onClick={() => setShowAll(false)}
+                >
+                  عرض أقل
+                  <ChevronDown
+                    size={14}
+                    style={{ transform: "rotate(180deg)", transition: "transform .2s" }}
+                  />
+                </button>
+              )}
+
+              {/* ── Prev/Next pagination (الطريقة الرئيسية للتنقل بين الصفحات) ──
+                  ✅ أزرار بأيقونات فقط — touch target 40px+ على الموبايل */}
+              {showPageNav && (
+                <div className="bprs-pagination" role="navigation" aria-label="ترقيم صفحات التقييمات">
+                  <button
+                    type="button"
+                    className="bprs-page-btn bprs-page-btn--prev"
+                    onClick={() => fetchPage(currentPage - 1)}
+                    disabled={!hasPrevPage || loading}
+                    aria-label="الصفحة السابقة"
+                    title="الصفحة السابقة"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+
+                  <span className="bprs-page-info" aria-live="polite">
+                    صفحة <strong>{currentPage}</strong> من <strong>{totalPages}</strong>
+                    <span className="bprs-page-total">({totalItems} تقييم)</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    className="bprs-page-btn bprs-page-btn--next"
+                    onClick={() => fetchPage(currentPage + 1)}
+                    disabled={!hasNextPage || loading}
+                    aria-label="الصفحة التالية"
+                    title="الصفحة التالية"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>

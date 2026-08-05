@@ -4,7 +4,7 @@ import { ChevronLeft, Package, AlertCircle } from "lucide-react";
  
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
-import { getCustomerOrders } from "../services/authService";
+import { getMyOrders as getCustomerOrders } from "../services/orderService";
 import logo from "../assets/logo.png";
 import {
   EmptyState,

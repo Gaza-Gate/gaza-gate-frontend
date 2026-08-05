@@ -1,8 +1,19 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SellerIllustration from '../assets/SellerIllustration'
 import BuyerIllustration from '../assets/BuyerIllustration'
+import { useAuth } from '../context/AuthContext'
 
-function PortalCard({ title, description, illustration, fillLabel, outlineLabel, onFill, onOutline, accentColor, tag }) {
+/**
+ * Onboarding — شاشة اختيار نوع الحساب (مشتري / بائع).
+ *
+ * ✅ اللوغو تم إزالته من أعلى الشاشة (بناءً على طلب المستخدم).
+ * ✅ الثيم ديناميكي بالكامل: في الوضع النهاري خلفية فاتحة + بطاقات بيضاء
+ *    + نصوص داكنة. في الوضع الليلي خلفية كحلية + بطاقات كحلية أفتح + نصوص بيضاء.
+ * ✅ البرتقالي يظل ثابتاً كهوية بصرية.
+ * ✅ الموجة في الخلفية تأتي من body::before / body::after في index.css.
+ */
+function PortalCard({ title, description, illustration, fillLabel, outlineLabel, onFill, onOutline, tag }) {
   return (
     <div className="portal-card">
       <div className="portal-card-tag">{tag}</div>
@@ -13,7 +24,7 @@ function PortalCard({ title, description, illustration, fillLabel, outlineLabel,
         <h2 className="portal-card-title">{title}</h2>
         <p className="portal-card-desc">{description}</p>
         <div className="portal-card-actions">
-          <button className="portal-btn-primary" onClick={onFill}>
+          <button className="portal-btn-primary auth-orange-btn" onClick={onFill}>
             {fillLabel}
           </button>
           <button className="portal-btn-ghost" onClick={onOutline}>
@@ -27,6 +38,18 @@ function PortalCard({ title, description, illustration, fillLabel, outlineLabel,
 
 export default function Onboarding() {
   const navigate = useNavigate()
+  const { isAuthenticated, isBootstrapping, currentRole } = useAuth()
+
+  // ✅ لو في session → نتجاوز الـ onboarding وندخل على طول
+  useEffect(() => {
+    if (isBootstrapping) return
+    if (!isAuthenticated) return
+    if (currentRole === 'seller') {
+      navigate('/seller/dashboard', { replace: true })
+    } else {
+      navigate('/home/customer', { replace: true })
+    }
+  }, [isAuthenticated, isBootstrapping, currentRole, navigate])
 
   return (
     <>
@@ -37,7 +60,8 @@ export default function Onboarding() {
 
         .onboarding-root {
           min-height: 100vh;
-          background: #FFF8F3;
+          background: var(--bg-page); /* ✅ ديناميكي — فاتح/كحلي حسب الثيم */
+          color: var(--text-dark);
           font-family: 'Tajawal', sans-serif;
           direction: rtl;
           display: flex;
@@ -47,9 +71,10 @@ export default function Onboarding() {
           padding: 2rem 1.25rem;
           position: relative;
           overflow: hidden;
+          transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* خلفية ديكور */
+        /* خلفية ديكور — توهج برتقالي خفيف (محايد للثيم) */
         .onboarding-root::before {
           content: '';
           position: absolute;
@@ -57,7 +82,7 @@ export default function Onboarding() {
           left: -120px;
           width: 420px;
           height: 420px;
-          background: radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 70%);
           pointer-events: none;
         }
         .onboarding-root::after {
@@ -67,7 +92,7 @@ export default function Onboarding() {
           right: -100px;
           width: 360px;
           height: 360px;
-          background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 70%);
           pointer-events: none;
         }
 
@@ -81,34 +106,40 @@ export default function Onboarding() {
 
         .onboarding-eyebrow {
           display: inline-block;
-          background: #FED7AA;
-          color: #C2410C;
+          background: rgba(249, 115, 22, 0.18);
+          color: #c2410c;
           font-size: 12px;
           font-weight: 700;
           letter-spacing: 0.08em;
           padding: 5px 16px;
           border-radius: 99px;
           margin-bottom: 0.9rem;
+          border: 1px solid rgba(249, 115, 22, 0.35);
+        }
+        .dark .onboarding-eyebrow {
+          color: #fdba74;
         }
 
         .onboarding-title {
           font-size: clamp(1.6rem, 4vw, 2.4rem);
           font-weight: 900;
-          color: #1A1A1A;
+          color: var(--text-dark);
           line-height: 1.3;
           margin-bottom: 0.6rem;
+          transition: color 0.3s ease;
         }
 
         .onboarding-title span {
-          color: #F97316;
+          color: #f97316;
         }
 
         .onboarding-sub {
           font-size: clamp(13px, 2vw, 15px);
-          color: #6B7280;
+          color: var(--text-mid);
           max-width: 440px;
           margin: 0 auto;
           line-height: 1.7;
+          transition: color 0.3s ease;
         }
 
         /* Grid */
@@ -130,22 +161,25 @@ export default function Onboarding() {
           }
         }
 
-        /* Card */
+        /* Card — ديناميكي حسب الثيم */
         .portal-card {
-          background: #FFFFFF;
+          background: var(--bg-glass);
           border-radius: 20px;
           padding: 2rem 1.75rem 1.75rem;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          box-shadow: 0 2px 24px rgba(249,115,22,0.08), 0 1px 4px rgba(0,0,0,0.05);
-          border: 1.5px solid #FDE8D4;
-          transition: transform 0.22s ease, box-shadow 0.22s ease;
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 1.5px solid var(--border-glass);
+          box-shadow: var(--shadow-glass);
+          transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.3s ease;
           position: relative;
           overflow: hidden;
         }
 
+        /* خط علوي برتقالي للـ card */
         .portal-card::before {
           content: '';
           position: absolute;
@@ -153,25 +187,32 @@ export default function Onboarding() {
           left: 0;
           right: 0;
           height: 3px;
-          background: linear-gradient(90deg, #F97316, #FDBA74);
+          background: linear-gradient(90deg, #fb923c, #fdba74);
           border-radius: 20px 20px 0 0;
         }
 
         .portal-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 10px 40px rgba(249,115,22,0.14), 0 2px 8px rgba(0,0,0,0.06);
+          border-color: rgba(249, 115, 22, 0.5);
+          box-shadow: 0 14px 48px rgba(249, 115, 22, 0.15), 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .dark .portal-card:hover {
+          box-shadow: 0 14px 48px rgba(249, 115, 22, 0.18), 0 4px 12px rgba(0, 0, 0, 0.45);
         }
 
         .portal-card-tag {
           display: inline-block;
-          background: #FFF3E8;
-          color: #EA580C;
+          background: rgba(249, 115, 22, 0.15);
+          color: #c2410c;
           font-size: 11px;
           font-weight: 700;
           padding: 4px 12px;
           border-radius: 99px;
           margin-bottom: 1.1rem;
-          border: 1px solid #FED7AA;
+          border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+        .dark .portal-card-tag {
+          color: #fdba74;
         }
 
         .portal-card-illustration {
@@ -179,12 +220,14 @@ export default function Onboarding() {
           height: 145px;
           margin-bottom: 1.3rem;
           border-radius: 16px;
-          background: #FFF8F3;
+          background: var(--bg-overlay);
+          border: 1px solid var(--border-glass);
           overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 8px;
+          transition: background 0.3s ease, border-color 0.3s ease;
         }
 
         @media (max-width: 640px) {
@@ -201,16 +244,18 @@ export default function Onboarding() {
         .portal-card-title {
           font-size: 1.2rem;
           font-weight: 800;
-          color: #111827;
+          color: var(--text-dark);
           margin-bottom: 0.5rem;
+          transition: color 0.3s ease;
         }
 
         .portal-card-desc {
           font-size: 13px;
-          color: #6B7280;
+          color: var(--text-mid);
           line-height: 1.7;
           margin-bottom: 1.4rem;
           min-height: 40px;
+          transition: color 0.3s ease;
         }
 
         .portal-card-actions {
@@ -222,7 +267,7 @@ export default function Onboarding() {
         .portal-btn-primary {
           width: 100%;
           padding: 12px 16px;
-          background: #F97316;
+          background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
           color: #fff;
           border: none;
           border-radius: 12px;
@@ -230,13 +275,14 @@ export default function Onboarding() {
           font-size: 14.5px;
           font-weight: 700;
           cursor: pointer;
-          transition: background 0.18s, transform 0.12s;
-          box-shadow: 0 4px 14px rgba(249,115,22,0.3);
+          transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+          box-shadow: 0 6px 18px rgba(249, 115, 22, 0.4);
         }
 
         .portal-btn-primary:hover {
-          background: #EA6D0E;
+          background: linear-gradient(135deg, #fdba74 0%, #fb923c 50%, #f97316 100%);
           transform: scale(1.02);
+          box-shadow: 0 8px 22px rgba(249, 115, 22, 0.55);
         }
 
         .portal-btn-primary:active {
@@ -247,8 +293,8 @@ export default function Onboarding() {
           width: 100%;
           padding: 11px 16px;
           background: transparent;
-          color: #374151;
-          border: 1.5px solid #E5E7EB;
+          color: var(--text-mid);
+          border: 1.5px solid var(--border-strong);
           border-radius: 12px;
           font-family: 'Tajawal', sans-serif;
           font-size: 14px;
@@ -258,32 +304,9 @@ export default function Onboarding() {
         }
 
         .portal-btn-ghost:hover {
-          border-color: #F97316;
-          color: #F97316;
-          background: #FFF8F3;
-        }
-
-        /* Footer dots */
-        .onboarding-footer {
-          margin-top: 2rem;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          position: relative;
-          z-index: 1;
-        }
-
-        .onboarding-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #FDBA74;
-        }
-
-        .onboarding-dot-active {
-          width: 20px;
-          border-radius: 3px;
-          background: #F97316;
+          border-color: #f97316;
+          color: #f97316;
+          background: rgba(249, 115, 22, 0.08);
         }
 
         /* Animations */
@@ -292,14 +315,15 @@ export default function Onboarding() {
           to   { opacity: 1; transform: translateY(0); }
         }
 
-        .onboarding-header { animation: fadeUp 0.45s ease both; }
-        .portal-card:nth-child(1) { animation: fadeUp 0.45s 0.1s ease both; }
-        .portal-card:nth-child(2) { animation: fadeUp 0.45s 0.2s ease both; }
+        .onboarding-header { animation: fadeUp 0.45s 0.1s ease both; }
+        .portal-card:nth-child(1) { animation: fadeUp 0.45s 0.2s ease both; }
+        .portal-card:nth-child(2) { animation: fadeUp 0.45s 0.3s ease both; }
       `}</style>
 
       <div className="onboarding-root">
         {/* Header */}
         <div className="onboarding-header">
+          <div className="onboarding-eyebrow">مرحباً بك</div>
           <h1 className="onboarding-title">
             أهلاً بك في <span>بوابتك</span>
           </h1>
@@ -331,8 +355,6 @@ export default function Onboarding() {
             onOutline={() => navigate('/login/seller')}
           />
         </div>
-
-       
       </div>
     </>
   )

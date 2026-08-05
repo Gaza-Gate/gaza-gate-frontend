@@ -318,3 +318,55 @@
     padding: 20px 16px 40px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .fav-wrapper { background: var(--bg-page); }
+.dark .fav-header h1 { color: #FFFFFF; }
+.dark .fav-header p { color: #94a3b8; }
+.dark .fav-clear { color: #f87171; }
+.dark .fav-clear:hover { color: #FCA5A5; }
+
+.dark .fav-card {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.dark .fav-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 18px rgba(249, 115, 22, 0.18);
+  border-color: rgba(249, 115, 22, 0.40);
+}
+
+.dark .fav-card-img-wrap { background: rgba(30, 41, 59, 0.55); }
+
+.dark .fav-heart-btn {
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+}
+.dark .fav-heart-btn.active { color: #f87171; }
+
+.dark .fav-cat-badge {
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+}
+
+.dark .fav-status {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.dark .fav-card-title { color: #FFFFFF; }
+.dark .fav-store { color: #94a3b8; }
+.dark .fav-store--link:hover { color: #fb923c; background: rgba(249, 115, 22, 0.12); }
+
+.dark .fav-rating { color: #FFFFFF; }
+.dark .fav-price { color: #fb923c; }
+.dark .fav-qty { color: #94a3b8; }
+
+.dark .fav-empty-circle { background: rgba(30, 41, 59, 0.95); color: #f87171; }
+.dark .fav-empty-dot--grey { background: #cbd5e1; }
+.dark .fav-empty h3 { color: #FFFFFF; }
+.dark .fav-empty p { color: #94a3b8; }

@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Package as PackageIcon, Eye } from "lucide-react";
 import "./RatingsManagement.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 import { ErrorState } from "../components/LoadingState";
 import { customerProfilePath } from "../utils/sellerHelpers";
+import ProductDetailsModal from "../components/ProductDetailsModal";
+import { getSellerProductDetails } from "../services/productService";
 
 // ══════════════════════════════════════════════════
 //  ⚙️  الـ endpoints — تأكدي من المسار الصحيح ببوستمان
@@ -125,7 +127,7 @@ const fetchProductReviews = async () => {
     ? payload
     : [];
 
-  return list.map((r) => {
+  const normalized = list.map((r) => {
     const firstName = r.customer?.user?.firstName ?? r.customer?.firstName ?? "";
     const lastName = r.customer?.user?.lastName ?? r.customer?.lastName ?? "";
     const fullName = `${firstName} ${lastName}`.trim();
@@ -142,6 +144,50 @@ const fetchProductReviews = async () => {
       sellerReply,
     };
   });
+
+  // ✅ إثراء: نجيب تفاصيل كل منتج بشكل متوازٍ — للحصول على image و price
+  //    الـ /api/seller/review بيرجع product: { id, name } بس — مش كافية للعرض النظيف
+  //    بنجلب التفاصيل بالتوازي (parallel) عشان نحد من وقت الانتظار
+  const uniqueProductIds = [
+    ...new Set(
+      normalized
+        .map((r) => r.product?.id)
+        .filter(Boolean)
+    ),
+  ];
+
+  if (uniqueProductIds.length > 0) {
+    const detailResults = await Promise.allSettled(
+      uniqueProductIds.map((id) => getSellerProductDetails(id))
+    );
+    const detailsMap = {};
+    detailResults.forEach((res, i) => {
+      if (res.status === "fulfilled") {
+        const product = res.value?.data?.product ?? res.value?.product ?? null;
+        if (product) {
+          const imageUrl =
+            product.primaryImage?.imageUrl ||
+            product.images?.[0]?.imageUrl ||
+            product.imageUrl ||
+            null;
+          detailsMap[uniqueProductIds[i]] = {
+            id: product.id,
+            name: product.name,
+            image: imageUrl,
+            price: product.price ?? null,
+          };
+        }
+      }
+    });
+
+    normalized.forEach((r) => {
+      if (r.product?.id && detailsMap[r.product.id]) {
+        r.product = { ...r.product, ...detailsMap[r.product.id] };
+      }
+    });
+  }
+
+  return normalized;
 };
 
 // تقييماتي أنا كسيلر للزبائن — كل عنصر فيه customer (الزبون المُقيَّم) + order + product
@@ -213,6 +259,9 @@ const RatingsManagement = () => {
   const reviewRefs = useRef({});
   const highlightTimeoutRef = useRef(null);
   const handledReviewIdRef = useRef(null);
+
+  //   مودال تفاصيل المنتج — ينفتح عند الضغط على المنتج داخل التقييم
+  const [activeProductId, setActiveProductId] = useState(null);
 
   const sortRef = useRef(null);
 
@@ -607,6 +656,40 @@ const handleSubmitEdit = async (id, orderId) => {
                 </p>
               )}
 
+              {/* ✅ بطاقة المنتج - بتبويب "تقييمات الزبائن لي" بس — قابلة للضغط لفتح المودال */}
+              {!isCustomerTab && review.product?.id && (
+                <button
+                  type="button"
+                  className="rm-review-product"
+                  onClick={() => setActiveProductId(review.product.id)}
+                  title="عرض تفاصيل المنتج"
+                >
+                  <div className="rm-review-product-img">
+                    {review.product.image || review.product.imageUrl || review.product.primaryImage?.imageUrl ? (
+                      <img
+                        src={review.product.image || review.product.imageUrl || review.product.primaryImage?.imageUrl}
+                        alt={review.product.name}
+                      />
+                    ) : (
+                      <PackageIcon size={20} />
+                    )}
+                  </div>
+                  <div className="rm-review-product-info">
+                    <span className="rm-review-product-name" title={review.product.name}>
+                      {review.product.name}
+                    </span>
+                    <span className="rm-review-product-price">
+                      {review.product.price != null
+                        ? `${Number(review.product.price).toFixed(2)}₪`
+                        : "اضغط لعرض التفاصيل"}
+                    </span>
+                  </div>
+                  <span className="rm-review-product-cta" aria-hidden="true">
+                    <Eye size={14} />
+                  </span>
+                </button>
+              )}
+
               {/* فورم التعديل يحل مكان التعليق العادي لما تكون بحالة تعديل */}
               {isCustomerTab && isEditing ? (
                 <div className="rm-edit-form">
@@ -731,6 +814,13 @@ const handleSubmitEdit = async (id, orderId) => {
         </div>
 
       </main>
+
+      {/* ✅ مودال تفاصيل المنتج — يطلع عند الضغط على المنتج داخل التقييم */}
+      <ProductDetailsModal
+        open={!!activeProductId}
+        productId={activeProductId}
+        onClose={() => setActiveProductId(null)}
+      />
     </div>
   );
 };

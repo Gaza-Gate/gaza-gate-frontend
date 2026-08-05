@@ -25,9 +25,11 @@ import {
 import {
   getAuthToken,
   getCurrentUser,
+} from "../services/authService";
+import {
   getConversations,
   getMessages,
-} from "../services/authService";
+} from "../services/conversationService";
 
 import { getSocket, connectSocket } from "../utils/socket";
 import api from "../utils/api";
@@ -358,15 +360,16 @@ export default function Messages() {
         });
         const officialMsg = sent?.data?.data?.message;
         if (officialMsg) {
+          // ✅ منع تكرار الرسالة: شيل الـ optimistic (tempId) أولاً،
+          //    ثم ضيف الرسمي عبر addMessageUnique — لو الـ socket
+          //    سبَق وحطّ الرسمي، ما رح ينضاف مرة ثانية
           setMessages((prev) => {
-            // 🆕 لو الـ socket سبق ووصل ورجّع نفس الرسالة (استبدل الـ optimistic
-            // فعلياً بنفسه عبر reconcileIncomingMessage)، ما عاد فيه عنصر بـ
-            // tempId أصلاً، فالـ map هون ما رح يغيّر شي (ما رح يصير تكرار).
-            // لو لسا الـ optimistic موجود (REST رجع أول)، منستبدله زي العادة.
-            const tempExists = prev.some((m) => m.id === tempId);
-            if (!tempExists) return prev;
-            return prev.map((m) => (m.id === tempId ? { ...officialMsg } : m));
+            const withoutOptimistic = prev.filter((m) => m.id !== tempId);
+            return addMessageUnique(withoutOptimistic, officialMsg);
           });
+        } else {
+          // لو الباك ما رجّع message، على الأقل شيل الـ optimistic
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
         }
       } catch (err) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));

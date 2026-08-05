@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import logo from "../assets/logo.png";
+import ThemeLogo from "./ThemeLogo";
 import {
   Home,
   ShoppingBag,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 import "./CustomerNavbar.css";
 
 /**
@@ -35,7 +36,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   const {
     logout: authLogout,
     hasSellerProfile,
-    switchRole,
+    switchRoleAndNavigate,
     currentRole,
     isSwitchingRole,
     isBecomingSeller,
@@ -100,25 +101,19 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
 
     if (item.action === "switch-to-seller") {
       if (isConverting) return; // ✅ بنمنع الضغط المتعدد
-      // عنده متجر → switch-role بدل become-seller
-      // الـ overlay (عالمي) بيظهر تلقائياً لأن AuthContext بيضبط isSwitchingRole
+      // عنده متجر → switchRoleAndNavigate (atomic: state + tokens + socket → navigate)
       try {
-        const result = await switchRole("seller");
-        if (result?.reconnectSocket) {
-          try {
-            const { connectSocket, disconnectSocket } = await import(
-              "../utils/socket"
-            );
-            disconnectSocket();
-            connectSocket();
-          } catch {
-            /* socket غير متاح */
-          }
-        }
-        navigate("/seller/dashboard");
+        await switchRoleAndNavigate("seller", navigate, {
+          path: "/seller/dashboard",
+          replace: true,
+        });
+        // ✅ navigate صار من جوا الـ helper
       } catch (err) {
         // fallback: navigate to become-seller (في حالة غريبة)
-        console.warn("[CustomerNavbar] switch-role فشل، بنحوّل لصفحة become-seller:", err?.message);
+        console.warn(
+          "[CustomerNavbar] switch-role فشل، بنحوّل لصفحة become-seller:",
+          err?.message
+        );
         navigate("/customer/become-seller");
       }
       return;
@@ -139,11 +134,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     <>
       <nav className="cn-nav" dir="rtl">
         <div className="cn-logo" onClick={() => navigate("/home/customer")}>
-          {logo ? (
-            <img src={logo} alt="Gaza Gate" className="cn-logo-img" />
-          ) : (
-            <span className="cn-logo-text">GAZA GATE</span>
-          )}
+          <ThemeLogo className="cn-logo-img" />
         </div>
 
         <div className="cn-links">
@@ -219,6 +210,9 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
             <ShoppingCart size={18} />
             {cartCount > 0 && <span className="cn-badge">{cartCount}</span>}
           </button>
+
+          {/* ✅ زر تبديل الثيم (Light/Dark/System) */}
+          <ThemeToggle variant="navbar" size={18} />
 
           {/* ✅ جرس الإشعارات المعزول — NotificationBell بيدير كل شي داخلياً */}
           <NotificationBell role="customer" />

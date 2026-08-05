@@ -26,6 +26,11 @@ import {
   getCustomerNotifications,
   markCustomerNotificationRead,
   markAllCustomerNotificationsRead,
+  deleteCustomerNotification,
+  deleteAllCustomerNotifications,
+  extractNotifications,
+  extractStats,
+  extractPagination,
 } from "../services/notificationService";
 
 import { connectSocket } from "../utils/socket";
@@ -38,6 +43,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { formatApiError } from "../utils/errorHelper";
 
 import "./NotificationsPage.css";
 
@@ -46,6 +52,7 @@ const NEW_NOTIFICATION_EVENT = "notification:new";
 
 // ── Constants ──────────────────────────────────────────────
 // 4 أنواع الإشعارات بالـ API (بالحروف الكبيرة): ORDER, SYSTEM, PROMOTIONAL, GENERAL
+// ✅ فقط لونين: أزرق + برتقالي
 const TYPE_META = {
   ORDER: {
     key: "ORDER",
@@ -58,8 +65,8 @@ const TYPE_META = {
     key: "SYSTEM",
     label: "النظام",
     icon: Settings,
-    color: "#475569",
-    bg: "#f1f5f9",
+    color: "#2563eb",
+    bg: "#dbeafe",
   },
   PROMOTIONAL: {
     key: "PROMOTIONAL",
@@ -72,8 +79,8 @@ const TYPE_META = {
     key: "GENERAL",
     label: "عام",
     icon: Bell,
-    color: "#7c3aed",
-    bg: "#f3e8ff",
+    color: "#2563eb",
+    bg: "#dbeafe",
   },
 };
 
@@ -335,26 +342,15 @@ export default function CustomerNotifications() {
         else setLoading(true);
         setError(null);
 
-        const data = await getCustomerNotifications(pageNum);
-        const rawList = Array.isArray(data?.notifications)
-          ? data.notifications
-          : [];
+        const data = await getCustomerNotifications({ page: pageNum, limit: 20 });
+        const rawList = extractNotifications(data);
 
         // 🔒 فلتر أمان: حتى لو الـ endpoint بيرجّع إشعار للبائع
         //    (bug في الباك)، ما نعرضه بواجهة الزبون
         const list = rawList.filter(isCustomerNotification);
-        const s = data?.stats ?? {};
-        const p = data?.pagination ?? null;
 
-        setStats({
-          total: s.total ?? list.length,
-          order: s.order ?? 0,
-          general: s.general ?? 0,
-          system: s.system ?? 0,
-          promotional: s.promotional ?? 0,
-          unRead: s.unRead ?? 0,
-        });
-        setPagination(p);
+        setStats(extractStats(data, list.length));
+        setPagination(extractPagination(data));
         setPage(pageNum);
 
         if (append) {
@@ -364,9 +360,9 @@ export default function CustomerNotifications() {
         }
       } catch (err) {
         console.error("Notifications error:", err);
-        setError(
-          err?.response?.data?.message || err.message || "تعذر جلب الإشعارات"
-        );
+        // ✅ استخدام formatApiError الموحّد لاستخراج رسالة الخطأ بشكل متسق
+        const info = formatApiError(err, "تعذر جلب الإشعارات");
+        setError(info.message);
       } finally {
         setLoading(false);
         setLoadingMore(false);

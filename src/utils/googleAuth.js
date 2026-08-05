@@ -69,6 +69,43 @@ export async function authenticateSellerWithGoogle(credential, remember = true) 
   return { mode: "login", user, accessToken: token };
 }
 
+/**
+ * ✅ تسجيل دخول المشتري عبر Google فقط (بدون fallback لـ register).
+ *    مفيد لصفحة Login — بنخلي الـ caller يقرر شو يعمل إذا الحساب مش موجود
+ *    (مثلاً: redirect لصفحة Register مع تمرير الـ credential).
+ *
+ * @param {string} credential - Google ID token من GoogleLogin.onSuccess
+ * @returns {Promise<{ user: object, accessToken: string }>}
+ * @throws {AxiosError} — 404/not-found إذا الحساب غير موجود
+ *                       — 401 إذا التوكن غير صالح
+ *                       — أخطاء أخرى حسب الباك
+ */
+export async function customerGoogleLoginOnly(credential) {
+  const data = await customerGoogleLogin(credential);
+  const token = extractToken(data);
+  const user = extractUser(data);
+  if (!token) throw new Error("لم يتم استلام رمز الدخول من السيرفر");
+  return { user, accessToken: token };
+}
+
+/**
+ * ✅ إنشاء حساب مشتري عبر Google فقط (بدون محاولة login).
+ *    مفيد لصفحة Register — بيكمل الـ flow دفعة واحدة.
+ *
+ * @param {string} credential - Google ID token من GoogleLogin.onSuccess
+ * @returns {Promise<{ user: object, accessToken: string }>}
+ * @throws {AxiosError} — 409 إذا الإيميل مسجل مسبقاً
+ *                       — 400 إذا التوكن غير صالح
+ *                       — أخطاء أخرى حسب الباك
+ */
+export async function customerGoogleRegisterOnly(credential) {
+  const data = await customerGoogleRegister(credential);
+  const token = extractToken(data);
+  const user = extractUser(data);
+  if (!token) throw new Error("لم يتم استلام رمز الدخول من السيرفر");
+  return { user, accessToken: token };
+}
+
 export async function prepareSellerGoogleRegistration(credential) {
   const profile = parseGoogleProfile(credential);
   const data = await sellerGoogleRegister(credential);

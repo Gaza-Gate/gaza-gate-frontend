@@ -9,25 +9,26 @@ import {
   CreditCard,
   PackagePlus,
   Monitor,
+  Shirt,
+  Hammer,
+  UtensilsCrossed,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProducts } from "../services/productService";
 import { getCurrentUser } from "../services/authService";
 import heroBanner from "../assets/hero-banner.webp";
-import handcraftIconImg from "../assets/icon-park-outline_traditional-chinese-medicine.jpg";
-import foodIconImg from "../assets/ion_fast-food-outline.png";
-import clothesIconImg from "../assets/hugeicons_clothes.jpg";
 import logoFallback from "../assets/logo.png";
 import "./CustomerHome.css";
 
 
-// ── بيانات الأقسام والمنتجات والبانرات ──
+// ── بيانات الأقسام — أيقونات Lucide فقط (بدون صور) ──
+//    الترتيب: 4 بطاقات، كلها بنفس الحجم والشكل
 const categories = [
-  { id: "handicraft", label: "الأشغال اليدوية", iconSrc: handcraftIconImg },
-  { id: "food", label: "المأكولات المنزلية", iconSrc: foodIconImg },
-  { id: "clothes", label: "ملابس", iconSrc: clothesIconImg },
-  { id: "electronics", label: "الإلكترونيات", icon: Monitor },
+  { id: "handicraft", label: "الأشغال اليدوية", Icon: Hammer },
+  { id: "food", label: "المأكولات المنزلية", Icon: UtensilsCrossed },
+  { id: "clothes", label: "ملابس", Icon: Shirt },
+  { id: "electronics", label: "الإلكترونيات", Icon: Monitor },
 ];
 
 
@@ -179,27 +180,17 @@ export default function CustomerHome() {
         </div>
 
        <div className="home-categories">
-    {categories.map(({ id, label, iconSrc, icon: Icon }) => (
+    {categories.map(({ id, label, Icon }) => (
       <button
         key={id}
         className="home-category-card"
         onClick={() => navigate(`/products?category=${id}`)}
+        aria-label={`تصفح قسم ${label}`}
       >
         <span className="home-category-icon">
-          {iconSrc ? (
-            <img
-              src={iconSrc}
-              alt={label}
-              loading="lazy"
-              decoding="async"
-              width={28}
-              height={28}
-            />
-          ) : (
-            Icon && <Icon size={28} />
-          )}
+          <Icon size={26} strokeWidth={2} aria-hidden="true" />
         </span>
-        {label}
+        <span className="home-category-label">{label}</span>
       </button>
     ))}
   </div>

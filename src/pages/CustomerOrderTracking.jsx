@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ChevronRight, CheckCircle, Store, Package, Star, XCircle, CheckCircle2,
   CreditCard, Banknote, Wallet, Hash, Calendar,
@@ -10,6 +10,7 @@ import { getOrderDetails, getPaymentMethodLabel } from "../services/orderService
 import { ORDER_STEPS, getStepIndex, isCancelledStatus, isCancellableStatus, getStatusLabel } from "../utils/orderStatus";
 import { checkReviewEligibility } from "../utils/reviewEligibility";
 import { getMyReviewedProductsMap } from "../services/reviewService";
+import { extractSellerId, storeProfilePath } from "../utils/sellerHelpers";
 import { OrderDetailsSkeleton } from "../components/LoadingState";
 import logo from "../assets/logo.png";
 import "./CustomerOrderTracking.css";
@@ -220,7 +221,28 @@ export default function CustomerOrderTracking() {
           <section className="ot-items">
             <div className="ot-store-card">
               <Store size={16} />
-              <span>{order.seller?.storeName || "متجر"}</span>
+              {(() => {
+                // ✅ اسم البائع = Link يودّي على صفحة المتجر
+                //    بنتحقق من وجود sellerId + storePath قبل ما نولّد Link
+                //    — لو ما في id صالح، نعرض اسم البائع كنص عادي بدون Link
+                const sellerId = extractSellerId(order.seller);
+                const storeName = order.seller?.storeName || "متجر";
+                const targetPath = storeProfilePath(order.seller);
+
+                if (targetPath && sellerId) {
+                  return (
+                    <Link
+                      to={targetPath}
+                      className="ot-store-link"
+                      title={`زيارة متجر ${storeName}`}
+                      aria-label={`زيارة متجر ${storeName}`}
+                    >
+                      {storeName}
+                    </Link>
+                  );
+                }
+                return <span>{storeName}</span>;
+              })()}
             </div>
 
             {items.map((item) => {
@@ -257,8 +279,9 @@ export default function CustomerOrderTracking() {
                         className="ot-rate-btn"
                         title="تقييم المنتج"
                       >
-                        <Star size={14} fill="#fbbf24" stroke="#fbbf24" />
+                        <Star size={16} fill="#ffffff" stroke="#ffffff" />
                         قيّم المنتج
+                       
                       </button>
                     )}
                     {isReviewed && (

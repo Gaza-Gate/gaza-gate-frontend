@@ -82,3 +82,28 @@
   .cfm-card { padding: 2.5rem 1.5rem 2rem; border-radius: 22px; }
   .cfm-title { font-size: 1.2rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .cfm-overlay { background: rgba(5, 13, 32, 0.75); }
+
+.dark .cfm-card {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.dark .cfm-title { color: #FFFFFF; }
+
+.dark .cfm-btn-cancel {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #cbd5e1;
+}
+.dark .cfm-btn-cancel:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.22);
+  color: #FFFFFF;
+}
+
+.dark .cfm-btn-confirm { background: var(--orange); color: #fff; }
+.dark .cfm-btn-confirm:hover:not(:disabled) { background: var(--orange-dark); }

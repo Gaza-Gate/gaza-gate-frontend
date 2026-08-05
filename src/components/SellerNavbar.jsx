@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, ChevronDown, Menu, X, ArrowLeftRight } from "lucide-react";
-import logo from "../assets/logo.png";
+import ThemeLogo from "./ThemeLogo";
 import ConvertToBuyerModal from "./ConvertToBuyerModal";
 import { logout } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 import "./SellerNavbar.css";
 
 const NAV_LINKS = [
@@ -22,7 +23,7 @@ const MORE_LINKS = [
 
 export default function SellerNavbar() {
   const {
-    switchRole,
+    switchRoleAndNavigate,
     becomeCustomer,
     logout: authLogout,
     currentRole,
@@ -83,15 +84,23 @@ export default function SellerNavbar() {
       try {
         // أول محاولة: تحويل حقيقي (أول مرة يصير فيها العميل customer)
         result = await becomeCustomer();
+        // ✅ atomic: state + tokens + socket → navigate
+        navigate("/home/customer", { replace: true });
       } catch (err) {
-        // لو عنده صلاحية customer أصلاً (409)، بنستخدم switch-role بس للتنقل
+        // لو عنده صلاحية customer أصلاً (409)، بنستخدم switchRoleAndNavigate
         if (err.response?.status === 409) {
-          result = await switchRole("customer");
+          await switchRoleAndNavigate("customer", navigate, {
+            path: "/home/customer",
+            replace: true,
+          });
+          // ✅ navigate صار من جوا الـ helper
+          return;
         } else {
           throw err;
         }
       }
 
+      // (fallback socket reconnect — الـ helper الجديد بيشتغل تلقائياً)
       if (result?.reconnectSocket) {
         const { connectSocket, disconnectSocket } = await import(
           "../utils/socket"
@@ -99,8 +108,6 @@ export default function SellerNavbar() {
         disconnectSocket();
         connectSocket();
       }
-
-      navigate("/home/customer");
     } catch (error) {
       console.error("فشل التحويل لحساب المشتري:", error);
     }
@@ -111,7 +118,7 @@ export default function SellerNavbar() {
   return (
     <nav className="snb-nav" dir="rtl">
       <Link to="/seller/dashboard" className="snb-logo-link">
-        <img src={logo} alt="Gaza Gate" className="snb-logo" />
+        <ThemeLogo className="snb-logo" />
       </Link>
 
       <div className="snb-links snb-links-desktop">
@@ -159,6 +166,9 @@ export default function SellerNavbar() {
       </div>
 
       <div className="snb-actions snb-actions-desktop">
+        {/* ✅ زر تبديل الثيم (Light/Dark/System) */}
+        <ThemeToggle variant="navbar" size={18} />
+
         {/* ✅ جرس الإشعارات المعزول — NotificationBell بيدير كل شي داخلياً */}
         <NotificationBell role="seller" />
         <button className="snb-logout-btn" onClick={handleLogout} disabled={loggingOut}>

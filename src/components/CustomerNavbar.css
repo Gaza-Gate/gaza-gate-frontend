@@ -4,14 +4,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-glass);
   padding: 14px 32px;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;              /* ✅ فوق أي محتوى صفحة */
+  isolation: isolate;         /* ✅ stacking context مستقل */
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
   font-family: "Tajawal", sans-serif;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .cn-nav {
+  background: rgba(30, 41, 59, 0.75);
+  border-bottom-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Logo ── */
@@ -19,11 +29,24 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  background: transparent;
 }
 
 .cn-logo-img {
   height: 56px;
   object-fit: contain;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* ✅ إصلاح اللوغو في الثيم الليلي — لو الـ PNG نفسه فيه خلفية سوداء
+   نستخدم mix-blend-mode: screen عشان الأسود يختفي ويبان لون الناف بار من وراه. */
+.dark .cn-logo-img {
+  mix-blend-mode: screen;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .cn-logo-text {
@@ -54,6 +77,10 @@
   text-decoration: none;
   transition: color 0.2s, background 0.2s;
   padding: 0;
+}
+
+.dark .cn-link {
+  color: #CBD5E1;
 }
 
 .cn-link:hover {
@@ -102,6 +129,10 @@
 
 .cn-icon-btn--ghost {
   color: var(--text-mid);
+}
+
+.dark .cn-icon-btn--ghost {
+  color: #CBD5E1;
 }
 
 .cn-badge {
@@ -160,6 +191,10 @@
 
 .cn-mobile-menu-btn:hover {
   background: #f3f4f6;
+}
+
+.dark .cn-mobile-menu-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
 }
 
 /* ── Responsive ── */
@@ -247,10 +282,12 @@
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  background: #fff;
-  border: 1px solid var(--border);
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-glass);
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   min-width: 200px;
   padding: 6px;
   z-index: 200;
@@ -258,6 +295,12 @@
   flex-direction: column;
   gap: 2px;
   animation: cn-dropdown-in 0.15s ease;
+}
+
+.dark .cn-dropdown-menu {
+  background: rgba(51, 65, 85, 0.92);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(249, 115, 22, 0.1);
 }
 
 @keyframes cn-dropdown-in {
@@ -281,6 +324,10 @@
   text-align: right;
   transition: background 0.15s, color 0.15s;
   width: 100%;
+}
+
+.dark .cn-dropdown-item {
+  color: #CBD5E1;
 }
 
 .cn-dropdown-item:hover {
@@ -329,13 +376,20 @@
   left: 0;
   bottom: 0;
   width: min(320px, 88vw);
-  background: #ffffff;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   z-index: 200;
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 28px rgba(0, 0, 0, 0.18);
   animation: cn-drawer-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   overflow-y: auto;
+}
+
+.dark .cn-drawer {
+  background: rgba(30, 41, 59, 0.95);
+  border-inline-end: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 @keyframes cn-drawer-slide {
@@ -353,11 +407,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border);
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
   position: sticky;
   top: 0;
   z-index: 2;
+}
+
+.dark .cn-drawer-head {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.04) 100%);
+  border-bottom-color: rgba(148, 163, 184, 0.2);
 }
 
 .cn-drawer-head h3 {
@@ -366,6 +425,10 @@
   color: #111827;
   margin: 0;
   letter-spacing: -0.2px;
+}
+
+.dark .cn-drawer-head h3 {
+  color: #F1F5F9;
 }
 
 .cn-drawer-close {
@@ -388,6 +451,18 @@
   border-color: #d1d5db;
 }
 
+.dark .cn-drawer-close {
+  background: rgba(51, 65, 85, 0.55);
+  color: #CBD5E1;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.dark .cn-drawer-close:hover {
+  background: rgba(51, 65, 85, 0.9);
+  color: #F1F5F9;
+  border-color: rgba(249, 115, 22, 0.4);
+}
+
 .cn-drawer-section {
   padding: 18px 14px 8px;
   display: flex;
@@ -402,6 +477,10 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0 8px 8px;
+}
+
+.dark .cn-drawer-section-title {
+  color: #64748B;
 }
 
 .cn-drawer-link {
@@ -424,15 +503,29 @@
   position: relative;
 }
 
+.dark .cn-drawer-link {
+  color: #CBD5E1;
+}
+
 .cn-drawer-link:hover {
   background: #f9fafb;
   color: #111827;
+}
+
+.dark .cn-drawer-link:hover {
+  background: rgba(249, 115, 22, 0.08);
+  color: #F1F5F9;
 }
 
 .cn-drawer-link.active {
   background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
   color: #ea580c;
   font-weight: 700;
+}
+
+.dark .cn-drawer-link.active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18) 0%, rgba(249, 115, 22, 0.06) 100%);
+  color: #FB923C;
 }
 
 .cn-drawer-link.active::before {
@@ -453,6 +546,10 @@
   border-top: 1px solid #f3f4f6;
 }
 
+.dark .cn-drawer-foot {
+  border-top-color: rgba(148, 163, 184, 0.2);
+}
+
 .cn-drawer-link--logout {
   color: #dc2626;
   font-weight: 600;
@@ -461,4 +558,13 @@
 .cn-drawer-link--logout:hover {
   background: #fef2f2;
   color: #b91c1c;
+}
+
+.dark .cn-drawer-link--logout {
+  color: #FCA5A5;
+}
+
+.dark .cn-drawer-link--logout:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #FECACA;
 }

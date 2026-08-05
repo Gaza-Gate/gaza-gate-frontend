@@ -1,4 +1,4 @@
-/* ╔══════════════════════════════════════════════════════════════════╗
+﻿/* ╔══════════════════════════════════════════════════════════════════╗
    ║  Gaza Gate — Buyer Product Reviews Section                        ║
    ║  تقييمات المشترين لمنتج معيّن — قابلة لإعادة الاستخدام         ║
    ╚══════════════════════════════════════════════════════════════════╝ */
@@ -317,6 +317,37 @@
   opacity: 1;
 }
 
+/* ✅ Highlight animation — لما التقييم يجي من إشعار "رد على تقييمك" */
+@keyframes bprs-highlight-flash {
+  0% {
+    background: rgba(249, 115, 22, 0.18);
+    border-color: #f97316;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25), 0 8px 24px rgba(249, 115, 22, 0.18);
+    transform: scale(1.01);
+  }
+  60% {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: #fb923c;
+    box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.12), 0 4px 16px rgba(249, 115, 22, 0.12);
+  }
+  100% {
+    background: #f9fafb;
+    border-color: var(--bprs-border);
+    box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+    transform: scale(1);
+  }
+}
+
+.bprs-review-card--highlight {
+  animation: bprs-highlight-flash 2.4s ease-out 1;
+  border: 1px solid #f97316 !important;
+}
+
+.bprs-review-card--highlight .bprs-review-card-bg {
+  opacity: 1 !important;
+  background: linear-gradient(180deg, #fb923c 0%, #f97316 100%) !important;
+}
+
 /* ── head ── */
 .bprs-review-head {
   display: flex;
@@ -403,7 +434,11 @@
   line-height: 1.75;
   margin: 0 0 12px;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   white-space: pre-wrap;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ── image ── */
@@ -604,9 +639,13 @@
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding-right: 44px; /* يعادل عرض الأفاتار + gap */
   position: relative;
   z-index: 1;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ── mobile — أصغر شوي ── */
@@ -665,6 +704,127 @@
   border-color: var(--bprs-primary);
   transform: translateY(-1px);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Prev/Next Pagination (clean & minimal — مطابق لستايل الموقع)
+   ═══════════════════════════════════════════════════════════════ */
+.bprs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--bprs-border);
+  border-radius: var(--bprs-radius);
+  box-shadow: var(--bprs-shadow-sm);
+  flex-wrap: wrap;
+}
+
+.bprs-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* ✅ أزرار بأيقونات فقط — touch target 44px للموبايل */
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: #fff;
+  border: 1px solid var(--bprs-border-strong);
+  border-radius: 50%;
+  color: var(--bprs-text-mid);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.bprs-page-btn:hover:not(:disabled) {
+  border-color: var(--bprs-primary);
+  color: var(--bprs-primary);
+  background: var(--bprs-primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+}
+
+.bprs-page-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.bprs-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.bprs-page-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--bprs-text-mid);
+  font-weight: 600;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.bprs-page-info strong {
+  color: var(--bprs-text);
+  font-weight: 800;
+}
+
+.bprs-page-total {
+  color: var(--bprs-text-mute);
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin-inline-start: 6px;
+}
+
+/* Dark mode */
+.dark .bprs-pagination {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(90, 115, 168, 0.25);
+}
+.dark .bprs-page-btn {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #E2E8F0;
+}
+.dark .bprs-page-btn:hover:not(:disabled) {
+  background: rgba(249, 115, 22, 0.18);
+  border-color: var(--bprs-primary);
+  color: #fb923c;
+}
+.dark .bprs-page-btn:disabled {
+  background: rgba(51, 65, 85, 0.25);
+  color: #6b7a9a;
+}
+.dark .bprs-page-info { color: #cbd5e1; }
+.dark .bprs-page-info strong { color: #FFFFFF; }
+.dark .bprs-page-total { color: #94a3b8; }
+
+/* ✅ Dark mode — وضوح نص التعليقات والاسم (يتجاوز --bprs-text-mid) */
+.dark .bprs-review-comment { color: #E2E8F0; }
+.dark .bprs-review-name   { color: #FFFFFF; }
+.dark .bprs-review-reply-text { color: #E2E8F0; }
+.dark .bprs-review-reply-name { color: #FFFFFF; }
+.dark .bprs-review-time   { color: #94a3b8; }
+.dark .bprs-review-reply-time { color: #94a3b8; }
+.dark .bprs-dist-label    { color: #cbd5e1; }
+.dark .bprs-dist-count    { color: #cbd5e1; }
+.dark .bprs-title         { color: #FFFFFF; }
+.dark .bprs-subtitle      { color: #cbd5e1; }
+.dark .bprs-empty p       { color: #FFFFFF; }
+.dark .bprs-empty span    { color: #94a3b8; }
+.dark .bprs-empty         { color: #cbd5e1; }
 
 /* ═══════ Empty / Error / Loading ═══════ */
 .bprs-empty {
@@ -959,6 +1119,11 @@
     grid-template-columns: 28px 1fr 28px;
     gap: 8px;
   }
+
+  /* ✅ Pagination — touch target 40px+ للموبايل، وتوسيط أنيق */
+  .bprs-pagination { gap: 12px; padding: 12px 14px; }
+  .bprs-page-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+  .bprs-page-total { display: none; } /* نخفي العدّاد الإضافي على الموبايل — الأيقونات تكفي */
 }
 
 @media (max-width: 480px) {
@@ -1176,3 +1341,211 @@
 .bprs-review-user:hover {
   background: rgba(249, 115, 22, 0.04);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Highlight Animation — إبراز التقييم المحدد
+   ─────────────────────────────────────────────────────────
+   تُستخدم لما يفوت اليوزر من إشعار "رد على تقييمك" (?reviewId=xxx)
+   → الـ BuyerProductReviewsSection يفعّل isHighlighted=true
+   → هنا بنشغّل animation + glow برتقالي + scrollIntoView (في الـ JS)
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes bprs-highlight-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(249, 115, 22, 0.0),
+      0 0 0 0 rgba(249, 115, 22, 0.0);
+    background-color: rgba(249, 115, 22, 0.0);
+    border-color: var(--bprs-border);
+  }
+  18% {
+    box-shadow:
+      0 0 0 6px rgba(249, 115, 22, 0.35),
+      0 0 32px 6px rgba(249, 115, 22, 0.45);
+    background-color: rgba(249, 115, 22, 0.10);
+    border-color: #f97316;
+  }
+  45% {
+    box-shadow:
+      0 0 0 4px rgba(249, 115, 22, 0.25),
+      0 0 24px 4px rgba(249, 115, 22, 0.32);
+    background-color: rgba(249, 115, 22, 0.06);
+    border-color: #fb923c;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(249, 115, 22, 0.0),
+      0 0 0 0 rgba(249, 115, 22, 0.0);
+    background-color: rgba(249, 115, 22, 0.0);
+    border-color: var(--bprs-border);
+  }
+}
+
+.bprs-review-card--highlight {
+  position: relative;
+  z-index: 2;
+  /* بنستخدم animation مرة وحدة (count: 1) — فبعد 2.5s يرجع لوضعه الطبيعي */
+  animation: bprs-highlight-pulse 2.4s cubic-bezier(0.16, 1, 0.3, 1) 1;
+  will-change: box-shadow, background-color, border-color;
+}
+
+/* ✅ Dark mode: عدّل الـ background tint لتلائم الـ navy */
+.dark .bprs-review-card--highlight {
+  animation-name: bprs-highlight-pulse-dark;
+}
+
+@keyframes bprs-highlight-pulse-dark {
+  0% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.0);
+    background-color: rgba(249, 115, 22, 0.0);
+    border-color: var(--bprs-border);
+  }
+  18% {
+    box-shadow:
+      0 0 0 6px rgba(249, 115, 22, 0.45),
+      0 0 32px 6px rgba(249, 115, 22, 0.55);
+    background-color: rgba(249, 115, 22, 0.14);
+    border-color: #fb923c;
+  }
+  45% {
+    box-shadow:
+      0 0 0 4px rgba(249, 115, 22, 0.3),
+      0 0 24px 4px rgba(249, 115, 22, 0.4);
+    background-color: rgba(249, 115, 22, 0.08);
+    border-color: #fdba74;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.0);
+    background-color: rgba(249, 115, 22, 0.0);
+    border-color: var(--bprs-border);
+  }
+}
+
+/* ✅ Reduced motion — نلغي الـ animation ونحتفظ بالـ outline بسيط */
+@media (prefers-reduced-motion: reduce) {
+  .bprs-review-card--highlight,
+  .dark .bprs-review-card--highlight {
+    animation: none !important;
+    border: 2px solid #f97316 !important;
+    background-color: rgba(249, 115, 22, 0.08) !important;
+  }
+}
+
+/* ✅ Dark mode tokens — لإعادة الاستخدام (نفس البطاقات) */
+.dark {
+  --bprs-primary: #fb923c;
+  --bprs-primary-dark: #f97316;
+  --bprs-primary-light: rgba(249, 115, 22, 0.10);
+  --bprs-primary-soft: rgba(249, 115, 22, 0.18);
+  --bprs-text: #FFFFFF;
+  --bprs-text-mid: #cbd5e1;
+  --bprs-text-mute: #94a3b8;
+  --bprs-border: rgba(90, 115, 168, 0.25);
+  --bprs-border-strong: rgba(138, 158, 201, 0.45);
+  --bprs-bg: #1e293b;
+  --bprs-card: #334155;
+  --bprs-success: #10b981;
+  --bprs-warn: #fbbf24;
+  --bprs-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --bprs-shadow: 0 6px 20px rgba(0, 0, 0, 0.40);
+  --bprs-shadow-lg: 0 16px 50px rgba(0, 0, 0, 0.50);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark mode — رفع specificity للـ inline cards
+   ─────────────────────────────────────────────────────────
+   الـ base rule ".bprs-section.bprs-inline .bprs-review-card"
+   (3 classes) بتفوز على ".dark .bprs-review-card" (2 classes).
+   الحل: نضيف rule بـ 4 classes عشان يفوز بالـ cascade
+   ويحوّل البطاقات للكحلي في dark mode.
+   ═══════════════════════════════════════════════════════════════ */
+.dark .bprs-section.bprs-inline .bprs-review-card {
+  background: var(--bprs-card);
+  border-color: var(--bprs-border);
+  box-shadow: var(--bprs-shadow-sm);
+}
+
+.dark .bprs-section.bprs-inline .bprs-review-card:hover {
+  border-color: var(--bprs-border-strong);
+  box-shadow: var(--bprs-shadow);
+}
+
+/* ✅ header divider للـ inline */
+.dark .bprs-section.bprs-inline .bprs-header {
+  border-bottom-color: var(--bprs-border);
+}
+
+/* ✅ empty state للـ inline */
+.dark .bprs-section.bprs-inline .bprs-empty {
+  background: transparent;
+  border-color: var(--bprs-border);
+}
+
+/* ✅ reply داخل inline — شفافية تندمج مع الكحلي */
+.dark .bprs-section.bprs-inline .bprs-review-reply {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--bprs-border);
+  border-right-color: var(--bprs-primary);
+}
+.dark .bprs-section.bprs-inline .bprs-review-reply-tail {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--bprs-border);
+}
+
+.dark .bprs-section:not(.bprs-inline),
+.dark .bprs-section.bprs-inline .bprs-skel-card {
+  background: var(--bprs-card);
+  border-color: var(--bprs-border);
+}
+
+.dark .bprs-section .bprs-header-stats {
+  background: rgba(51, 65, 85, 0.5);
+  border-color: var(--bprs-border);
+}
+
+.dark .bprs-summary {
+  background: var(--bprs-card);
+  border-color: var(--bprs-border);
+}
+
+.dark .bprs-dist-bar {
+  background: rgba(90, 115, 168, 0.18);
+}
+
+.dark .bprs-review-card {
+  background: var(--bprs-card);
+  border-color: var(--bprs-border);
+  color: var(--bprs-text);
+}
+
+.dark .bprs-review-card:hover {
+  border-color: var(--bprs-border-strong);
+}
+
+.dark .bprs-review-card:has(.bprs-review-name--link:hover) {
+  border-color: var(--bprs-primary-soft);
+  background: rgba(51, 65, 85, 0.85);
+}
+
+.dark .bprs-review-reply {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(90, 115, 168, 0.25);
+}
+
+.dark .bprs-review-reply-tail {
+  background: var(--bprs-card);
+  border-color: var(--bprs-border);
+}
+
+.dark .bprs-empty,
+.dark .bprs-error {
+  background: rgba(51, 65, 85, 0.4);
+  border-color: var(--bprs-border);
+  color: var(--bprs-text);
+}
+
+.dark .bprs-empty span,
+.dark .bprs-error span {
+  color: var(--bprs-text-mute);
+}
+

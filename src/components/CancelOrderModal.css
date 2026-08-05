@@ -398,3 +398,86 @@
   box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
   transform: translateY(-1px);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .com-overlay { background: rgba(5, 13, 32, 0.75); }
+.dark .com-modal {
+  background: rgba(30, 41, 59, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.55);
+}
+
+.dark .com-header { border-bottom-color: rgba(148, 163, 184, 0.18); }
+.dark .com-header-title { color: #FFFFFF; }
+.dark .com-header-subtitle { color: #94a3b8; }
+
+.dark .com-close { color: #94a3b8; }
+.dark .com-close:hover { background: rgba(148, 163, 184, 0.18); color: #FFFFFF; }
+
+.dark .com-body { background: transparent; }
+.dark .com-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #fcd34d;
+}
+.dark .com-warning-title { color: #fcd34d; }
+.dark .com-warning-text { color: #cbd5e1; }
+
+.dark .com-label { color: #cbd5e1; }
+.dark .com-textarea {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .com-textarea::placeholder { color: #94a3b8; }
+.dark .com-textarea:focus { border-color: #fb923c; }
+
+.dark .com-reason-option {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.20);
+  color: #cbd5e1;
+}
+.dark .com-reason-option:hover {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: rgba(249, 115, 22, 0.40);
+  color: #FFFFFF;
+}
+.dark .com-reason-option--selected {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: var(--orange);
+  color: #fb923c;
+}
+
+.dark .com-foot {
+  background: transparent;
+  border-top-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .com-btn-secondary {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+.dark .com-btn-secondary:hover {
+  background: rgba(148, 163, 184, 0.22);
+  color: #FFFFFF;
+}
+
+.dark .com-summary-card {
+  background: rgba(51, 65, 85, 0.65);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .com-success-label { color: #94a3b8; }
+.dark .com-success-value { color: #FFFFFF; }
+.dark .com-success-value svg { color: #34d399; }
+.dark .com-success-id {
+  background: rgba(30, 41, 59, 0.85);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.30);
+}
+.dark .com-success-info {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #fcd34d;
+}

@@ -403,6 +403,106 @@
   margin-bottom: 8px;
 }
 
+/* ✅ بطاقة المنتج داخل التقييم - بتبويب "تقييمات الزبائن لي" - قابلة للضغط */
+.rm-review-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  margin: 0 0 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: right;
+  direction: rtl;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.rm-review-product:hover {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.10);
+}
+.rm-review-product:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+.rm-review-product-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+.rm-review-product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rm-review-product-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+.rm-review-product-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rm-review-product-name {
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rm-review-product-price {
+  font-size: 12px;
+  color: #f97316;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rm-review-product-cta {
+  font-size: 12px;
+  color: #f97316;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* dark mode للبطاقة */
+.dark .rm-review-product {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .rm-review-product:hover {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.40);
+}
+.dark .rm-review-product-name  { color: #FFFFFF; }
+.dark .rm-review-product-label { color: #94a3b8; }
+.dark .rm-review-product-img   { background: rgba(90, 115, 168, 0.20); color: #94a3b8; }
+
 .rm-review-comment {
   font-size: 13.5px;
   color: #374151;
@@ -1300,3 +1400,178 @@
 .rm-edit-link-btn:active {
   transform: scale(0.98);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .rm-root { background: var(--bg-page); color: #FFFFFF; }
+
+.dark .rm-navbar {
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+.dark .rm-nav-link { color: #cbd5e1; }
+.dark .rm-nav-link:hover { background: rgba(148, 163, 184, 0.18); color: #fb923c; }
+
+.dark .rm-dropdown-menu {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(138, 158, 201, 0.30);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.dark .rm-dropdown-item { color: #cbd5e1; }
+.dark .rm-dropdown-item:hover { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+
+.dark .rm-btn-notif { color: #cbd5e1; }
+.dark .rm-btn-notif:hover { background: rgba(148, 163, 184, 0.18); color: #fb923c; }
+.dark .rm-notif-dot { border-color: #1e293b; }
+.dark .rm-btn-logout { color: #fb923c; }
+.dark .rm-btn-logout:hover { color: #fb923c; }
+
+.dark .rm-page-title { color: #FFFFFF; }
+.dark .rm-page-subtitle { color: #94a3b8; }
+
+.dark .rm-tabs { border-bottom-color: rgba(138, 158, 201, 0.20); }
+.dark .rm-tab { color: #94a3b8; }
+.dark .rm-tab:hover { color: #fb923c; }
+.dark .rm-tab-active { color: #fb923c; border-bottom-color: #fb923c; }
+
+.dark .rm-summary-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .rm-dist-star { color: #cbd5e1; }
+.dark .rm-dist-bar-track { background: rgba(148, 163, 184, 0.18); }
+.dark .rm-dist-bar-fill { background: #fb923c; }
+.dark .rm-dist-count { color: #94a3b8; }
+.dark .rm-average-value { color: #FFFFFF; }
+.dark .rm-average-sub { color: #94a3b8; }
+
+.dark .rm-filter-btn {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #cbd5e1;
+}
+.dark .rm-filter-btn:hover { border-color: #fb923c; color: #fb923c; }
+.dark .rm-filter-active { background: #fb923c !important; border-color: #fb923c !important; color: #1e293b !important; }
+.dark .rm-filter-active:hover { background: #f97316 !important; }
+
+.dark .rm-btn-sort {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #cbd5e1;
+}
+.dark .rm-btn-sort:hover { border-color: #fb923c; color: #fb923c; }
+.dark .rm-sort-menu {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .rm-sort-item { color: #cbd5e1; }
+.dark .rm-sort-item:hover { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+.dark .rm-sort-item-active { color: #fb923c; }
+
+.dark .rm-review-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .rm-review-name { color: #FFFFFF; }
+.dark .rm-review-date { color: #94a3b8; }
+.dark .rm-badge-green { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.dark .rm-badge-yellow { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.dark .rm-review-extra { color: #cbd5e1; }
+.dark .rm-review-comment { color: #FFFFFF; }
+
+.dark .rm-reply-box {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .rm-reply-header { color: #cbd5e1; }
+.dark .rm-edit-reply { color: #94a3b8; }
+.dark .rm-edit-reply:hover { background: rgba(138, 158, 201, 0.20); color: #FFFFFF; }
+.dark .rm-reply-text { color: #FFFFFF; }
+.dark .rm-reply-textarea {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .rm-reply-textarea:focus { border-color: #fb923c; background: rgba(30, 41, 59, 0.85); }
+.dark .rm-reply-textarea::placeholder { color: #94a3b8; }
+
+.dark .rm-btn-submit-reply { background: var(--orange); }
+.dark .rm-btn-submit-reply:hover { background: #fb923c; }
+.dark .rm-btn-cancel-reply {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .rm-btn-cancel-reply:hover { background: rgba(51, 65, 85, 0.55); color: #FFFFFF; }
+
+.dark .rm-btn-reply {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .rm-btn-reply:hover { border-color: #fb923c; color: #fb923c; background: rgba(249, 115, 22, 0.10); }
+
+.dark .rm-empty {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #94a3b8;
+}
+
+.dark .rm-reply-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+
+.dark .rm-pagination {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+}
+.dark .rm-pagination button {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .rm-pagination button:hover:not(:disabled) {
+  background: #fb923c;
+  border-color: #fb923c;
+  color: #1e293b;
+}
+.dark .rm-pagination span { color: #cbd5e1; }
+
+.dark .rm-btn-edit-review {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .rm-btn-edit-review:hover { border-color: #fb923c; color: #fb923c; background: rgba(249, 115, 22, 0.10); }
+
+.dark .rm-btn-delete-review {
+  background: transparent;
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.30);
+}
+.dark .rm-btn-delete-review:hover { background: rgba(239, 68, 68, 0.15); border-color: #f87171; }
+.dark .rm-confirm-delete { color: #f87171; }
+.dark .rm-btn-confirm-delete { background: #ef4444; }
+.dark .rm-btn-confirm-delete:hover { background: #dc2626; }
+
+.dark .rm-review-name--link { color: #fb923c; }
+.dark .rm-review-name--link:hover { color: #fb923c; border-bottom-color: #fb923c; }
+.dark .rm-avatar-link:hover { box-shadow: 0 0 0 2px #fb923c; }
+
+.dark .rm-error-hint {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.30);
+}
+.dark .rm-error-hint p { color: #fdba74; }
+.dark .rm-edit-link-btn { background: var(--orange); }
+.dark .rm-edit-link-btn:hover { background: #fb923c; }

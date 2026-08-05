@@ -347,3 +347,57 @@
     padding: 16px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي (مطابق للثيم العام)
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-categories-page { background: var(--bg-page); }
+
+.dark .admin-categories-page__title { color: #FFFFFF; }
+.dark .admin-categories-page__subtitle { color: #94a3b8; }
+
+.dark .categories-table-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(148, 163, 184, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .categories-table th { color: #94a3b8; border-bottom-color: rgba(138, 158, 201, 0.20); }
+.dark .categories-table td { color: #FFFFFF; border-bottom-color: rgba(138, 158, 201, 0.10); }
+.dark .category-name-cell { color: #FFFFFF; }
+.dark .text-muted { color: #cbd5e1; }
+
+.dark .categories-loading,
+.dark .categories-empty { color: #94a3b8; }
+
+.dark .icon-btn--edit { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.dark .icon-btn--delete { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+/* الموديلز */
+.dark .modal-box {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+.dark .modal-box__header h3 { color: #FFFFFF; }
+.dark .modal-close-btn { color: #94a3b8; }
+.dark .modal-close-btn:hover { color: #fb923c; }
+.dark .modal-field-label { color: #cbd5e1; }
+.dark .modal-input {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .modal-input:focus { border-color: #fb923c; }
+.dark .modal-error { color: #FCA5A5; }
+
+.dark .btn--outline {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .btn--outline:hover { background: rgba(51, 65, 85, 0.55); color: #FFFFFF; }
+
+.dark .delete-icon-circle { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.dark .delete-title { color: #FFFFFF; }
+.dark .delete-message { color: #94a3b8; }

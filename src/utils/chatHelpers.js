@@ -191,6 +191,11 @@ export function contactStore(navigate, { sellerId, productId, storeName } = {}) 
     return;
   }
 
+  // ✅ السماح بالمراسلة الذاتية: لو الـ sellerId هو نفس current user id
+  //    (المستخدم بيبيع وبيشتري من نفسه)، بنفتح المحادثة عادي.
+  //    ممنوع نضيف شرط senderId === receiverId هنا — الخيار يرجع للباك.
+  // ❌ لا تضف: if (sellerId === currentUser?.id) return;
+
   // ✅ نمرّر state للـ route (للمستخدم الجديد) + URL params (لـ refresh/share)
   const params = new URLSearchParams();
   if (sellerId) params.set("sellerId", sellerId);

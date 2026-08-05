@@ -19,6 +19,27 @@
   color: #f97316;
   text-decoration: none;
   white-space: nowrap;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ✅ لو اللوغو صار صورة (PNG/JPG) لاحقاً، نضمن خلفيته شفافة
+   عشان ما يظهر مربع أسود في الثيم الليلي. */
+.gn-logo img,
+.gn-logo-img {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal;
+}
+
+.dark .gn-logo img,
+.dark .gn-logo-img {
+  mix-blend-mode: screen;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .gn-links {
@@ -99,4 +120,30 @@
     justify-content: flex-start;
     overflow-x: auto;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .gn-nav {
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom-color: rgba(138, 158, 201, 0.20);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.dark .gn-logo { color: #fb923c; }
+
+.dark .gn-link { color: #cbd5e1; }
+.dark .gn-link:hover {
+  background: rgba(51, 65, 85, 0.55);
+  color: #fb923c;
+}
+.dark .gn-link-active {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+}
+
+.dark .gn-actions-placeholder {
+  background: rgba(148, 163, 184, 0.18);
 }

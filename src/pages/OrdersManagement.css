@@ -371,6 +371,10 @@
 .om-dashboard-link-btn:active {
   transform: scale(0.98);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Filters bar (من فرع development) — فلتر الحالة/البحث فوق الجدول
+   ═══════════════════════════════════════════════════════════════ */
 .om-filters-bar {
   display: flex;
   align-items: center;
@@ -409,3 +413,99 @@
   font-size: 13px;
   color: #999;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .om-root { background: var(--bg-page); }
+
+.dark .om-navbar {
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+.dark .om-nav-link { color: #cbd5e1; }
+.dark .om-nav-link:hover { color: #fb923c; }
+.dark .om-nav-active { color: #fb923c; }
+
+.dark .om-dropdown-menu {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(138, 158, 201, 0.30);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.dark .om-dropdown-item { color: #cbd5e1; }
+.dark .om-dropdown-item:hover {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+}
+
+.dark .om-btn-notif { color: #cbd5e1; }
+.dark .om-notif-dot { border-color: #1e293b; }
+.dark .om-btn-logout { color: #f87171; }
+
+.dark .om-page-title { color: #FFFFFF; }
+.dark .om-page-subtitle { color: #94a3b8; }
+
+.dark .om-stat-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .om-stat-label { color: #cbd5e1; }
+.dark .om-stat-value { color: #fb923c; }
+
+.dark .om-table-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .om-table-title { color: #FFFFFF; }
+.dark .om-table th {
+  color: #94a3b8;
+  border-bottom-color: rgba(138, 158, 201, 0.20);
+}
+.dark .om-table td {
+  color: #FFFFFF;
+  border-bottom-color: rgba(138, 158, 201, 0.10);
+}
+.dark .om-cell-id { color: #94a3b8; }
+.dark .om-cell-with-icon { color: #cbd5e1; }
+.dark .om-cell-price { color: #FFFFFF; }
+
+.dark .om-badge-blue { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.dark .om-badge-green { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.dark .om-badge-yellow { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.dark .om-badge-purple { background: rgba(168, 85, 247, 0.18); color: #c4b5fd; }
+.dark .om-badge-gray { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+
+.dark .om-btn-view { color: #fb923c; }
+.dark .om-btn-view:hover { color: #fb923c; }
+
+.dark .om-cell-customer--link:hover { color: #fb923c; border-bottom-color: #fb923c; }
+
+.dark .om-error-hint {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.30);
+}
+.dark .om-error-hint p { color: #fdba74; }
+.dark .om-dashboard-link-btn { background: var(--orange); }
+.dark .om-dashboard-link-btn:hover { background: #fb923c; }
+
+/* ✅ Dark mode — تكامل مع شريط الفلاتر الجديد */
+.dark .om-filters-bar {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .om-filter-label { color: #cbd5e1; }
+.dark .om-filter-select {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(148, 163, 184, 0.30);
+  color: #E2E8F0;
+}
+.dark .om-filter-count { color: #94a3b8; }

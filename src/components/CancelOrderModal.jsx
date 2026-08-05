@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AlertTriangle, X, Loader2, Ban, Package, CheckCircle2, Hash } from "lucide-react";
-import { cancelCustomerOrder } from "../services/authService";
+import { cancelOrder as cancelCustomerOrder } from "../services/orderService";
 import { formatApiError } from "../utils/errorHelper";
 import "./CancelOrderModal.css";
 

@@ -2,57 +2,87 @@
 //
 // جرس الإشعارات الموحّد — يستخدمه كل من CustomerNavbar و SellerNavbar.
 //
+// ✅ يفتح NotificationDropdown (نافذة منبثقة) بدل صفحة منفصلة
+// ✅ العداد: جاي من useNotificationCount(role) — معزول حسب الدور
+// ✅ click-outside: الـ dropdown يقفل تلقائياً
+// ✅ ESC: يقفل الـ dropdown
+//
 // 🔑 الميزة الأساسية: عزل صارم حسب الدور (Role-based Isolation)
 //   - المكون يستقبل `role="customer"` أو `role="seller"` كـ prop
 //   - داخلياً يستخدم `useNotificationCount(role)` →
 //     العداد بيكون صفر دائماً لو الـ currentRole مش مطابق
-//   - يعني: لو المستخدم وضعه seller → جرس الـ seller فقط يعرض
-//     ولو انتقل لوضع customer → جرس الـ customer يعرض بعداد جديد
 //
-// ✅ لا نحتاج لتمرير count كـ prop — المكون يجيبه لحاله
-// ✅ لا نحتاج لتمرير onClick كـ prop — بيمرر للـ navigate للـ path الصحيح
-// ✅ أيقونة + badge + handler — كل شي self-contained
+// 📍 مسار النقر على الإشعار (موحّد عبر notificationRoutes.js):
+//   - إشعار تقييم للزبون → /product/:id?reviewId=...
+//   - إشعار تقييم للبائع → /seller/products?productId=...
+//     (ProductsList عنده useEffect يفتح ProductDetailsModal تلقائياً)
+//   - إشعار تقييم بدون productId → /seller/ratings (قسم التقييمات)
+//   - إشعار طلب/رسالة/آخر → الراوت المخصص حسب النوع
 
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { useNotificationCount } from "../hooks/useNotificationCount";
+import NotificationDropdown from "./NotificationDropdown";
 import "./NotificationBell.css";
-
-const ROUTE_BY_ROLE = {
-  customer: "/notifications",
-  seller: "/seller/notifications",
-};
 
 const LABEL_BY_ROLE = {
   customer: "الإشعارات",
   seller: "الإشعارات",
 };
 
-export default function NotificationBell({ role, iconColor = "#374151" }) {
+export default function NotificationBell({ role, iconColor = "currentColor" }) {
   // ✅ الهوك بيعزل العداد حسب الدور — لا تقلق من الـ leak
   const { count, loading } = useNotificationCount(role);
-  const navigate = useNavigate();
-  const target = ROUTE_BY_ROLE[role] || "/notifications";
+  const [isOpen, setIsOpen] = useState(false);
+  const anchorRef = useRef(null);
+
   const label = LABEL_BY_ROLE[role] || "الإشعارات";
 
   function handleClick() {
-    navigate(target);
+    setIsOpen((prev) => !prev);
   }
 
+  function handleClose() {
+    setIsOpen(false);
+  }
+
+  // ✅ ESC يقفل
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    function onKey(e) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
   return (
-    <button
-      className="nb-bell"
-      onClick={handleClick}
-      aria-label={label}
-      title={label}
-      data-bell-role={role}
-    >
-      <Bell size={20} color={iconColor} />
-      {!loading && count > 0 && (
-        <span className="nb-badge" aria-label={`${count} إشعار غير مقروء`}>
-          {count > 99 ? "99+" : count}
-        </span>
-      )}
-    </button>
+    <>
+      <button
+        ref={anchorRef}
+        className={`nb-bell ${isOpen ? "nb-bell--active" : ""}`}
+        onClick={handleClick}
+        aria-label={label}
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        title={label}
+        data-bell-role={role}
+      >
+        <Bell size={20} color={isOpen ? "#f97316" : iconColor} />
+        {!loading && count > 0 && (
+          <span className="nb-badge" aria-label={`${count} إشعار غير مقروء`}>
+            {count > 99 ? "99+" : count}
+          </span>
+        )}
+      </button>
+
+      {/* ✅ النافذة المنبثقة — تظهر فوق الواجهة بدون تحويل لصفحة */}
+      <NotificationDropdown
+        isOpen={isOpen}
+        onClose={handleClose}
+        role={role}
+        anchorRef={anchorRef}
+      />
+    </>
   );
 }

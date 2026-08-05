@@ -214,6 +214,20 @@
   margin-bottom: 10px;
 }
 
+.ck-tax-loading {
+  display: inline-block;
+  margin-inline-start: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  animation: ck-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes ck-blink {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
 .ck-summary-total {
   display: flex;
   align-items: center;
@@ -586,3 +600,119 @@
     order: -1;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .ck-back { color: #94a3b8; }
+.dark .ck-back:hover { color: #fb923c; }
+.dark .ck-breadcrumb { color: #94a3b8; }
+.dark .ck-title { color: #FFFFFF; }
+.dark .ck-subtitle { color: #cbd5e1; }
+
+.dark .ck-error-message {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+
+.dark .ck-store-card,
+.dark .ck-summary,
+.dark .ck-payment-option {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .ck-store-head {
+  border-bottom-color: rgba(138, 158, 201, 0.20);
+  color: #FFFFFF;
+}
+.dark .ck-product-row { border-bottom-color: rgba(138, 158, 201, 0.12); }
+.dark .ck-product-price { color: #fb923c; }
+.dark .ck-product-info h3 { color: #FFFFFF; }
+.dark .ck-product-info p { color: #94a3b8; }
+.dark .ck-product-img { background: rgba(30, 41, 59, 0.55); }
+.dark .ck-store-total {
+  background: rgba(30, 41, 59, 0.65);
+  color: #cbd5e1;
+}
+
+.dark .ck-summary h2 {
+  color: #FFFFFF;
+  border-bottom-color: rgba(138, 158, 201, 0.20);
+}
+.dark .ck-summary-row { color: #cbd5e1; }
+.dark .ck-summary-total {
+  color: #FFFFFF;
+  border-top-color: rgba(138, 158, 201, 0.20);
+}
+
+.dark .ck-payment-option {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .ck-payment-option.selected {
+  border-color: #fb923c;
+  background: rgba(249, 115, 22, 0.10);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+.dark .ck-payment-radio { border-color: rgba(138, 158, 201, 0.40); }
+.dark .ck-payment-option.selected .ck-payment-radio { border-color: #fb923c; }
+.dark .ck-payment-option.selected .ck-payment-radio::after { background: #fb923c; }
+.dark .ck-payment-label { color: #FFFFFF; }
+.dark .ck-payment-desc { color: #94a3b8; }
+.dark .ck-payment-icon {
+  background: rgba(30, 41, 59, 0.55);
+  color: #cbd5e1;
+}
+.dark .ck-payment-option.selected .ck-payment-icon {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fb923c;
+}
+.dark .ck-payment-option.disabled {
+  background: rgba(51, 65, 85, 0.35);
+  opacity: 0.6;
+}
+.dark .ck-payment-option.disabled .ck-payment-label,
+.dark .ck-payment-option.disabled .ck-payment-desc { color: #94a3b8; }
+
+.dark .ck-trust { color: #94a3b8; }
+.dark .ck-trust svg { color: #34d399; }
+
+.dark .ck-secondary-btn {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .ck-secondary-btn:hover { border-color: #fb923c; color: #fb923c; }
+
+.dark .ck-card-brands span {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+.dark .ck-form-field label { color: #cbd5e1; }
+.dark .ck-form-field input {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .ck-form-field input::placeholder { color: #94a3b8; }
+.dark .ck-form-field input:focus {
+  outline: none;
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+.dark .ck-secure-note { color: #94a3b8; }
+.dark .ck-secure-note svg { color: #34d399; }
+
+.dark .ck-success h1 { color: #FFFFFF; }
+.dark .ck-success-lead { color: #cbd5e1; }
+.dark .ck-success-sub,
+.dark .ck-success p { color: #94a3b8; }
+.dark .ck-success-glow {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  box-shadow: 0 0 0 12px rgba(52, 211, 153, 0.10);
+}
+.dark .ck-success-icon { color: #34d399; }

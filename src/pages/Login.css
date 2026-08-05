@@ -135,3 +135,65 @@ body {
 @media (max-width: 520px) {
   .lp-card { padding: 2rem 1.3rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+body.dark { background-color: var(--bg-page); }
+.dark .lp-wrapper { background-color: var(--bg-page); }
+
+.dark .lp-card {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(138, 158, 201, 0.30);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+}
+
+.dark .lp-header h1 { color: #FFFFFF; }
+.dark .lp-header p { color: #94a3b8; }
+
+.dark .lp-field label { color: #cbd5e1; }
+.dark .lp-input-wrap input {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .lp-input-wrap input::placeholder { color: #94a3b8; }
+.dark .lp-input-wrap input:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20);
+}
+.dark .lp-input-icon { color: #94a3b8; }
+.dark .lp-input-icon:hover { color: #fb923c; }
+
+.dark .lp-remember { color: #cbd5e1; }
+.dark .lp-forgot { color: #fb923c; }
+
+.dark .lp-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+.dark .lp-success {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+  color: #34d399;
+}
+
+.dark .lp-btn-submit { color: #FFFFFF; }
+.dark .lp-btn-submit:hover:not(:disabled) { background: #fb923c; }
+
+.dark .lp-divider { color: rgba(138, 158, 201, 0.30); }
+.dark .lp-divider::before,
+.dark .lp-divider::after { background: rgba(138, 158, 201, 0.20); }
+
+.dark .lp-social-btn {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .lp-social-btn:hover { background: rgba(51, 65, 85, 0.85); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+
+.dark .lp-signup { color: #cbd5e1; }
+.dark .lp-signup a { color: #fb923c; }

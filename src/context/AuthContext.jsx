@@ -10,20 +10,22 @@
 //   1) Bootstrap sync (لحظة فتح التطبيق):
 //      - بنقرأ user + tokens من localStorage بشكل sync
 //      - إذا في token بس user ناقص (حالة قديمة) → بنعمل bootstrap
-//        عبر fetchProfileFlags() (نطلب /api/seller/profile و /api/profile/customer)
-//        لتحديد hasSellerProfile / hasCustomerProfile، ونعمل refresh token
-//        مرة وحدة لتجديد الـ access token.
+//        عبر fetchProfileFlags() لتحديد hasSellerProfile / hasCustomerProfile.
 //
 //   2) Mutations (login / become-seller / switch-role / become-customer):
 //      - بتحدّث localStorage + React state + بتطلق AUTH_CHANGED_EVENT
 //      - كل المكونات بتعمل re-render بنفس اللحظة بدون page reload
+//      - الـ navigate بيصير بعد ما يخلص await الـ API + يلتقط الـ React state
+//        (atomic — ما في race condition بين state و navigation).
 //
 //   3) الـ public API:
 //      const { user, currentRole, hasSellerProfile, hasCustomerProfile,
 //              isAuthenticated, isBootstrapping,
-//              login, becomeSeller, becomeCustomer, switchRole, logout,
-//              refreshSession,
+//              login, becomeSeller, becomeCustomer, switchRole, switchRoleAndNavigate,
+//              logout, refreshSession,
 //              isSwitchingRole, isBecomingSeller, isBecomingCustomer,
+//              switchingToRole, pendingNavigation,
+//              getHomePathForRole, clearRoleCaches,
 //              error, clearError } = useAuth();
 
 import {
@@ -41,7 +43,7 @@ import {
   submitBecomeCustomer,
   fetchProfileFlags,
 } from "../services/roleService";
-import { decodeJwt } from "../utils/jwt";
+import { decodeJwt, isTokenExpired } from "../utils/jwt";
 
 // ✅ Lazy load: بنستوردهم بس وقت الاستخدام (عشان ما نكسر SSR / التست)
 async function getSocketHelpers() {
@@ -66,7 +68,7 @@ async function reconnectSocketSafely() {
     /* ignore */
   }
   // نأخر شوي عشان الباك يحدّث الـ session
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 120));
   try {
     helpers.connectSocket();
   } catch {
@@ -82,6 +84,9 @@ const USER_TYPE_KEY = "userType";
 const SELLER_ID_KEY = "sellerId"; // بنخزّنه للمشتري لما يفتح متجر بائع
 // الحدث اللي بيطلقه utils/authSession.js بعد كل save/clear
 const AUTH_CHANGED_EVENT = "gaza-gate-auth-changed";
+// ✅ حدث مخصص: بنطلقه بعد أي role switch عشان الـ contexts
+//    الثانية (Cart, Wishlist, Notifications) تمسح caches الدور القديم
+const ROLE_CACHE_CLEAR_EVENT = "gaza-gate-role-cache-clear";
 
 const AuthContext = createContext(null);
 
@@ -104,13 +109,29 @@ function resolveRole(user) {
   return user?.role || "customer";
 }
 
-// حفظ/تحديث الجلسة: localStorage + React state
+// حفظ/تحديث الجلسة: localStorage + React state (نضمن atomicity)
 function applySessionToState(setUserState, setCurrentRole, finalUser) {
   if (!finalUser) return;
   localStorage.setItem(USER_KEY, JSON.stringify(finalUser));
   if (finalUser.role) localStorage.setItem(USER_TYPE_KEY, finalUser.role);
   setUserState(finalUser);
   setCurrentRole(resolveRole(finalUser));
+}
+
+/**
+ * ✅ يضمن إنو React التقط تحديث الـ state قبل ما الـ await يحل.
+ * بنستخدمها بعد setState مباشرة، قبل أي navigate، لتفادي
+ * race condition (الـ navigate يصير قبل ما الـ Outlet يرندر
+ * بالدور الجديد).
+ */
+function flushStateUpdates() {
+  return new Promise((resolve) => {
+    // double rAF: الأول يضمن إن React عمل commit، الثاني يضمن
+    // إن الـ DOM وصل للمرحلة اللي نقدر نعمل navigate بعدها بأمان
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
 }
 
 export function AuthProvider({ children }) {
@@ -123,11 +144,24 @@ export function AuthProvider({ children }) {
   const [switchingToRole, setSwitchingToRole] = useState(null); // ✅ "customer" | "seller" | null
   const [isBecomingSeller, setIsBecomingSeller] = useState(false);
   const [isBecomingCustomer, setIsBecomingCustomer] = useState(false);
-  const [isBootstrapping, setIsBootstrapping] = useState(false);
+  // ✅ نبدأ بـ true عشان حراس المسارات (RequireCustomer/RequireSeller)
+  //    ما ياخدوا قرار redirect قبل ما نتحقق من الـ token مع الباك.
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [error, setError] = useState(null);
+  // ✅ الوجهة المعلقة: لما يكون في تبديل دور جارٍ، نخزّن الـ path
+  //    اللي لازم نروح له بعد ما يخلص. الـ guards بيستفيدوا منها
+  //    عشان يعملوا navigate حتمي بدون انتظار.
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  // ✅ Lock: بنمنع تبديلين متوازيين (مثلاً: المستخدم يضغط
+  //    الزر مرتين أو auto-switch من RequireSeller + click من Navbar)
+  const switchInProgressRef = useRef(false);
 
   // نمنع تكرار bootstrap في نفس الجلسة
   const bootstrapRanRef = useRef(false);
+
+  // ✅ Latest-ref للـ logout — بنستخدمه بـ refreshSession و mount useEffect
+  //    عشان ما نقع بـ TDZ (logout معرّف بعدهم بالملف).
+  const logoutRef = useRef(null);
 
   // ── مزامنة الـ state مع localStorage (تابات تانية + نفس التاب) ──
   useEffect(() => {
@@ -173,10 +207,27 @@ export function AuthProvider({ children }) {
   );
 
   /**
+   * ✅ مسح caches الخاصة بالدور (cart, wishlist, notifications...).
+   * بنطلق event مخصص — الـ contexts الثانية بتسمع له وبتعمل reset.
+   * بنستدعيها بعد كل role switch ناجح.
+   */
+  const clearRoleCaches = useCallback(
+    (fromRole, toRole) => {
+      try {
+        window.dispatchEvent(
+          new CustomEvent(ROLE_CACHE_CLEAR_EVENT, {
+            detail: { fromRole, toRole, ts: Date.now() },
+          })
+        );
+      } catch {
+        /* ignore */
+      }
+    },
+    []
+  );
+
+  /**
    * ✅ Public API: login({ user, accessToken, refreshToken? })
-   *
-   * استدعيها فوراً بعد نجاح أي login API (customer/seller، local/google).
-   * بتحدّث localStorage + React state + بتطلق الحدث للمزامنة الفورية.
    */
   const login = useCallback(
     ({ user: newUser, accessToken, refreshToken } = {}) => {
@@ -192,24 +243,26 @@ export function AuthProvider({ children }) {
   );
 
   /**
-   * ✅ جديد: refreshSession()
-   *
+   * ✅ Public API: refreshSession()
    * بيفحص الـ session الحالي مع الباك. مفيد بـ 3 حالات:
-   *   1) الإقلاع: لو localStorage فيه user ناقص الـ flags → بنجيبها
+   *   1) الإقلاع: لو localStorage فيه user ناقص الـ flags
    *   2) بعد ما يصير بائع: للتأكد إن الـ flags صاروا true عند الباك
-   *   3) عند الـ 401 من الباك: لتجديد الـ token (لما الـ refresh ما اشتغل)
-   *
-   * بيرجّع object فيه { hasSellerProfile, hasCustomerProfile, user }.
+   *   3) عند الـ 401 من الباك
    */
   const refreshSession = useCallback(async () => {
     const token = readTokenFromStorage();
     if (!token) return null;
 
+    if (isTokenExpired(token)) {
+      console.info("[AuthContext] refreshSession: token منتهي محلياً → logout");
+      logoutRef.current?.();
+      return null;
+    }
+
     setIsBootstrapping(true);
     try {
       const flags = await fetchProfileFlags();
       if (!flags) {
-        // التوكن منتهي أو في مشكلة كبيرة
         return null;
       }
 
@@ -229,51 +282,80 @@ export function AuthProvider({ children }) {
     }
   }, [persistSession]);
 
-  // ── Bootstrap تلقائي: لحظة فتح التطبيق إذا في token بس user محدود ──
+  // ── Bootstrap تلقائي: لحظة فتح التطبيق ──
   useEffect(() => {
     const token = readTokenFromStorage();
     const cachedUser = readUserFromStorage();
 
-    // شروط تشغيل الـ bootstrap:
-    //   1) في token
-    //   2) الـ user موجود بس ناقص flags (النسخ القديمة من الكود ما كانت تخزّنهم)
-    //   3) ما اشتغل قبل بـ نفس الجلسة
-    const needsBootstrap =
-      Boolean(token) &&
-      Boolean(cachedUser) &&
-      cachedUser.hasSellerProfile === undefined &&
-      cachedUser.hasCustomerProfile === undefined &&
-      !bootstrapRanRef.current;
+    if (!token && !cachedUser) {
+      setIsBootstrapping(false);
+      return;
+    }
 
-    if (!needsBootstrap) return;
-    bootstrapRanRef.current = true;
-    refreshSession();
+    if (token && isTokenExpired(token)) {
+      console.info(
+        "[AuthContext] mount: الـ token منتهي محلياً → نمسح الـ session"
+      );
+      logoutRef.current?.();
+      setIsBootstrapping(false);
+      return;
+    }
+
+    if (!token && cachedUser) {
+      console.warn(
+        "[AuthContext] mount: في user بدون token → نمسح الـ user"
+      );
+      setUserState(null);
+      setCurrentRole("customer");
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(USER_TYPE_KEY);
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      setIsBootstrapping(false);
+      return;
+    }
+
+    if (!bootstrapRanRef.current) {
+      bootstrapRanRef.current = true;
+      refreshSession().finally(() => {
+        setIsBootstrapping(false);
+      });
+    } else {
+      setIsBootstrapping(false);
+    }
   }, [refreshSession]);
 
   /**
+   * ✅ Public API: getHomePathForRole(role)
+   * مسار "البيت" لكل دور. حراس المسارات (RequireSeller/RequireCustomer)
+   * و الـ callers بيستخدموه.
+   */
+  const getHomePathForRole = useCallback((role) => {
+    if (role === "seller") return "/seller/dashboard";
+    if (role === "customer") return "/home/customer";
+    return "/";
+  }, []);
+
+  /**
    * تحويل حساب "مشتري" إلى "بائع" لأول مرة.
-   * الباك بيرجّع accessToken + user جديد (role=seller, hasSellerProfile=true)
-   * حسب Postman: { data: { accessToken, user: { role, hasSellerProfile, ... }, reconnectSocket } }
-   *
-   * ✅ 409 Fallback (شفاف للمستخدم):
-   *    لو الباك رجّع 409 "Already a seller" → بنصلّح hasSellerProfile=true
-   *    محلياً + بنعمل switch-role لضمان تحديث الـ role/token.
-   *
-   * ⚠️ ما عاد في fallback تلقائي لـ switch-role بعد النجاح لأن الباك
-   *    بيرجّع accessToken دائماً (مؤكّد من Postman).
+   * الباك بيرجّع accessToken + user جديد (role=seller, hasSellerProfile=true).
    */
   const becomeSeller = useCallback(
     async (storeData) => {
+      // ✅ Lock: بنمنع أي محاولة ثانية (double-click) في نفس اللحظة
+      if (switchInProgressRef.current) {
+        throw new Error("عملية تحويل قيد التنفيذ، انتظر قليلاً");
+      }
+      switchInProgressRef.current = true;
+
       setIsBecomingSeller(true);
-      setSwitchingToRole("seller"); // ✅ تتبّع الـ target = seller للـ overlay
+      setIsSwitchingRole(true); // ✅ نوحّد العلم — الـ Overlay يسمع الاثنين
+      setSwitchingToRole("seller");
       setError(null);
       try {
         const result = await submitBecomeSeller(storeData);
-        // user من الباك هو مصدر الحقيقة — فيه role + hasSellerProfile + hasCustomerProfile
         const nextUser = {
           ...(result.user || {}),
           hasSellerProfile: true,
-          // إذا الباك ما رجّع hasCustomerProfile، نحتفظ بالقديم (إن وُجد)
           hasCustomerProfile:
             result.user?.hasCustomerProfile ??
             readUserFromStorage()?.hasCustomerProfile ??
@@ -281,7 +363,6 @@ export function AuthProvider({ children }) {
         };
 
         if (!result.accessToken) {
-          // eslint-disable-next-line no-console
           console.warn(
             "[AuthContext] become-seller ما رجّع accessToken — بنحاول switch-role"
           );
@@ -290,27 +371,32 @@ export function AuthProvider({ children }) {
             if (switchRes.user) {
               Object.assign(nextUser, switchRes.user);
             }
+            // ✅ نضمن role=seller
+            nextUser.role = "seller";
             persistSession({
               user: nextUser,
               accessToken: switchRes.accessToken,
               refreshToken: switchRes.refreshToken,
             });
-            // ✅ reconnect socket بالـ token الجديد
+            await flushStateUpdates();
             await reconnectSocketSafely();
+            clearRoleCaches("customer", "seller");
+            window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
             return {
               user: nextUser,
               reconnectSocket: true,
+              role: "seller",
+              targetPath: getHomePathForRole("seller"),
             };
           } catch (switchErr) {
-            // eslint-disable-next-line no-console
             console.error(
               "[AuthContext] switch-role بعد become-seller فشل:",
               switchErr
             );
-            // نكمل بدون token جديد — الباك رح يرفض بـ 403 إذا الـ token القديم
-            // لـ customer، والـ user رح يحتاج يعمل logout/login يدوياً
           }
         } else {
+          // ✅ نضمن role=seller حتى لو الباك نسي يحطّه
+          nextUser.role = "seller";
           persistSession({
             user: nextUser,
             accessToken: result.accessToken,
@@ -323,16 +409,23 @@ export function AuthProvider({ children }) {
         if (finalToken) {
           const decoded = decodeJwt(finalToken);
           if (decoded?.role && decoded.role !== "seller") {
-            // eslint-disable-next-line no-console
             console.warn(
               `[AuthContext] ⚠️ الـ accessToken فيه role="${decoded.role}" بدال "seller" — هذا غريب`
             );
           }
         }
 
-        // ✅ دائماً بنعمل reconnect socket بعد become-seller
+        // ✅ atomic: ننتظر React يلتقط الـ state، ثم نـ clear caches + reconnect
+        await flushStateUpdates();
         await reconnectSocketSafely();
-        return { user: nextUser, reconnectSocket: true };
+        clearRoleCaches("customer", "seller");
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+        return {
+          user: nextUser,
+          reconnectSocket: true,
+          role: "seller",
+          targetPath: getHomePathForRole("seller"),
+        };
       } catch (err) {
         // ✅ 409 "Already a seller" — state محلي قديم، نصلّحه تلقائياً
         if (err?.response?.status === 409) {
@@ -340,38 +433,43 @@ export function AuthProvider({ children }) {
           const fixedUser = {
             ...currentUser,
             hasSellerProfile: true,
+            role: "seller",
           };
 
-          // (1) نحدّث hasSellerProfile في state + localStorage فوراً
           persistSession({ user: fixedUser });
+          await flushStateUpdates();
 
-          // (2) نستدعي switch-role عشان ياخد role + token محدّث
           try {
             const switchResult = await switchUserRole("seller");
             const finalUser = {
               ...(switchResult.user || {}),
               ...fixedUser,
             };
+            finalUser.role = "seller";
             persistSession({
               user: finalUser,
               accessToken: switchResult.accessToken,
               refreshToken: switchResult.refreshToken,
             });
-            // ✅ reconnect socket بالـ token الجديد
+            await flushStateUpdates();
             await reconnectSocketSafely();
+            clearRoleCaches("customer", "seller");
+            window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
             return {
               user: finalUser,
               reconnectSocket: true,
               recoveredFrom409: true,
+              role: "seller",
+              targetPath: getHomePathForRole("seller"),
             };
           } catch (switchErr) {
-            // حتى لو switch فشل (network مثلاً) — الـ state المحلي صحيح
-            // الباك أكّد إنه بائع، والـ caller رح يوجّه للوحة البائع
             return {
               user: fixedUser,
               reconnectSocket: false,
               recoveredFrom409: true,
               switchFailed: true,
+              role: "seller",
+              targetPath: getHomePathForRole("seller"),
             };
           }
         }
@@ -384,43 +482,85 @@ export function AuthProvider({ children }) {
         throw err;
       } finally {
         setIsBecomingSeller(false);
+        setIsSwitchingRole(false);
         setSwitchingToRole(null);
+        switchInProgressRef.current = false;
       }
     },
-    [user, persistSession]
+    [user, persistSession, clearRoleCaches, getHomePathForRole]
   );
 
   /**
+   * ✅ Public API: switchRole(role)
    * تبديل الدور بين "seller" و"customer".
    * ⚠️ يفترض أن الـ profile المطلوب موجود.
-   *    الـ Smart gate (RequireSeller / Smart button) هو المسؤول عن هاد.
+   * الـ Smart gate (RequireSeller / Smart button) هو المسؤول عن هاد.
+   *
+   * atomic update: localStorage + state + event + reconnect socket
+   * كله بيتحدّث قبل ما الـ await يحل. الـ navigate (إن وجد)
+   * بيتنفّذ من الـ caller بعد ما يستلم الـ result.
    */
   const switchRole = useCallback(
     async (role) => {
       if (role !== "seller" && role !== "customer") {
         throw new Error('role يجب أن يكون "seller" أو "customer" فقط');
       }
+
+      // ✅ Lock: بنمنع أي محاولة ثانية
+      if (switchInProgressRef.current) {
+        throw new Error("عملية تبديل دور قيد التنفيذ، انتظر قليلاً");
+      }
+      switchInProgressRef.current = true;
+
+      const previousRole = currentRole;
+
       if (role === currentRole) {
-        return { user, reconnectSocket: false };
+        return {
+          user,
+          reconnectSocket: false,
+          role,
+          skipped: true,
+          targetPath: getHomePathForRole(role),
+        };
       }
 
       setIsSwitchingRole(true);
-      setSwitchingToRole(role); // ✅ تتبّع الـ target role للـ overlay
+      setSwitchingToRole(role);
       setError(null);
       try {
         const result = await switchUserRole(role);
+
+        // ✅ atomic: localStorage → state → event → socket
         const nextUser = {
           ...(readUserFromStorage() || {}),
           ...(result.user || {}),
+          // نضمن إنو الـ role المحلي يتطابق مع المطلوب
+          role,
         };
         persistSession({
           user: nextUser,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
         });
-        // ✅ reconnect socket بالـ token الجديد (مهم جداً)
+
+        // ✅ نضمن إنو React التقط الـ state (يرندر الـ Outlet بالدور الجديد)
+        await flushStateUpdates();
+
+        // ✅ نطلق event للمزامنة (تابات أخرى / listeners)
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+
+        // ✅ نمسح caches الدور القديم (cart, wishlist, notifications)
+        clearRoleCaches(previousRole, role);
+
+        // ✅ reconnect socket بالـ token الجديد
         await reconnectSocketSafely();
-        return { user: nextUser, reconnectSocket: true };
+
+        return {
+          user: nextUser,
+          reconnectSocket: true,
+          role,
+          targetPath: getHomePathForRole(role),
+        };
       } catch (err) {
         setError(
           err?.response?.data?.data?.message ||
@@ -431,34 +571,81 @@ export function AuthProvider({ children }) {
       } finally {
         setIsSwitchingRole(false);
         setSwitchingToRole(null);
+        switchInProgressRef.current = false;
       }
     },
-    [currentRole, user, persistSession]
+    [currentRole, user, persistSession, clearRoleCaches, getHomePathForRole]
+  );
+
+  /**
+   * ✅ Public API: switchRoleAndNavigate(role, navigate, options)
+   * Helper يدمج switch + navigate بشكل atomic:
+   *   1) switchRole(role) — يستنى API + state update + socket reconnect
+   *   2) نخزّن الـ pendingNavigation
+   *   3) navigate(targetPath) — replace: true بشكل افتراضي
+   *
+   * الـ caller ما يحتاج يعمل أي شي ثاني، فقط ينادي الدالة.
+   * الـ navigation بيصير تلقائياً بعد ما كل شي يخلص بنجاح.
+   */
+  const switchRoleAndNavigate = useCallback(
+    async (role, navigate, options = {}) => {
+      if (typeof navigate !== "function") {
+        throw new Error("switchRoleAndNavigate يحتاج navigate function");
+      }
+      const targetPath = options.path || getHomePathForRole(role);
+      const replace = options.replace !== false; // default: true
+
+      // ✅ نسجّل الـ target — حراس المسارات بيستفيدوا منه
+      //    لو الـ navigate صار قبل ما الـ state يلتقط
+      setPendingNavigation(targetPath);
+
+      try {
+        const result = await switchRole(role);
+        // switchRole خلّص: state + tokens + socket كلهم محدثين
+        navigate(result.targetPath || targetPath, { replace });
+        return result;
+      } finally {
+        setPendingNavigation(null);
+      }
+    },
+    [switchRole, getHomePathForRole]
   );
 
   /**
    * تحويل من "بائع" لمشتري.
-   * (POST /api/auth/become-customer) — لو البائع عنده customer profile بالفعل
-   * الباك بيرجّع 409، في هالحالة الـ caller بيستخدم switchRole("customer") بدالها.
    */
   const becomeCustomer = useCallback(async () => {
+    if (switchInProgressRef.current) {
+      throw new Error("عملية تحويل قيد التنفيذ، انتظر قليلاً");
+    }
+    switchInProgressRef.current = true;
+
     setIsBecomingCustomer(true);
-    setSwitchingToRole("customer"); // ✅ الـ target = customer
+    setIsSwitchingRole(true);
+    setSwitchingToRole("customer");
     setError(null);
     try {
       const result = await submitBecomeCustomer();
       const nextUser = {
         ...(readUserFromStorage() || {}),
         ...(result.user || {}),
+        role: "customer",
       };
       persistSession({
         user: nextUser,
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
       });
-      // ✅ reconnect socket بالـ token الجديد
+      await flushStateUpdates();
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      clearRoleCaches("seller", "customer");
       await reconnectSocketSafely();
-      return { user: nextUser, reconnectSocket: true };
+      return {
+        user: nextUser,
+        reconnectSocket: true,
+        role: "customer",
+        targetPath: getHomePathForRole("customer"),
+      };
     } catch (err) {
       setError(
         err?.response?.data?.data?.message ||
@@ -468,13 +655,15 @@ export function AuthProvider({ children }) {
       throw err;
     } finally {
       setIsBecomingCustomer(false);
+      setIsSwitchingRole(false);
       setSwitchingToRole(null);
+      switchInProgressRef.current = false;
     }
-  }, [persistSession]);
+  }, [persistSession, clearRoleCaches, getHomePathForRole]);
 
   /** تسجيل الخروج — محلي فقط، الـ API call بيسويه الـ component */
   const logout = useCallback(() => {
-    // ✅ نقفل الـ socket فوراً — حتى ما يستمر بإرسال events لليوزر بعد logout
+    // ✅ نقفل الـ socket فوراً
     getSocketHelpers().then((helpers) => {
       try {
         helpers?.disconnectSocket();
@@ -491,8 +680,14 @@ export function AuthProvider({ children }) {
     setUserState(null);
     setCurrentRole("customer");
     setError(null);
+    setPendingNavigation(null);
+    // ✅ نطلق event لمسح caches + إنهاء الـ session
+    clearRoleCaches(currentRole, null);
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
-  }, []);
+  }, [clearRoleCaches, currentRole]);
+
+  // ✅ نحدّث الـ ref بعد ما logout يصير معرّف
+  logoutRef.current = logout;
 
   const value = useMemo(
     () => ({
@@ -509,30 +704,40 @@ export function AuthProvider({ children }) {
       switchingToRole, // ✅ الـ target role للـ RoleSwitchOverlay
       isBecomingSeller,
       isBecomingCustomer,
+      pendingNavigation, // ✅ الوجهة المعلقة (للـ route guards)
       error,
       clearError: () => setError(null),
+      // ── actions ──
       login,
       becomeSeller,
       becomeCustomer,
       switchRole,
+      switchRoleAndNavigate, // ✅ helper جديد
       logout,
       refreshSession,
+      // ── helpers ──
+      getHomePathForRole,
+      clearRoleCaches,
     }),
     [
       user,
       currentRole,
       isBootstrapping,
       isSwitchingRole,
-      switchingToRole, // ✅ الـ target role للـ RoleSwitchOverlay
+      switchingToRole,
       isBecomingSeller,
       isBecomingCustomer,
+      pendingNavigation,
       error,
       login,
       becomeSeller,
       becomeCustomer,
       switchRole,
+      switchRoleAndNavigate,
       logout,
       refreshSession,
+      getHomePathForRole,
+      clearRoleCaches,
     ]
   );
 

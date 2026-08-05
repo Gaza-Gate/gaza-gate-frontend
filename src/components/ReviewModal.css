@@ -858,3 +858,87 @@
     to { transform: translateY(0); }
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .rm-overlay { background: rgba(5, 13, 32, 0.75); }
+
+.dark .rm-modal {
+  background: rgba(30, 41, 59, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.dark .rm-body { background: transparent; }
+
+.dark .rm-product-name { color: #FFFFFF; }
+.dark .rm-product-meta { color: #94a3b8; }
+.dark .rm-section-label { color: #cbd5e1; }
+
+.dark .rm-star-btn { color: rgba(255, 255, 255, 0.30); }
+.dark .rm-star-btn--filled { color: #fb923c; }
+
+.dark .rm-rating-text { color: #FFFFFF; }
+
+.dark .rm-textarea,
+.dark .rm-input {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .rm-textarea::placeholder,
+.dark .rm-input::placeholder { color: #94a3b8; }
+.dark .rm-textarea:focus,
+.dark .rm-input:focus {
+  border-color: #fb923c;
+  background: rgba(30, 41, 59, 0.85);
+}
+
+.dark .rm-counter { color: #94a3b8; }
+.dark .rm-counter--over { color: #f87171; }
+
+.dark .rm-image-upload-btn {
+  background: rgba(51, 65, 85, 0.65);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #cbd5e1;
+}
+.dark .rm-image-upload-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: #fb923c;
+  color: #fb923c;
+}
+
+.dark .rm-image-preview { background: rgba(30, 41, 59, 0.65); }
+
+.dark .rm-foot {
+  background: rgba(30, 41, 59, 0.85);
+  border-top-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .rm-btn-cancel {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+.dark .rm-btn-cancel:hover { background: rgba(148, 163, 184, 0.22); color: #FFFFFF; }
+
+.dark .rm-btn-cancel--delete {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+.dark .rm-btn-cancel--delete:hover {
+  background: rgba(239, 68, 68, 0.20);
+  color: #FCA5A5;
+}
+
+.dark .rm-already-banner {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #fcd34d;
+}
+
+.dark .rm-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #FCA5A5;
+}

@@ -1,8 +1,29 @@
+// src/pages/SellerNotifications.jsx
+//
+// صفحة إشعارات البائع — تستخدم endpoint البائع الصحيح من Postman.
+//   GET /api/seller/notification?page=1&limit=10
+//
+// Response shape (من Postman):
+//   {
+//     status: "success",
+//     data: {
+//       notifications: [{ id, type, title, content, actionUrl, isRead, sentAt,
+//                          sender: {id, name}, order: {id, orderNumber, status} }],
+//       stats: { total, order, general, system, promotional, unRead },
+//       pagination: { currentPage, totalPages, totalItems, pageSize,
+//                      hasNextPage, hasPreviousPage }
+//     }
+//   }
+//
+// ✅ ملاحظات:
+//   - لا يوجد filter صارم هنا — الباك يفصل الدور من الـ endpoint
+//   - نتعامل مع 4 types: ORDER, SYSTEM, PROMOTIONAL, GENERAL
+//   - socket event: "notification:new"
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
-  Check,
   CheckCheck,
   ShoppingBag,
   Star,
@@ -18,70 +39,55 @@ import {
   X,
   ExternalLink,
   Calendar,
-  Clock,
   Eye,
+  Trash2,
 } from "lucide-react";
 
 import {
   getSellerNotifications,
   markSellerNotificationRead,
   markAllSellerNotificationsRead,
+  deleteSellerNotification,
+  deleteAllSellerNotifications,
+  extractNotifications,
+  extractStats,
+  extractPagination,
 } from "../services/notificationService";
 
 import { connectSocket } from "../utils/socket";
+import { resolveNotificationRoute } from "../utils/notificationRoutes";
+import { isSellerNotification } from "../utils/notificationRoleFilter";
+
+import { useAuth } from "../context/AuthContext";
+import { formatApiError } from "../utils/errorHelper";
 
 import "./NotificationsPage.css";
 
-// اسم حدث الإشعار الجديد من السوكت (مطابق للـ seller side)
 const NEW_NOTIFICATION_EVENT = "notification:new";
 
-// ── Constants ──────────────────────────────────────────────
-// 4 أنواع الإشعارات بالـ API (بالحروف الكبيرة): ORDER, SYSTEM, PROMOTIONAL, GENERAL
+/* ── Constants ────────────────────────────────────────────── */
+// 4 أنواع الإشعارات (من Postman) — بالحروف الكبيرة
+// ✅ فقط لونين: أزرق + برتقالي
 const TYPE_META = {
-  ORDER: {
-    key: "ORDER",
-    label: "طلبات",
-    icon: ShoppingBag,
-    color: "#2563eb",
-    bg: "#dbeafe",
-  },
-  SYSTEM: {
-    key: "SYSTEM",
-    label: "النظام",
-    icon: Settings,
-    color: "#475569",
-    bg: "#f1f5f9",
-  },
-  PROMOTIONAL: {
-    key: "PROMOTIONAL",
-    label: "عروض",
-    icon: Star,
-    color: "#f97316",
-    bg: "#fff7ed",
-  },
-  GENERAL: {
-    key: "GENERAL",
-    label: "عام",
-    icon: Bell,
-    color: "#7c3aed",
-    bg: "#f3e8ff",
-  },
+  ORDER:       { key: "ORDER",       label: "طلبات",  icon: ShoppingBag, color: "#2563eb", bg: "#dbeafe" },
+  SYSTEM:      { key: "SYSTEM",      label: "النظام",  icon: Settings,    color: "#2563eb", bg: "#dbeafe" },
+  PROMOTIONAL: { key: "PROMOTIONAL", label: "عروض",    icon: Star,        color: "#f97316", bg: "#fff7ed" },
+  GENERAL:     { key: "GENERAL",     label: "عام",     icon: Bell,        color: "#2563eb", bg: "#dbeafe" },
 };
 
-// تطبيع الـ type (الباك إند يبعت uppercase، نحنا بدنا lowercase للـ grouping)
 const normType = (t) => (t ? String(t).toUpperCase() : "GENERAL");
 
 const TABS = [
-  { key: "all", label: "الكل" },
-  { key: "ORDER", label: "الطلبات" },
+  { key: "all",         label: "الكل" },
+  { key: "ORDER",       label: "الطلبات" },
   { key: "PROMOTIONAL", label: "العروض" },
-  { key: "SYSTEM", label: "النظام" },
-  { key: "GENERAL", label: "عام" },
+  { key: "SYSTEM",      label: "النظام" },
+  { key: "GENERAL",     label: "عام" },
 ];
 
-// ── Helpers ────────────────────────────────────────────────
+/* ── Helpers ──────────────────────────────────────────────── */
+
 function getNotifDate(n) {
-  // الـ API الحقيقي بيستعمل "sentAt"
   return n?.sentAt || n?.createdAt || n?.created_at;
 }
 
@@ -99,15 +105,11 @@ function timeAgo(dateStr) {
   if (days === 1) return "أمس";
   if (days < 7) return `منذ ${days} يوم`;
   if (days < 30) return `منذ ${Math.floor(days / 7)} أسبوع`;
-  return d.toLocaleDateString("ar-EG", {
-    day: "numeric",
-    month: "short",
-  });
+  return d.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
 }
 
 function getMeta(type) {
-  const key = normType(type);
-  return TYPE_META[key] || TYPE_META.GENERAL;
+  return TYPE_META[normType(type)] || TYPE_META.GENERAL;
 }
 
 function isRead(n) {
@@ -123,7 +125,6 @@ function getTitle(n) {
 }
 
 function getContent(n) {
-  // الـ API الحقيقي بيستعمل "content" (مش body)
   return n?.content || n?.body || n?.message || "";
 }
 
@@ -131,15 +132,9 @@ function getSender(n) {
   return n?.sender || null;
 }
 
-/**
- * استخراج بيانات الـ order من الإشعار — بيدعم أكثر من shape من الباك
- * (في كل backend response shape مختلف شوي)
- */
 function getOrder(n) {
   if (!n) return null;
   if (n.order) return n.order;
-
-  // ── Flat shape: orderId / order_id / orderNumber مباشر على الإشعار ──
   const flatId = n.orderId || n.order_id || n.orderID;
   if (flatId) {
     return {
@@ -152,23 +147,14 @@ function getOrder(n) {
   return null;
 }
 
-/**
- * استخراج order ID من الإشعار — حتى لو الـ order object كامل مش موجود
- */
 function getOrderId(n) {
   const order = getOrder(n);
-  if (order?.id) return order.id;
-  if (order?._id) return order._id;
-  if (order?.orderId) return order.orderId;
-  if (n?.orderId) return n.orderId;
-  if (n?.order_id) return n.order_id;
-  return null;
+  return (
+    order?.id || order?._id || order?.orderId ||
+    n?.orderId || n?.order_id || null
+  );
 }
 
-/**
- * استخراج بيانات الـ review من الإشعار — بيدعم أكثر من shape من الباك
- * (reviewId, review_id, review object, data.review)
- */
 function getReview(n) {
   if (!n) return null;
   if (n.review && typeof n.review === "object") return n.review;
@@ -177,81 +163,45 @@ function getReview(n) {
   return null;
 }
 
-/**
- * استخراج بيانات الـ product من الإشعار — بيدعم أكثر من shape من الباك
- * (productId, product_id, product object, review.product, order.product, data.product)
- */
 function getProduct(n) {
   if (!n) return null;
-  // 1) مباشر على الإشعار
   if (n.product && typeof n.product === "object" && n.product.id) return n.product;
   const directId = n.productId || n.product_id || n?.data?.productId;
   if (directId) return { id: directId };
-
-  // 2) جوّا الـ review object
   const review = getReview(n);
   if (review) {
-    if (review.productId || review.product_id) {
-      return { id: review.productId || review.product_id };
-    }
+    if (review.productId || review.product_id) return { id: review.productId || review.product_id };
     if (review.product?.id) return review.product;
   }
-
-  // 3) جوّا الـ order object
   const order = getOrder(n);
   if (order) {
     if (order.product?.id) return order.product;
     if (order.productId) return { id: order.productId };
   }
-
   return null;
 }
 
-/**
- * كشف إذا الإشعار عن "رد على تقييم" — بيستخدم:
- * 1) الحقول الصريحة (reviewId, productId, review, product)
- * 2) كلمات مفتاحية بالـ title/content
- */
 function isReviewReply(n) {
   if (!n) return false;
-  // 1) لو في review/product fields مباشرة
   if (n.reviewId || n.review_id || n.review) return true;
   if (n.productId || n.product_id || n.product) return true;
   if (n?.data?.reviewId || n?.data?.productId) return true;
-
-  // 2) كلمات مفتاحية بالـ title/content
   const title = String(getTitle(n) || "").toLowerCase();
   const content = String(getContent(n) || "").toLowerCase();
-  const reviewKeywords = [
-    "رد على تقييم",
-    "رد على مراجعة",
-    "رد على تقييمك",
-    "رد على مراجعتك",
-    "replied to your review",
-    "replied to your rating",
-    "review reply",
+  const kws = [
+    "رد على تقييم", "رد على مراجعة", "رد على تقييمك", "رد على مراجعتك",
+    "replied to your review", "replied to your rating", "review reply",
   ];
-  return reviewKeywords.some(
-    (kw) => title.includes(kw) || content.includes(kw)
-  );
+  return kws.some((kw) => title.includes(kw) || content.includes(kw));
 }
 
 /**
- * اشتقاق الـ action button من الإشعار — بيجرب:
- * 1) إشعار "رد على تقييم" → روح على المنتج (مع reviewId لو متوفر)
- * 2) actionUrl الجاهز من الباك إند
- * 3) routes محسوبة من order.id
- * 4) رابط المتجر من sender.id
-
- * للبائع: routes مختلفة (seller/orders, seller/products)
+ * اشتقاق الـ action button من الإشعار — للبائع فقط
  */
-function getNotificationActions(n, isSeller = true) {
+function getNotificationActions(n) {
   if (!n) return [];
-  const actions = [];
-  const order = getOrder(n);
-  const sender = getSender(n);
 
-  // ── 1) إشعار "رد على تقييم" → روح على المنتج مباشرة ──
+  // 1) review reply → روح على المنتج
   if (isReviewReply(n)) {
     const product = getProduct(n);
     const review = getReview(n);
@@ -259,73 +209,52 @@ function getNotificationActions(n, isSeller = true) {
       const params = new URLSearchParams();
       if (review?.id) params.set("reviewId", review.id);
       const query = params.toString();
-      actions.push({
+      return [{
         key: "view-review-reply",
         label: "عرض الرد على التقييم",
         icon: ExternalLink,
         type: normType(n.type),
         path: `/product/${product.id}${query ? `?${query}` : ""}`,
-      });
-      return actions;
+      }];
     }
   }
 
-  // ── 2) لو في actionUrl جاهز من الباك إند ──
+  // 2) Resolver الموحد
+  const resolved = resolveNotificationRoute(n, "seller");
+  if (resolved) {
+    return [{
+      key: resolved.key,
+      label: resolved.label,
+      icon: ExternalLink,
+      type: normType(n.type),
+      path: resolved.path,
+    }];
+  }
+
+  // 3) Fallback من actionUrl الجاهز من الباك
   if (n.actionUrl) {
     let target = n.actionUrl;
-    // ✅ تطبيع المسار للبائع
-    if (isSeller) {
-      if (target.startsWith("/orders/") && !target.startsWith("/seller/orders/")) {
-        target = `/seller/orders${target.replace(/^\/orders/, "")}`;
-      }
-    } else {
-      // للمشتري
-      if (target.startsWith("/orders/") && !target.startsWith("/my-orders/")) {
-        target = `/my-orders${target.replace(/^\/orders/, "")}`;
-      }
+    if (target.startsWith("/orders/") && !target.startsWith("/seller/orders/")) {
+      target = `/seller/orders${target.replace(/^\/orders/, "")}`;
     }
     let label = "عرض التفاصيل";
     if (normType(n.type) === "ORDER") label = "عرض تفاصيل الطلب";
-    else if (normType(n.type) === "PROMOTIONAL") label = "عرض العرض";
-    else if (normType(n.type) === "SYSTEM") label = "عرض التفاصيل";
-    actions.push({
-      key: "primary",
-      label,
-      icon: ExternalLink,
-      type: normType(n.type),
-      path: target,
-    });
-    return actions; // الباك إند وفّر الرابط الجاهز
+    return [{ key: "primary", label, icon: ExternalLink, type: normType(n.type), path: target }];
   }
 
-  // ── 3) fallback: اشتق من order object أو orderId المباشر ──
+  // 4) Fallback أخير من order id
   const orderId = getOrderId(n);
   if (orderId) {
-    const orderPath = isSeller ? `/seller/orders/${orderId}` : `/my-orders/${orderId}`;
-    actions.push({
+    return [{
       key: "view-order",
       label: "عرض تفاصيل الطلب",
       icon: ShoppingBag,
       type: "ORDER",
-      path: orderPath,
-    });
+      path: `/seller/orders/${orderId}`,
+    }];
   }
 
-  // ── 4) رابط المتجر من sender.id (للمشتري فقط) ──
-  if (!isSeller) {
-    const senderId = sender?.id || sender?._id || n?.senderId;
-    if (senderId && normType(n.type) === "ORDER") {
-      actions.push({
-        key: "view-store",
-        label: "عرض المتجر",
-        icon: ExternalLink,
-        type: "GENERAL",
-        path: `/customer/store/${senderId}`,
-      });
-    }
-  }
-
-  return actions;
+  return [];
 }
 
 function formatFullDate(dateStr) {
@@ -333,39 +262,40 @@ function formatFullDate(dateStr) {
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString("ar-EG", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric", month: "long", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
   });
 }
 
-function getStatusLabel(status) {
-  const statusMap = {
-    pending: "قيد الانتظار",
-    accepted: "مقبول",
-    in_production: "قيد الإنتاج",
-    ready: "جاهز",
-    completed: "مكتمل",
-    rejected: "مرفوض",
-    cancelled: "ملغي",
-  };
-  return statusMap[status] || status;
+const STATUS_LABELS = {
+  pending_review: "قيد المراجعة",
+  approved: "تم القبول",
+  accepted: "مقبول",
+  in_production: "قيد الإنتاج",
+  preparing: "قيد التحضير",
+  ready: "جاهز",
+  shipped: "قيد الشحن",
+  delivered: "تم التوصيل",
+  completed: "مكتمل",
+  cancelled: "ملغي",
+  canceled: "ملغي",
+  rejected: "مرفوض",
+  pending: "قيد الانتظار",
+};
+function getStatusLabel(s) {
+  return STATUS_LABELS[s] || s;
 }
 
-// ── Main Component ─────────────────────────────────────────
+/* ── Main Component ───────────────────────────────────────── */
+
 export default function SellerNotifications() {
   const navigate = useNavigate();
+  const { currentRole, isBootstrapping } = useAuth();
+  const isSellerMode = currentRole === "seller";
 
   const [notifs, setNotifs] = useState([]);
   const [stats, setStats] = useState({
-    total: 0,
-    order: 0,
-    general: 0,
-    system: 0,
-    promotional: 0,
-    unRead: 0,
+    total: 0, order: 0, general: 0, system: 0, promotional: 0, unRead: 0,
   });
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
@@ -374,13 +304,16 @@ export default function SellerNotifications() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
   const inFlightRef = useRef(false);
 
-  // ── جلب الإشعارات (مع pagination) ──
+  /* ── جلب الإشعارات ── */
   const load = useCallback(
     async (pageNum = 1, append = false) => {
       if (inFlightRef.current) return;
+      if (!isSellerMode) return;
       inFlightRef.current = true;
 
       try {
@@ -388,64 +321,58 @@ export default function SellerNotifications() {
         else setLoading(true);
         setError(null);
 
-        const data = await getSellerNotifications(pageNum);
-        const list = Array.isArray(data?.notifications) ? data.notifications : [];
-        const s = data?.stats ?? {};
-        const p = data?.pagination ?? null;
+        const data = await getSellerNotifications({ page: pageNum, limit: 20 });
+        const list = extractNotifications(data);
+        // Defense in depth: لو الباك رجّع إشعار غلط من الدور الثاني
+        const safe = list.filter(isSellerNotification);
 
-        setStats({
-          total: s.total ?? list.length,
-          order: s.order ?? 0,
-          general: s.general ?? 0,
-          system: s.system ?? 0,
-          promotional: s.promotional ?? 0,
-          unRead: s.unRead ?? 0,
-        });
-        setPagination(p);
+        setStats(extractStats(data, safe.length));
+        setPagination(extractPagination(data));
         setPage(pageNum);
 
-        if (append) {
-          setNotifs((prev) => [...prev, ...list]);
-        } else {
-          setNotifs(list);
-        }
+        if (append) setNotifs((prev) => [...prev, ...safe]);
+        else setNotifs(safe);
       } catch (err) {
         console.error("Notifications error:", err);
-        setError(
-          err?.response?.data?.message || err.message || "تعذر جلب الإشعارات"
-        );
+        const info = formatApiError(err, "تعذر جلب الإشعارات");
+        setError(info.message);
       } finally {
         setLoading(false);
         setLoadingMore(false);
         inFlightRef.current = false;
       }
     },
-    []
+    [isSellerMode]
   );
 
   useEffect(() => {
+    if (isBootstrapping) return;
+    if (!isSellerMode) {
+      setNotifs([]);
+      setStats({ total: 0, order: 0, general: 0, system: 0, promotional: 0, unRead: 0 });
+      return;
+    }
     load(1);
-  }, [load]);
+  }, [load, isSellerMode, isBootstrapping]);
 
-  // ── الاستماع لإشعار جديد جاي من السوكت (real-time) ──
+  /* ── socket listener ── */
   useEffect(() => {
+    if (!isSellerMode) return undefined;
     const socket = connectSocket();
-    const handleNewNotification = (payload) => {
-      // الـ payload الجاي بالشكل: { notification: {...}, stats: {... } } أو الإشعار مباشرة
+
+    const handleNew = (payload) => {
       const notif = payload?.notification ?? payload;
-      if (!notif) return;
-      const id = notif.id ?? notif._id;
+      if (!notif || !isSellerNotification(notif)) return;
+      const id = getId(notif);
       if (!id) return;
 
       setNotifs((prev) => {
         const list = Array.isArray(prev) ? prev : [];
-        // تجنّب التكرار
         if (list.some((n) => getId(n) === id)) {
           return list.map((n) => (getId(n) === id ? { ...n, ...notif } : n));
         }
         return [{ ...notif, isRead: false }, ...list];
       });
-      // زيادة العداد
       setStats((prev) => ({
         ...prev,
         total: (prev.total ?? 0) + 1,
@@ -453,13 +380,11 @@ export default function SellerNotifications() {
       }));
     };
 
-    socket.on(NEW_NOTIFICATION_EVENT, handleNewNotification);
-    return () => {
-      socket.off(NEW_NOTIFICATION_EVENT, handleNewNotification);
-    };
-  }, []);
+    socket.on(NEW_NOTIFICATION_EVENT, handleNew);
+    return () => socket.off(NEW_NOTIFICATION_EVENT, handleNew);
+  }, [isSellerMode]);
 
-  // ── Mark single as read (optimistic) ──
+  /* ── Mark single as read (optimistic) ── */
   const markOneRead = useCallback(async (id) => {
     if (!id) return;
     setNotifs((prev) =>
@@ -471,7 +396,7 @@ export default function SellerNotifications() {
       await markSellerNotificationRead(id);
     } catch (err) {
       console.error("Mark read error:", err);
-      // rollback على الفشل
+      // rollback
       setNotifs((prev) =>
         prev.map((n) => (getId(n) === id ? { ...n, isRead: false, read: false } : n))
       );
@@ -479,7 +404,7 @@ export default function SellerNotifications() {
     }
   }, []);
 
-  // ── Mark all as read (optimistic) ──
+  /* ── Mark all as read ── */
   const markAll = useCallback(async () => {
     if (markingAll || stats.unRead === 0) return;
     setMarkingAll(true);
@@ -491,71 +416,121 @@ export default function SellerNotifications() {
       await markAllSellerNotificationsRead();
     } catch (err) {
       console.error("Mark all read error:", err);
-      // rollback
       setStats((prev) => ({ ...prev, unRead: prevUnread }));
-      setNotifs((prev) =>
-        prev.map((n) => ({ ...n, isRead: false, read: false }))
-      );
+      setNotifs((prev) => prev.map((n) => ({ ...n, isRead: false, read: false })));
     } finally {
       setMarkingAll(false);
     }
   }, [markingAll, stats.unRead]);
 
-  // ── Tabs (filtering) ──
+  /* ── Delete one ── */
+  const deleteOne = useCallback(async (id) => {
+    if (!id || deletingId) return;
+    setDeletingId(id);
+    const snapshot = notifs;
+    const target = snapshot.find((n) => getId(n) === id);
+    setNotifs((prev) => prev.filter((n) => getId(n) !== id));
+    setStats((prev) => ({
+      ...prev,
+      total: Math.max(0, prev.total - 1),
+      unRead: target && !isRead(target) ? Math.max(0, prev.unRead - 1) : prev.unRead,
+    }));
+
+    try {
+      await deleteSellerNotification(id);
+    } catch (err) {
+      console.error("Delete one error:", err);
+      // rollback
+      setNotifs(snapshot);
+      setStats(extractStats({ stats: extractStats(snapshot, snapshot.length) }, snapshot.length));
+    } finally {
+      setDeletingId(null);
+    }
+  }, [notifs, deletingId]);
+
+  /* ── Delete all ── */
+  const clearAll = useCallback(async () => {
+    if (stats.total === 0) return;
+    const snapshot = notifs;
+    const snapshotStats = stats;
+    setNotifs([]);
+    setStats({ total: 0, order: 0, general: 0, system: 0, promotional: 0, unRead: 0 });
+
+    try {
+      await deleteAllSellerNotifications();
+    } catch (err) {
+      console.error("Delete all error:", err);
+      setNotifs(snapshot);
+      setStats(snapshotStats);
+    } finally {
+      setConfirmClearAll(false);
+    }
+  }, [notifs, stats]);
+
+  /* ── Tabs (filtering) ── */
   const visible = useMemo(() => {
     if (activeTab === "all") return notifs;
     return notifs.filter((n) => normType(n.type) === activeTab);
   }, [notifs, activeTab]);
 
-  // عدادات الـ tabs (من اللوكال)
   const tabCounts = useMemo(() => {
     const local = { all: notifs.filter((n) => !isRead(n)).length };
     TABS.forEach((t) => {
       if (t.key === "all") return;
-      const c = notifs.filter(
-        (n) => normType(n.type) === t.key && !isRead(n)
-      ).length;
+      const c = notifs.filter((n) => normType(n.type) === t.key && !isRead(n)).length;
       local[t.key] = c;
     });
     return local;
   }, [notifs]);
 
-  // ── فتح التفاصيل + mark read (في نفس الوقت) ──
+  /* ── Modal handlers ── */
   const openNotif = useCallback(
     async (n) => {
       if (!n) return;
       setSelectedNotif(n);
       const id = getId(n);
-      if (id && !isRead(n)) {
-        markOneRead(id);
-      }
+      if (id && !isRead(n)) markOneRead(id);
     },
-    [] // eslint-disable-line react-hooks/exhaustive-deps
+    [markOneRead]
   );
 
-  const closeNotif = useCallback(() => {
-    setSelectedNotif(null);
-  }, []);
+  const closeNotif = useCallback(() => setSelectedNotif(null), []);
 
   const handleActionClick = useCallback(
     (action) => {
       if (!action?.path) return;
-      // تعليم كمقروء قبل التنقل
       if (selectedNotif && !isRead(selectedNotif)) {
         markOneRead(getId(selectedNotif));
       }
       closeNotif();
       navigate(action.path);
     },
-    [selectedNotif, navigate] // eslint-disable-line react-hooks/exhaustive-deps
+    [selectedNotif, navigate, markOneRead, closeNotif]
   );
 
   const statCards = [
-    { key: "total", label: "إجمالي الإشعارات", value: stats.total, icon: Inbox, accent: "#6b7280" },
-    { key: "unRead", label: "غير مقروءة", value: stats.unRead, icon: Bell, accent: "#f97316" },
-    { key: "order", label: "الطلبات", value: stats.order, icon: ShoppingBag, accent: "#2563eb" },
-    { key: "system", label: "النظام", value: stats.system, icon: Settings, accent: "#475569" },
+    { key: "total",  label: "إجمالي الإشعارات", value: stats.total,  icon: Inbox,      accent: "#6b7280" },
+    { key: "unRead", label: "غير مقروءة",        value: stats.unRead, icon: Bell,       accent: "#f97316" },
+    { key: "order",  label: "الطلبات",           value: stats.order,  icon: ShoppingBag, accent: "#2563eb" },
+    { key: "system", label: "النظام",            value: stats.system, icon: Settings,   accent: "#475569" },
   ];
+
+  /* ── حارس العرض: لو مش بوضعية البائع ── */
+  if (!isBootstrapping && !isSellerMode) {
+    return (
+      <div className="np-root" dir="rtl">
+        <main className="np-main">
+          <div className="np-empty" style={{ paddingTop: 80 }}>
+            <div className="np-empty-art" style={{ background: "#fef3c7", color: "#d97706" }}>
+              <Bell size={42} />
+            </div>
+            <h3>إشعارات البائع فقط</h3>
+            <p>هذه الصفحة تعرض إشعاراتك كـ <strong>بائع</strong> فقط.<br />بدّل لوضع البائع لعرض الإشعارات الخاصة بك.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="np-root" dir="rtl">
@@ -579,11 +554,7 @@ export default function SellerNotifications() {
               onClick={markAll}
               disabled={markingAll || stats.unRead === 0}
             >
-              {markingAll ? (
-                <Loader2 size={15} className="np-spin" />
-              ) : (
-                <CheckCheck size={15} />
-              )}
+              {markingAll ? <Loader2 size={15} className="np-spin" /> : <CheckCheck size={15} />}
               تعيين الكل كمقروء
             </button>
             <button
@@ -604,13 +575,7 @@ export default function SellerNotifications() {
             const Icon = s.icon;
             return (
               <div className="np-stat-card" key={s.key}>
-                <div
-                  className="np-stat-icon"
-                  style={{
-                    background: `${s.accent}15`,
-                    color: s.accent,
-                  }}
-                >
+                <div className="np-stat-icon" style={{ background: `${s.accent}15`, color: s.accent }}>
                   <Icon size={18} />
                 </div>
                 <div className="np-stat-info">
@@ -622,7 +587,7 @@ export default function SellerNotifications() {
           })}
         </div>
 
-        {/* ── Tabs + filters ── */}
+        {/* ── Tabs ── */}
         <div className="np-tabs">
           <div className="np-tabs-list">
             {TABS.map((tab) => {
@@ -639,9 +604,15 @@ export default function SellerNotifications() {
               );
             })}
           </div>
-          <div className="np-tabs-filter" title="فلتر">
-            <Filter size={14} />
-          </div>
+          <button
+            className="np-btn-clear-all"
+            onClick={() => setConfirmClearAll(true)}
+            disabled={stats.total === 0}
+            title="حذف كل الإشعارات"
+          >
+            <Trash2 size={14} />
+            حذف الكل
+          </button>
         </div>
 
         {/* ── List ── */}
@@ -666,15 +637,12 @@ export default function SellerNotifications() {
               <h3>تعذر جلب الإشعارات</h3>
               <p>{error}</p>
               <button className="np-retry-btn" onClick={() => load(1)}>
-                <RefreshCw size={15} />
-                إعادة المحاولة
+                <RefreshCw size={15} /> إعادة المحاولة
               </button>
             </div>
           ) : visible.length === 0 ? (
             <div className="np-empty">
-              <div className="np-empty-art">
-                <Bell size={42} />
-              </div>
+              <div className="np-empty-art"><Bell size={42} /></div>
               <h3>
                 {activeTab === "all"
                   ? "لا توجد إشعارات"
@@ -698,54 +666,52 @@ export default function SellerNotifications() {
               const order = getOrder(n);
               const date = getNotifDate(n);
               return (
-                <button
+                <div
                   key={id}
-                  type="button"
-                  className={`np-item ${!read ? "np-item-unread" : ""}`}
-                  onClick={() => openNotif(n)}
+                  className={`np-item-wrap ${!read ? "np-item-unread" : ""}`}
                 >
-                  <div
-                    className="np-item-icon"
-                    style={{
-                      background: meta.bg,
-                      color: meta.color,
-                    }}
+                  <button
+                    type="button"
+                    className="np-item"
+                    onClick={() => openNotif(n)}
                   >
-                    <Icon size={18} strokeWidth={2} />
-                  </div>
-                  <div className="np-item-body">
-                    {title && <div className="np-item-title">{title}</div>}
-                    {content && (
-                      <div className="np-item-desc">{content}</div>
-                    )}
-                    <div className="np-item-meta">
-                      <span
-                        className="np-item-type-tag"
-                        style={{
-                          background: meta.bg,
-                          color: meta.color,
-                        }}
-                      >
-                        {meta.label}
-                      </span>
-                      {order?.orderNumber && (
-                        <span className="np-item-order-tag">
-                          {order.orderNumber}
+                    <div className="np-item-icon" style={{ background: meta.bg, color: meta.color }}>
+                      <Icon size={18} strokeWidth={2} />
+                    </div>
+                    <div className="np-item-body">
+                      {title && <div className="np-item-title">{title}</div>}
+                      {content && <div className="np-item-desc">{content}</div>}
+                      <div className="np-item-meta">
+                        <span className="np-item-type-tag" style={{ background: meta.bg, color: meta.color }}>
+                          {meta.label}
                         </span>
-                      )}
-                      {date && (
-                        <span className="np-item-time">{timeAgo(date)}</span>
+                        {order?.orderNumber && (
+                          <span className="np-item-order-tag">{order.orderNumber}</span>
+                        )}
+                        {date && <span className="np-item-time">{timeAgo(date)}</span>}
+                      </div>
+                      {sender?.name && (
+                        <div className="np-item-sender">من: {sender.name}</div>
                       )}
                     </div>
-                    {sender?.name && (
-                      <div className="np-item-sender">من: {sender.name}</div>
-                    )}
-                  </div>
-                  <div className="np-item-right">
-                    {!read && <span className="np-unread-dot" aria-label="غير مقروء" />}
-                    <Eye size={14} color="#cbd5e1" style={{ marginTop: 4 }} />
-                  </div>
-                </button>
+                    <div className="np-item-right">
+                      {!read && <span className="np-unread-dot" aria-label="غير مقروء" />}
+                      <Eye size={14} color="#cbd5e1" style={{ marginTop: 4 }} />
+                    </div>
+                  </button>
+                  <button
+                    className="np-item-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm("حذف هذا الإشعار؟")) deleteOne(id);
+                    }}
+                    disabled={deletingId === id}
+                    aria-label="حذف"
+                    title="حذف"
+                  >
+                    {deletingId === id ? <Loader2 size={14} className="np-spin" /> : <X size={14} />}
+                  </button>
+                </div>
               );
             })
           )}
@@ -755,43 +721,61 @@ export default function SellerNotifications() {
             <div className="np-pagination">
               <button
                 className="np-page-btn"
-                disabled={!pagination.hasPreviousPage || loading}
+                disabled={!pagination.hasPreviousPage || loadingMore}
                 onClick={() => load(page - 1)}
               >
-                <ChevronRight size={15} />
-                السابق
+                <ChevronRight size={15} /> السابق
               </button>
               <span className="np-page-info">
                 صفحة {pagination.currentPage} من {pagination.totalPages}
               </span>
               <button
                 className="np-page-btn"
-                disabled={!pagination.hasNextPage || loading}
+                disabled={!pagination.hasNextPage || loadingMore}
                 onClick={() => load(page + 1)}
               >
-                التالي
-                <ChevronLeft size={15} />
+                التالي <ChevronLeft size={15} />
               </button>
             </div>
           )}
         </div>
       </main>
 
-      {/* ── Notification detail modal ── */}
+      {/* ── Detail Modal ── */}
       {selectedNotif && (
         <NotificationDetailModal
           notif={selectedNotif}
           onClose={closeNotif}
           onAction={handleActionClick}
-          isSeller={true}
         />
+      )}
+
+      {/* ── Confirm clear all modal ── */}
+      {confirmClearAll && (
+        <div className="np-modal-overlay" onClick={(e) => e.target === e.currentTarget && setConfirmClearAll(false)}>
+          <div className="np-modal np-modal-confirm" dir="rtl" role="dialog" aria-modal="true">
+            <div className="np-modal-body" style={{ textAlign: "center", padding: 24 }}>
+              <div className="np-empty-art" style={{ background: "#fef2f2", color: "#ef4444", margin: "0 auto 16px" }}>
+                <Trash2 size={32} />
+              </div>
+              <h3>حذف كل الإشعارات؟</h3>
+              <p style={{ color: "#64748b", margin: "8px 0 20px" }}>لا يمكن التراجع عن هذا الإجراء.</p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                <button className="np-btn-mark-all" onClick={() => setConfirmClearAll(false)}>إلغاء</button>
+                <button className="np-retry-btn" onClick={clearAll} style={{ background: "#ef4444", color: "#fff" }}>
+                  نعم، احذف الكل
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// ── Detail Modal ──────────────────────────────────────────
-function NotificationDetailModal({ notif, onClose, onAction, isSeller = false }) {
+/* ── Detail Modal ────────────────────────────────────────── */
+function NotificationDetailModal({ notif, onClose, onAction }) {
   const meta = getMeta(notif.type);
   const Icon = meta.icon;
   const title = getTitle(notif);
@@ -799,66 +783,41 @@ function NotificationDetailModal({ notif, onClose, onAction, isSeller = false })
   const sender = getSender(notif);
   const order = getOrder(notif);
   const date = getNotifDate(notif);
-  const actions = getNotificationActions(notif, isSeller);
+  const actions = getNotificationActions(notif);
   const read = isRead(notif);
 
-  // إغلاق بـ Escape
   useEffect(() => {
-    function onKey(e) {
-      if (e.key === "Escape") onClose();
-    }
+    function onKey(e) { if (e.key === "Escape") onClose(); }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   return (
-    <div
-      className="np-modal-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <div className="np-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="np-modal" dir="rtl" role="dialog" aria-modal="true">
-        {/* ── Header ── */}
         <div
           className="np-modal-header"
-          style={{
-            background: `linear-gradient(135deg, ${meta.color} 0%, ${meta.color}dd 100%)`,
-          }}
+          style={{ background: `linear-gradient(135deg, ${meta.color} 0%, ${meta.color}dd 100%)` }}
         >
-          <button
-            type="button"
-            className="np-modal-close"
-            onClick={onClose}
-            aria-label="إغلاق"
-          >
+          <button type="button" className="np-modal-close" onClick={onClose} aria-label="إغلاق">
             <X size={18} />
           </button>
           <div className="np-modal-header-info">
             <h2 className="np-modal-title">{title || "إشعار"}</h2>
             <div className="np-modal-type-badge" style={{ background: "rgba(255,255,255,0.2)" }}>
-              <Icon size={12} />
-              {meta.label}
+              <Icon size={12} /> {meta.label}
             </div>
           </div>
-          <div
-            className="np-modal-header-icon"
-            style={{ background: "rgba(255,255,255,0.2)" }}
-          >
+          <div className="np-modal-header-icon" style={{ background: "rgba(255,255,255,0.2)" }}>
             <Icon size={22} />
           </div>
         </div>
 
-        {/* ── Body ── */}
         <div className="np-modal-body">
-          {/* Content */}
           {content && (
-            <div className="np-modal-content">
-              <p>{content}</p>
-            </div>
+            <div className="np-modal-content"><p>{content}</p></div>
           )}
 
-          {/* Sender */}
           {sender?.name && (
             <div className="np-modal-row">
               <div className="np-modal-row-icon" style={{ background: meta.bg, color: meta.color }}>
@@ -871,7 +830,6 @@ function NotificationDetailModal({ notif, onClose, onAction, isSeller = false })
             </div>
           )}
 
-          {/* Order details */}
           {order && (
             <div className="np-modal-order">
               <div className="np-modal-order-head">
@@ -888,24 +846,19 @@ function NotificationDetailModal({ notif, onClose, onAction, isSeller = false })
                 {order.status && (
                   <div className="np-modal-order-item">
                     <span className="np-modal-order-label">الحالة</span>
-                    <span className="np-modal-order-value">
-                      {getStatusLabel(order.status)}
-                    </span>
+                    <span className="np-modal-order-value">{getStatusLabel(order.status)}</span>
                   </div>
                 )}
                 {order.totalPrice != null && (
                   <div className="np-modal-order-item">
                     <span className="np-modal-order-label">المبلغ</span>
-                    <span className="np-modal-order-value">
-                      {order.totalPrice} ₪
-                    </span>
+                    <span className="np-modal-order-value">{order.totalPrice} ₪</span>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Date */}
           {date && (
             <div className="np-modal-row">
               <div className="np-modal-row-icon" style={{ background: meta.bg, color: meta.color }}>
@@ -918,16 +871,12 @@ function NotificationDetailModal({ notif, onClose, onAction, isSeller = false })
             </div>
           )}
 
-          {/* Read status */}
           <div className="np-modal-read-status">
-            <span
-              className={`np-modal-read-dot ${read ? "read" : "unread"}`}
-            />
+            <span className={`np-modal-read-dot ${read ? "read" : "unread"}`} />
             <span>{read ? "تمت القراءة" : "لم تتم القراءة بعد"}</span>
           </div>
         </div>
 
-        {/* ── Footer (actions) ── */}
         {actions.length > 0 && (
           <div className="np-modal-footer">
             {actions.map((a) => {
@@ -944,13 +893,7 @@ function NotificationDetailModal({ notif, onClose, onAction, isSeller = false })
                 </button>
               );
             })}
-            <button
-              type="button"
-              className="np-modal-btn-close"
-              onClick={onClose}
-            >
-              إغلاق
-            </button>
+            <button type="button" className="np-modal-btn-close" onClick={onClose}>إغلاق</button>
           </div>
         )}
       </div>

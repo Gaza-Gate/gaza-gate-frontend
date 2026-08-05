@@ -285,6 +285,8 @@
   color: #ea580c;
   border-bottom-color: #ea580c;
 }
+
+/* ✅ Clickable row hover (من فرع development) — صفوف قابلة للنقر */
 .dsh-row--clickable {
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -293,5 +295,81 @@
   background-color: rgba(0, 0, 0, 0.03);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .dsh-wrapper { background: var(--bg-page); }
+.dark .dsh-title-area h1 { color: #FFFFFF; }
+.dark .dsh-title-area p { color: #94a3b8; }
 
+.dark .dsh-stat-card,
+.dark .dsh-panel {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
 
+.dark .dsh-icon-green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.dark .dsh-icon-orange {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fb923c;
+}
+.dark .dsh-stat-value { color: #FFFFFF; }
+.dark .dsh-stat-label { color: #cbd5e1; }
+.dark .dsh-stat-sub { color: #94a3b8; }
+
+.dark .dsh-panel-title { color: #FFFFFF; }
+.dark .dsh-link-btn { color: #fb923c; }
+.dark .dsh-link-btn:hover { color: #fb923c; }
+
+.dark .dsh-rating-summary { border-bottom-color: rgba(148, 163, 184, 0.18); }
+.dark .dsh-rating-bar-track { background: rgba(148, 163, 184, 0.18); }
+.dark .dsh-rating-bar-fill { background: #fcd34d; }
+.dark .dsh-rating-number { color: #FFFFFF; }
+.dark .dsh-rating-stars { color: #fcd34d; }
+.dark .dsh-rating-count { color: #94a3b8; }
+
+.dark .dsh-review-name { color: #FFFFFF; }
+.dark .dsh-review-stars { color: #fcd34d; }
+.dark .dsh-review-text { color: #cbd5e1; }
+
+.dark .dsh-conv-name { color: #FFFFFF; }
+.dark .dsh-conv-text { color: #cbd5e1; }
+.dark .dsh-conv-time { color: #94a3b8; }
+
+.dark .dsh-conv-input-row { border-top-color: rgba(148, 163, 184, 0.18); }
+.dark .dsh-conv-input-row input {
+  background: rgba(30, 41, 59, 0.55);
+  color: #FFFFFF;
+}
+.dark .dsh-conv-input-row input::placeholder { color: #94a3b8; }
+.dark .dsh-send-btn { background: #fb923c; }
+
+.dark .dsh-empty-text { color: #94a3b8; }
+
+.dark .dsh-order-row { border-bottom-color: rgba(138, 158, 201, 0.10); }
+.dark .dsh-order-number { color: #FFFFFF; }
+.dark .dsh-order-buyer { color: #94a3b8; }
+.dark .dsh-order-total { color: #fb923c; }
+
+.dark .dsh-tag-waiting { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.dark .dsh-tag-progress { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.dark .dsh-tag-approved { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.dark .dsh-tag-cancelled { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+
+.dark .dsh-conv-dot { border-color: #1e293b; }
+
+.dark .dsh-avatar--link:hover { box-shadow: 0 0 0 2px #fb923c; }
+.dark .dsh-review-name--link { color: #fb923c; }
+.dark .dsh-review-name--link:hover { color: #fb923c; border-bottom-color: #fb923c; }
+.dark .dsh-order-buyer--link { color: #fb923c; }
+.dark .dsh-order-buyer--link:hover { color: #fb923c; border-bottom-color: #fb923c; }
+
+/* ✅ Dark mode — تكامل مع صف الـ clickable */
+.dark .dsh-row--clickable:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}

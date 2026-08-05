@@ -54,13 +54,28 @@ export function CartProvider({ children }) {
     let enrichedProduct = product;
     let sellerId = extractSellerId(product);
 
+    // ✅ لازم نتأكد من الـ sellerId قبل أي محاولة إضافة
     if (!sellerId) {
       try {
         const fullProduct = await getPublicProductDetails(productId);
         sellerId = extractSellerId(fullProduct);
-        enrichedProduct = { ...product, ...fullProduct };
+        if (sellerId) {
+          enrichedProduct = { ...product, ...fullProduct };
+        } else {
+          // ✅ الـ API رجّع المنتج بدون sellerId — بنرمي خطأ بدل ما نكمل بصمت
+          throw new Error(
+            "تعذّر تحديد البائع لهذا المنتج. حاول مرة أخرى لاحقاً."
+          );
+        }
       } catch (err) {
-        console.error("تعذر جلب تفاصيل المنتج لمعرفة البائع:", err);
+        // ✅ بنرمي الخطأ للـ caller (الـ UI يعرضه للمستخدم) بدل المحاولة الفاشلة
+        if (err?.response) {
+          throw new Error(
+            err?.response?.data?.data?.message ||
+              "تعذّر جلب تفاصيل المنتج. حاول مرة أخرى."
+          );
+        }
+        throw err;
       }
     }
 
@@ -69,8 +84,8 @@ export function CartProvider({ children }) {
       throw new Error("الرجاء تسجيل الدخول لإضافة المنتج للسلة");
     }
 
-    // ننادي السيرفر أولاً - لو رفض، منوقف هون ومنرمي الخطأ
-    await addToCart(productId, quantity, token);
+    // ✅ التوكن بيُضاف تلقائياً عبر الـ axios interceptor — لا نمرره كـ arg
+    await addToCart(productId, quantity);
 
     // لو نجح السيرفر، هلأ منحدث السلة المحلية
     setItems((prev) => {

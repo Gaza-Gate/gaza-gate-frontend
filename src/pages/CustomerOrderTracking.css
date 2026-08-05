@@ -128,6 +128,109 @@
   align-self: flex-start;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ── زر "قيّم المنتج" — مُعاد تصميمه ليكون بارز وملفت للنظر ──
+   ─────────────────────────────────────────────────────────
+   ✅ أكبر حجماً (padding/font أكبر)
+   ✅ لون برتقالي قوي (Primary brand color) — يتماشى مع الهوية
+   ✅ تدرج لوني مع glow + shadow بارز
+   ✅ تأثير hover ديناميكي (ترفع + تكبر)
+   ✅ أنيميشن نبض خفيف (pulse) لجذب الانتباه
+   ✅ شارة "تقييم" (badge) قبل النص لجذب العين
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes ot-rate-pulse {
+  0%, 100% {
+    box-shadow:
+      0 6px 18px rgba(249, 115, 22, 0.45),
+      0 0 0 0 rgba(249, 115, 22, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 8px 22px rgba(249, 115, 22, 0.55),
+      0 0 0 8px rgba(249, 115, 22, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  }
+}
+
+.ot-rate-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 11px 22px 11px 20px;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: -0.1px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  animation: ot-rate-pulse 2.4s ease-in-out infinite;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* لمعة تمريرية (shine) عبر الزر */
+.ot-rate-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
+  transition: left 0.6s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+.ot-rate-btn:hover::before { left: 130%; }
+
+.ot-rate-btn > * { position: relative; z-index: 1; }
+
+.ot-rate-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.06) saturate(1.05);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.ot-rate-btn:active {
+  transform: translateY(0) scale(0.99);
+  animation: none;
+}
+
+.ot-rate-btn svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.30));
+  flex-shrink: 0;
+}
+
+/* شارة "جديد" / "سريع" بجانب النص (لجذب الانتباه) */
+.ot-rate-btn .ot-rate-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #ea580c;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-inline-start: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0;
+  line-height: 1;
+}
+
 /* ═══════ أزرار تعديل/حذف التقييم ═══════ */
 .ot-reviewed-actions {
   display: flex;
@@ -195,6 +298,12 @@
   align-self: flex-start;
 }
 
+.dark .ot-rate-loading {
+  background: rgba(51, 65, 85, 0.5);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #cbd5e1;
+}
+
 .ot-spin {
   animation: ot-spin 0.8s linear infinite;
 }
@@ -216,6 +325,12 @@
   font-weight: 600;
   color: #b91c1c;
   align-self: flex-start;
+}
+
+.dark .ot-rate-warning {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #FCA5A5;
 }
 
 /* ── Meta strip (رقم الطلب + الدفع + عدد القطع) ── */
@@ -305,6 +420,17 @@
 
 .ot-store-card svg {
   color: var(--orange);
+}
+
+.ot-store-link {
+  color: var(--text-dark);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.15s;
+}
+.ot-store-link:hover {
+  color: var(--orange);
+  text-decoration: underline;
 }
 
 .ot-item-card {
@@ -522,3 +648,222 @@
     justify-content: space-between;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — صفحة تتبع الطلب
+   ─────────────────────────────────────────────────────────
+   كل الكروت والخلفيات والنصوص تتحول لدرجات navy + orange.
+   خطوات التتبع: أخضر للـ done، برتقالي للـ current،
+   رمادي كحلي للـ pending.
+   ═══════════════════════════════════════════════════════════════ */
+.dark .ot-back {
+  color: #cbd5e1;
+}
+.dark .ot-back:hover {
+  color: #fb923c;
+}
+
+/* ── Summary bar (كارد معلومات الطلب) ── */
+.dark .ot-summary-bar {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(148, 163, 184, 0.22);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(148, 163, 184, 0.1);
+}
+.dark .ot-order-id { color: #FFFFFF; }
+.dark .ot-order-date { color: #94a3b8; }
+.dark .ot-total { color: #fb923c; }
+
+/* ── زر إلغاء الطلب ── */
+.dark .ot-cancel-btn {
+  background: rgba(239, 68, 68, 0.10);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.dark .ot-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.20);
+  color: #FECACA;
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* ── شارة "تم تقييم هذا المنتج" ── */
+.dark .ot-reviewed-badge {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.08) 100%);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.40);
+}
+
+/* ── زر "قيّم المنتج" (Dark mode) — نفس البرتقالي القوي مع glow أقوى ── */
+.dark .ot-rate-btn {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.dark .ot-rate-btn:hover {
+  filter: brightness(1.10) saturate(1.08);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 10px 26px rgba(249, 115, 22, 0.55),
+    0 0 0 6px rgba(249, 115, 22, 0.18);
+}
+.dark .ot-rate-btn .ot-rate-badge {
+  background: #ffffff;
+  color: #c2410c;
+}
+
+/* ── أزرار تعديل/حذف التقييم ── */
+.dark .ot-edit-btn {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.35);
+}
+.dark .ot-edit-btn:hover {
+  background: rgba(249, 115, 22, 0.22);
+  border-color: rgba(249, 115, 22, 0.55);
+  color: #fed7aa;
+}
+.dark .ot-delete-btn {
+  background: rgba(239, 68, 68, 0.10);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.dark .ot-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.20);
+  color: #FECACA;
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* ── Meta strip (رقم الطلب / الدفع / عدد القطع / التاريخ) ── */
+.dark .ot-meta-strip {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(138, 158, 201, 0.06);
+}
+.dark .ot-meta-item {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+.dark .ot-meta-item svg { color: #fb923c; }
+.dark .ot-meta-label { color: #94a3b8; }
+.dark .ot-meta-value { color: #FFFFFF; }
+
+/* ── Quantity line + shipping ── */
+.dark .ot-item-qty { color: #94a3b8; }
+.dark .ot-shipping {
+  background: rgba(30, 41, 59, 0.55);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* ── كارد المتجر ── */
+.dark .ot-store-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #FFFFFF;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .ot-store-card svg { color: #fb923c; }
+.dark .ot-store-link { color: #FFFFFF; }
+.dark .ot-store-link:hover { color: #fb923c; }
+
+/* ── كارد المنتج ── */
+.dark .ot-item-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(148, 163, 184, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .ot-item-card:hover {
+  border-color: rgba(249, 115, 22, 0.40);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(249, 115, 22, 0.20);
+}
+.dark .ot-item-img {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(138, 158, 201, 0.18);
+}
+.dark .ot-item-info h3 { color: #FFFFFF; }
+.dark .ot-item-info p { color: #94a3b8; }
+.dark .ot-item-price { color: #fb923c; }
+
+/* ── المجموع الفرعي + الإجمالي الكلي ── */
+.dark .ot-subtotal { color: #cbd5e1; }
+.dark .ot-grand-total {
+  background: rgba(249, 115, 22, 0.10);
+  color: #FFFFFF;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-right: 4px solid var(--orange);
+}
+.dark .ot-grand-total span:last-child { color: #fb923c; }
+
+/* ── مسار الطلب (Timeline) ── */
+.dark .ot-timeline-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(148, 163, 184, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(148, 163, 184, 0.1);
+}
+.dark .ot-timeline-card h2 { color: #FFFFFF; }
+
+/* خط الوصل بين الخطوات */
+.dark .ot-step:not(:last-child)::before {
+  background: rgba(148, 163, 184, 0.22);
+}
+.dark .ot-step--done:not(:last-child)::before {
+  background: #22c55e;
+}
+.dark .ot-step--current:not(:last-child)::before {
+  background: linear-gradient(to bottom, #22c55e 0%, rgba(148, 163, 184, 0.22) 100%);
+}
+
+/* أيقونات الخطوات */
+.dark .ot-step-icon {
+  background: rgba(138, 158, 201, 0.18);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+.dark .ot-step--done .ot-step-icon {
+  background: #22c55e;
+  color: #fff;
+  border-color: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.35);
+}
+.dark .ot-step--current .ot-step-icon {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25), 0 0 16px rgba(249, 115, 22, 0.45);
+}
+.dark .ot-step--pending .ot-step-icon {
+  background: rgba(138, 158, 201, 0.10);
+  color: #64748b;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+.dark .ot-step--alt .ot-step-icon {
+  background: rgba(239, 68, 68, 0.18);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* علامة الصح على الخطوة المكتملة */
+.dark .ot-step-check {
+  background: #334155;
+  color: #22c55e;
+}
+
+/* محتوى الخطوة (العنوان + الوصف) */
+.dark .ot-current-badge {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.30);
+}
+.dark .ot-step-content h4 { color: #FFFFFF; }
+.dark .ot-step-content p { color: #94a3b8; }
+.dark .ot-step--pending .ot-step-content h4,
+.dark .ot-step--pending .ot-step-content p { color: #64748b; }
+.dark .ot-step--done .ot-step-content h4 { color: #FFFFFF; }

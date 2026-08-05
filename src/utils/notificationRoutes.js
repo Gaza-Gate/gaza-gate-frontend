@@ -65,21 +65,76 @@ function getOrder(n) {
 }
 
 function getReview(n) {
+  // 1) إشعار فيه كائن review كامل (مثل Postman: { review: { id, rating, comment } })
   if (n?.review && typeof n.review === "object" && n.review.id) return n.review;
-  return {
-    id: pickField(n, ["reviewId", "review_id"]),
-    productId: pickField(n, ["reviewProductId"]),
-  };
+  // 2) تجميع الـ review من حقول مسطحة + حقول داخل data/payload/meta
+  const id =
+    pickField(n, ["reviewId", "review_id", "ratingId", "rating_id"]) ||
+    pickField(n?.data, ["reviewId", "review_id", "id"]) ||
+    pickField(n?.payload, ["reviewId", "review_id", "id"]) ||
+    pickField(n?.meta, ["reviewId", "review_id", "id"]) ||
+    pickField(n?.target, ["id", "reviewId"]) ||
+    pickField(n?.context, ["id", "reviewId"]);
+  const productId =
+    pickField(n, ["reviewProductId", "review_product_id"]) ||
+    pickField(n?.review, ["productId", "product_id"]) ||
+    pickField(n?.data, ["productId", "product_id"]) ||
+    pickField(n?.payload, ["productId", "product_id"]) ||
+    pickField(n?.meta, ["productId", "product_id"]) ||
+    pickField(n?.target, ["productId"]) ||
+    pickField(n?.context, ["productId"]);
+  return { id, productId };
 }
 
 function getProduct(n) {
+  // 1) كائن product كامل (Postman: { product: { id, name, image } })
   if (n?.product && typeof n.product === "object" && n.product.id) return n.product;
-  // ممكن يجي داخل review
+  // 2) المنتج متداخل داخل review
   const review = n?.review;
-  if (review?.product && typeof review.product === "object") return review.product;
-  return {
-    id: pickField(n, ["productId", "product_id"]),
-  };
+  if (review?.product && typeof review.product === "object" && review.product.id) {
+    return review.product;
+  }
+  // 3) استخراج productId من كل المصادر الممكنة
+  const id =
+    pickField(n, ["productId", "product_id", "productID"]) ||
+    pickField(review, ["productId", "product_id", "productID"]) ||
+    pickField(n?.data, ["productId", "product_id", "id"]) ||
+    pickField(n?.payload, ["productId", "product_id", "id"]) ||
+    pickField(n?.meta, ["productId", "product_id", "id"]) ||
+    pickField(n?.target, ["productId", "id"]) ||
+    pickField(n?.context, ["productId", "id"]);
+  return id ? { id } : { id: null };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Public helpers — تقدر تستخدمها من أي مكون (Dropdown / Page)
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * استخراج productId من أي إشعار — يدعم كل الـ shapes المحتملة.
+ * ترجع null لو ما في productId.
+ */
+export function extractProductIdFromNotification(notif) {
+  if (!notif) return null;
+  return getProduct(notif)?.id ?? null;
+}
+
+/**
+ * استخراج reviewId من أي إشعار — يدعم كل الـ shapes المحتملة.
+ * ترجع null لو ما في reviewId.
+ */
+export function extractReviewIdFromNotification(notif) {
+  if (!notif) return null;
+  return getReview(notif)?.id ?? null;
+}
+
+/**
+ * هل هذا الإشعار من نوع تقييم/مراجعة؟
+ */
+export function isReviewNotification(notif) {
+  if (!notif) return false;
+  const t = normType(notif.type);
+  return t === "REVIEW" || t === "REVIEW_REPLY" || t === "RATING";
 }
 
 function getSender(n) {
@@ -181,23 +236,61 @@ export function resolveNotificationRoute(notif, role) {
   if (!notif || !role) return null;
   const t = normType(notif.type);
 
-  /* ── 1) إشعار "رد على تقييم" (مراجعة) — روح على المنتج مباشرة مع highlight ── */
-  // نعتمد على: reviewId / reviewId + productId / review object
+  /* ── 1) إشعار "تقييم/مراجعة" — توجيه دقيق حسب الدور ──
+     ✅ الزبون: روح على صفحة المنتج (public) مع ?reviewId=xxx
+        → CustomerProductDetails يقرأ الـ reviewId من URL ويمرره كـ highlightReviewId
+          لـ BuyerProductReviewsSection → useEffect بيعمل scrollIntoView للتقييم المحدد
+     ✅ البائع: روح على ProductDetailsModal للمنتج مباشرة عبر /seller/products?productId=xxx
+        → ProductsList عنده useEffect بيشوف ?productId= في URL ويفتح ProductDetailsModal تلقائياً
+        → البائع يشوف تفاصيل المنتج + التقييم + باقي التقييمات
+        (لأن /product/:id محمي بـ RequireCustomer — البائع ما يقدر يفتحه)
+     ✅ Fallback (لو ما في productId):
+        - البائع → /seller/ratings (قسم "تقييمات المتجر" الرئيسي)
+        - الزبون → /products
+  */
   if (t === "REVIEW" || t === "REVIEW_REPLY" || t === "RATING") {
     const review = getReview(notif);
     const product = getProduct(notif);
-    // product لازم يكون موجود — لو مش موجود، نتجاهل هذا الفرع
-    if (product?.id) {
+
+    // ✅ الزبون + يوجد productId → صفحة المنتج (عامة)
+    if (role === "customer" && product?.id) {
       const path = appendQuery(
-        role === "customer" ? `/product/${product.id}` : `/product/${product.id}`,
+        `/product/${product.id}`,
         review?.id ? { reviewId: review.id } : null
       );
       return {
         path,
-        label: role === "customer" ? "عرض الرد على التقييم" : "عرض التقييم",
-        key: "review-reply",
+        label: "عرض التقييم",
+        key: "review",
       };
     }
+
+    // ✅ البائع + يوجد productId → فتح ProductDetailsModal مباشرة
+    //    (/seller/products?productId=xxx بيشغّل المودال تلقائياً عبر ProductsList)
+    if (role === "seller" && product?.id) {
+      const path = appendQuery("/seller/products", { productId: product.id });
+      return {
+        path,
+        label: "عرض تفاصيل المنتج",
+        key: "review-product-modal",
+      };
+    }
+
+    // ⚠️ Fallback: ما في productId — نتجه لقسم التقييمات الرئيسي
+    if (role === "seller") {
+      // البائع: قسم "تقييمات المتجر" الرئيسي (ممكن مع highlight لو في reviewId)
+      const path = appendQuery(
+        "/seller/ratings",
+        review?.id ? { reviewId: review.id } : null
+      );
+      return {
+        path,
+        label: "تقييمات المتجر",
+        key: "ratings-list",
+      };
+    }
+    // الزبون: صفحة المنتجات الرئيسية
+    return { path: "/products", label: "المنتجات", key: "products-list" };
   }
 
   /* ── 2) إشعار "رسالة/محادثة" → روح على الرسائل ── */
@@ -250,16 +343,28 @@ export function resolveNotificationRoute(notif, role) {
     };
   }
 
-  // Review
+  // Review (fallback ثانوي — فقط لو ما وصلنا للـ branch الأساسي في الأعلى)
   const review = getReview(notif);
   const product = getProduct(notif);
   if ((review?.id || product?.id) && (t === "REVIEW" || t === "RATING")) {
     if (product?.id) {
-      const path = appendQuery(
-        `/product/${product.id}`,
-        review?.id ? { reviewId: review.id } : null
-      );
-      return { path, label: "عرض التقييم", key: "review" };
+      // ✅ الزبون → صفحة المنتج (عامة)
+      if (role === "customer") {
+        const path = appendQuery(
+          `/product/${product.id}`,
+          review?.id ? { reviewId: review.id } : null
+        );
+        return { path, label: "عرض التقييم", key: "review" };
+      }
+      // ✅ البائع → ProductDetailsModal عبر /seller/products?productId=xxx
+      if (role === "seller") {
+        const path = appendQuery("/seller/products", { productId: product.id });
+        return {
+          path,
+          label: "عرض تفاصيل المنتج",
+          key: "review-product-modal",
+        };
+      }
     }
   }
 
@@ -292,8 +397,15 @@ export function resolveNotificationRoute(notif, role) {
     }
   }
 
-  // Product fallback
+  // Product fallback — البائع ما يقدر يفتح /product/:id (محمي بـ RequireCustomer)
   if (product?.id) {
+    if (role === "seller") {
+      return {
+        path: appendQuery("/seller/products", { productId: product.id }),
+        label: "عرض تفاصيل المنتج",
+        key: "product",
+      };
+    }
     return {
       path: `/product/${product.id}`,
       label: "عرض المنتج",

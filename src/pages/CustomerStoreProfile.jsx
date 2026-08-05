@@ -28,6 +28,7 @@ import {
 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { useAuth } from "../context/AuthContext";
 import { getCurrentUser } from "../services/authService";
 import { getStoreProfile, getStoreProducts } from "../services/storeService";
 import { avatarColor } from "../utils/chatHelpers";
@@ -118,6 +119,14 @@ export default function CustomerStoreProfile() {
   const [productSort, setProductSort] = useState("default"); // default | price-asc | price-desc | name
   const [activeCategory, setActiveCategory] = useState("all");
   const [copied, setCopied] = useState(false);
+  const [msgTooltipVisible, setMsgTooltipVisible] = useState(false);
+
+  // ✅ Auth central: لمعرفة دور الزائر الحالي (customer | seller | null للزائر)
+  const { currentRole } = useAuth();
+
+  // ✅ لزائر الـ "seller" → زر المراسلة معطّل (API غير جاهز بعد)
+  //    لزائر الـ "customer" أو الزائر غير المسجّل → الزر يبقى فعّال عادي
+  const isCurrentUserSeller = currentRole === "seller";
 
   // عدّاد + متوسط التقييمات — يُحدَّث من BuyerProductReviewsSection بعد ما يجيب البيانات
   const [sellerReviewsCount, setSellerReviewsCount] = useState(0);
@@ -266,6 +275,14 @@ export default function CustomerStoreProfile() {
 
   // ── Handlers ──
   const handleMessageSeller = () => {
+    // ✅ لو الزائر بائع → ما بسمح بفتح المحادثة (الميزة قيد التطوير)
+    if (isCurrentUserSeller) {
+      setMsgTooltipVisible(true);
+      // إخفاء الـ tooltip تلقائياً بعد 3 ثواني
+      setTimeout(() => setMsgTooltipVisible(false), 3000);
+      return;
+    }
+
     const currentUser = getCurrentUser();
     if (!currentUser) {
       navigate("/login/customer");
@@ -461,14 +478,28 @@ export default function CustomerStoreProfile() {
             </div>
 
             <div className="csp-hero-actions">
-              <button
-                className="csp-msg-btn"
-                onClick={handleMessageSeller}
-                title="مراسلة المتجر"
-              >
-                <MessageCircle size={16} />
-                مراسلة المتجر
-              </button>
+              {/* ✅ زر المراسلة — يدعم الزائر بحساب seller (معطّل + tooltip) وبحساب customer (فعّال) */}
+              <div className="csp-msg-btn-wrap">
+                <button
+                  className={`csp-msg-btn ${isCurrentUserSeller ? "csp-msg-btn--disabled" : ""}`}
+                  onClick={handleMessageSeller}
+                  disabled={isCurrentUserSeller}
+                  aria-disabled={isCurrentUserSeller}
+                  title={
+                    isCurrentUserSeller
+                      ? "المراسلة بين البائعين ستتوفر قريباً"
+                      : "مراسلة المتجر"
+                  }
+                >
+                  <MessageCircle size={16} />
+                  مراسلة المتجر
+                </button>
+                {isCurrentUserSeller && msgTooltipVisible && (
+                  <div className="csp-msg-tooltip" role="tooltip">
+                    المراسلة بين البائعين ستتوفر قريباً
+                  </div>
+                )}
+              </div>
               <button
                 className="csp-icon-action"
                 onClick={handleShare}
@@ -867,7 +898,7 @@ export default function CustomerStoreProfile() {
               );
             })()}
 
-            {sellerId && (
+            {sellerId ? (
               <BuyerProductReviewsSection
                 mode="seller"
                 sellerId={sellerId}
@@ -878,6 +909,11 @@ export default function CustomerStoreProfile() {
                 onProductTagClick={handleReviewProductClick}
                 onCountLoaded={handleReviewsLoaded}
               />
+            ) : (
+              <div className="csp-empty-reviews">
+                <Package size={32} color="#cbd5e1" />
+                <p>لم يتم تحديد متجر — لا يمكن عرض التقييمات</p>
+              </div>
             )}
           </section>
         )}
@@ -987,11 +1023,18 @@ export default function CustomerStoreProfile() {
               </div>
 
               <button
-                className="csp-about-msg-btn"
+                className={`csp-about-msg-btn ${isCurrentUserSeller ? "csp-about-msg-btn--disabled" : ""}`}
                 onClick={handleMessageSeller}
+                disabled={isCurrentUserSeller}
+                aria-disabled={isCurrentUserSeller}
+                title={
+                  isCurrentUserSeller
+                    ? "المراسلة بين البائعين ستتوفر قريباً"
+                    : "تواصل مع المتجر"
+                }
               >
                 <MessageCircle size={18} />
-                تواصل مع المتجر
+                {isCurrentUserSeller ? "تواصل مع المتجر (قريباً)" : "تواصل مع المتجر"}
               </button>
             </div>
           </section>

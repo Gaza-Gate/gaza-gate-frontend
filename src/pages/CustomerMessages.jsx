@@ -23,12 +23,14 @@ import {
 import {
   getAuthToken,
   getCurrentUser,
+} from "../services/authService";
+import {
   getCustomerConversations,
   getCustomerMessages,
   sendCustomerMessage,
   createConversation,
   markConversationAsRead,
-} from "../services/authService";
+} from "../services/conversationService";
 
 import { getSocket, connectSocket } from "../utils/socket";
 import api from "../utils/api";
@@ -381,9 +383,16 @@ export default function CustomerMessages() {
         const sent = await sendCustomerMessage(selectedId, text);
         const officialMsg = sent?.data?.message;
         if (officialMsg) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === tempId ? { ...officialMsg } : m)).filter((m) => m.id !== tempId || !m._optimistic)
-          );
+          // ✅ منع تكرار الرسالة: شيل الـ optimistic (tempId) أولاً،
+          //    ثم ضيف الرسمي عبر addMessageUnique — لو الـ socket
+          //    سبَق وحطّ الرسمي، ما رح ينضاف مرة ثانية
+          setMessages((prev) => {
+            const withoutOptimistic = prev.filter((m) => m.id !== tempId);
+            return addMessageUnique(withoutOptimistic, officialMsg);
+          });
+        } else {
+          // لو الباك ما رجّع message، على الأقل شيل الـ optimistic
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
         }
       } catch (err) {
         // إزالة الرسالة المؤقتة وإرجاع النص

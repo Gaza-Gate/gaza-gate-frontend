@@ -4,24 +4,85 @@
 @tailwind components;
 @tailwind utilities;
 
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; } 
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ═══════════════════════════════════════════════════════════════
+   Theme tokens — متغيرات CSS (light + dark)
+   ─────────────────────────────────────────────────────────
+   كل component يستخدم var(--xxx) فيستفيد تلقائياً من تبديل الثيم.
+   البرتقالي يظل نفسه في الوضعين (هوية بصرية).
+   ═══════════════════════════════════════════════════════════════ */
 :root {
   --orange:       #F97316;
   --orange-dark:  #EA6D0E;
   --orange-light: #FFE2CC;
   --orange-pale:  #FFF3E8;
+
+  /* light tokens (default) */
   --bg-page:      #F7F7F7;
+  --bg-surface:   #ffffff;
+  --bg-glass:     rgba(255, 255, 255, 0.7);
+  --bg-glass-strong: rgba(255, 255, 255, 0.85);
+  --bg-overlay:   rgba(255, 255, 255, 0.5);
+
   --text-dark:    #1A1A1A;
   --text-mid:     #4B4B4B;
   --text-muted:   #888888;
+  --text-on-glass: #111827;
+
   --border:       #E5E5E5;
-  --border-focus: #F97316;
-  --radius-sm:    8px;
-  --radius-lg:    16px;
+  --border-strong:#D4D4D8;
+  --border-glass: rgba(255, 255, 255, 0.4);
+
   --shadow-card:  0 2px 20px rgba(0,0,0,.08);
   --shadow-btn:   0 4px 14px rgba(249,115,22,.35);
+  --shadow-glass: 0 8px 32px rgba(15, 23, 42, 0.15);
   --transition:   0.2s ease;
+
+  /* Wave background (light) */
+  --wave-color-1: rgba(255, 237, 213, 0.6);
+  --wave-color-2: rgba(254, 215, 170, 0.4);
+  --wave-base-1:  #fafaf9;
+  --wave-base-2:  #fff7ed;
+  --wave-base-3:  #ffedd5;
+}
+
+/* ── Dark mode tokens — Soft Dark (slate-based) ──
+   خلفية slate-800 (#1e293b) للجسم + slate-700 (#334155) للبطاقات
+   + برتقالي ثابت (#F97316) للهوية + نصوص slate-100/300 للقراءة المريحة.
+   تجنّبنا الـ #000 النقي لتخفيف إرهاق العين. */
+.dark {
+  /* الخلفية الأساسية للتطبيق (body) — slate-800 */
+  --bg-page:      #1e293b;
+  /* البطاقات / الأسطح — slate-700 */
+  --bg-surface:   #334155;
+  /* الـ glass (الشفاف مع blur) */
+  --bg-glass:     rgba(51, 65, 85, 0.55);
+  --bg-glass-strong: rgba(30, 41, 59, 0.92);
+  --bg-overlay:   rgba(15, 23, 42, 0.6);
+
+  /* النصوص — slate-100 للعناوين، slate-300 للتفاصيل، slate-400 للثانوي */
+  --text-dark:    #f1f5f9;          /* عناوين رئيسية — slate-100 (مريح أكثر من الأبيض الناصع) */
+  --text-mid:     #cbd5e1;          /* تفاصيل — slate-300 */
+  --text-muted:   #94a3b8;          /* نصوص ثانوية — slate-400 */
+  --text-on-glass: #f8fafc;         /* slate-50 */
+
+  /* الحدود — slate subtle */
+  --border:       rgba(148, 163, 184, 0.2);
+  --border-strong:rgba(203, 213, 225, 0.3);
+  --border-glass: rgba(255, 255, 255, 0.08);
+
+  /* الظلال — أخف وأقل قسوة */
+  --shadow-card:  0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-btn:   0 4px 14px rgba(249, 115, 22, 0.4);
+  --shadow-glass: 0 8px 32px rgba(15, 23, 42, 0.35);
+
+  /* Wave (slate) — تدرج slate ناعم مع لمسة indigo خفيفة للإثراء البصري */
+  --wave-color-1: rgba(99, 102, 241, 0.10);
+  --wave-color-2: rgba(71, 85, 105, 0.4);
+  --wave-base-1:  #1e293b;
+  --wave-base-2:  #334155;
+  --wave-base-3:  #475569;
 }
 
 html, body {
@@ -31,10 +92,392 @@ html, body {
   color: var(--text-dark);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Wave Background — خلفية متموجة متحركة
+   ─────────────────────────────────────────────────────────
+   ✅ Light: موجات كريمية/برتقالية شفافة فوق أساس فاتح
+   ✅ Dark : موجات كحلية عميقة فوق أساس navy
+   الحركة: بطيئة جداً (12-18s) عشان ما تشتت.
+   ═══════════════════════════════════════════════════════════════ */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 0.4s ease, background 0.4s ease;
+}
+
+/* الطبقة 1: تدرج متموج (radial) */
+body::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, var(--wave-color-1) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 30%, var(--wave-color-2) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, var(--wave-base-3) 0%, transparent 70%),
+    linear-gradient(135deg, var(--wave-base-1) 0%, var(--wave-base-2) 50%, var(--wave-base-3) 100%);
+  animation: wave-drift 18s ease-in-out infinite;
+}
+
+/* الطبقة 2: موجة SVG شفافة فوق كل شي (تعطي إحساس "مائي") */
+body::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23F97316' fill-opacity='0.04' d='M0,160L48,170.7C96,181,192,203,288,202.7C384,203,480,181,576,165.3C672,149,768,139,864,149.3C960,160,1056,192,1152,192C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: bottom;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+  animation: wave-drift-slow 12s ease-in-out infinite;
+}
+
+@keyframes wave-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-2%, 1%) scale(1.02); }
+}
+@keyframes wave-drift-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(1%, -1%) scale(1.03); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Glassmorphism utilities (Tailwind @layer)
+   ═══════════════════════════════════════════════════════════════ */
+@layer components {
+  .glass-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-card-strong {
+    background: var(--bg-glass-strong);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-pill {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+  }
+
+  .glow-orange {
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.35), 0 0 4px rgba(249, 115, 22, 0.2);
+  }
+
+  .glow-orange-strong {
+    box-shadow: 0 0 24px rgba(249, 115, 22, 0.55), 0 0 8px rgba(249, 115, 22, 0.35);
+  }
+
+  /* الـ button الأساسي برتقالي — يظل نفسه في الوضعين */
+  .btn-orange {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+    color: #ffffff;
+    border: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-orange:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.45);
+  }
+}
+
+/* الانيميشن الأصلية (fadeUp) — محفوظة */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-up { animation: fadeUp .4s ease both; }
+
+/* احترام تفضيل المستخدم (لو ما اختار ثيم يدوياً) */
+@media (prefers-color-scheme: dark) {
+  html:not(.light) { color-scheme: dark; }
+}
+html:not(.dark)  { color-scheme: light; }
+
+/* Scrollbar أنيقة في الـ dark */
+.dark ::-webkit-scrollbar { width: 10px; height: 10px; }
+.dark ::-webkit-scrollbar-track { background: var(--bg-page); }
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+
+/* احترام reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after { animation: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark mode — تحسينات متقدّمة
+   ─────────────────────────────────────────────────────────
+   - إبراز اللوغو: في dark mode نضيف drop-shadow خفيف برتقالي/أبيض
+   - تحسين الـ visible-navy class (تستخدمها بعض الصفحات)
+   - تسجيل الـ class للـ toast wrapper عند الفتح في dark
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ اللوغو — على الـ navbar
+   ─────────────────────────────────────────────────────────
+   بدون أي box-shadow أو drop-shadow أو glow.
+   خلفية الـ img شفافة لتتماشى مع خلفية الـ navbar.
+   (سابقاً كان فيه drop-shadow متعدد الطبقات — تم إزالته بناءً
+    على طلب المستخدم: "completely remove any box-shadow,
+   filter: drop-shadow(), or glow effects currently applied to
+   the logo container".)
+   ═══════════════════════════════════════════════════════════════ */
+.cn-logo-img,
+.snb-logo,
+[data-logo="primary"] {
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  filter: none;
+}
+
+.dark .cn-logo-img,
+.dark .snb-logo,
+.dark [data-logo="primary"] {
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  filter: none;
+}
+
+.dark .cn-logo-img:hover,
+.dark .snb-logo:hover,
+.dark [data-logo="primary"]:hover {
+  filter: none;
+  box-shadow: none;
+}
+
+/* ✅ اللوغو على شاشات الـ Auth/Splash/Onboarding —
+   شفاف تماماً، بدون أي ظل أو توهج.
+   className: theme-logo--auth
+*/
+.theme-logo--auth,
+img.theme-logo--auth {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal;
+}
+
+/* ✅ ضمان أن خلفية الـ header في الـ dark slate ناعم
+   (الـ navbar كان يستخدم class "nav" مع background أبيض) */
+.dark .cn-nav,
+.dark .snb-nav {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-glass);
+}
+
+/* ✅ إبراز عناصر التمييز — البرتقالي */
+.dark .home-link-btn,
+.dark .text-brand-500,
+.dark [class*="text-brand"] {
+  color: #fb923c !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ FormCard — البطاقة الموحّدة لشاشات Login/Register/Verify
+   ─────────────────────────────────────────────────────────
+   ديناميكي بالكامل بحسب الثيم:
+   - light → خلفية فاتحة + بطاقة بيضاء + نصوص داكنة.
+   - dark  → خلفية كحلية (#1e293b) + بطاقة شفافة زجاجية + نصوص بيضاء.
+   البرتقالي يظل نفسه كهوية بصرية.
+   ═══════════════════════════════════════════════════════════════ */
+.form-card-wrapper {
+  background: var(--bg-page);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.3s ease;
+}
+
+/* Glow برتقالي خفيف (محايد للثيم) */
+.form-card-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(249, 115, 22, 0.10) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(249, 115, 22, 0.06) 0%, transparent 70%);
+}
+
+.form-card-inner {
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1.5px solid var(--border-glass);
+  border-radius: var(--radius-lg, 20px);
+  box-shadow: var(--shadow-card);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 480px;
+  color: var(--text-dark);
+  position: relative;
+  z-index: 1;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* في الـ dark — البطاقة شفافة بزجاج + ظل أنعم (slate-based) */
+.dark .form-card-inner {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.form-card-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-dark);
+  transition: color 0.3s ease;
+}
+
+.form-card-subtitle {
+  font-size: 14px;
+  color: var(--text-mid);
+  transition: color 0.3s ease;
+}
+
+.form-card-footer {
+  color: var(--text-mid);
+  transition: color 0.3s ease;
+}
+
+.form-card-remember {
+  color: var(--text-mid);
+  transition: color 0.3s ease;
+}
+
+.form-card-api-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+}
+.dark .form-card-api-error {
+  color: #fecaca;
+}
+:root .form-card-api-error {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Auth dividers — لون محايد للثيم */
+.auth-divider {
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+.auth-divider-line {
+  background: var(--border);
+  transition: background-color 0.3s ease;
+}
+.dark .auth-divider-line {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Auth inputs (Login/Register/Verify) — ديناميكي حسب الثيم
+   ═══════════════════════════════════════════════════════════════ */
+.form-card-inner input,
+.form-card-inner textarea,
+.form-card-inner select {
+  background: var(--bg-overlay) !important;
+  color: var(--text-dark) !important;
+  border: 1.5px solid var(--border) !important;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-card-inner input::placeholder,
+.form-card-inner textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.form-card-inner input:focus,
+.form-card-inner textarea:focus,
+.form-card-inner select:focus {
+  border-color: #F97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18) !important;
+  outline: none;
+}
+
+.form-card-inner input:disabled,
+.form-card-inner textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* الوضع الداكن: الـ inputs شفافة على الـ slate */
+.dark .form-card-inner input,
+.dark .form-card-inner textarea,
+.dark .form-card-inner select {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+.dark .form-card-inner input::placeholder,
+.dark .form-card-inner textarea::placeholder {
+  color: rgba(203, 213, 225, 0.6) !important;
+}
+
+.dark .form-card-inner input:focus,
+.dark .form-card-inner textarea:focus,
+.dark .form-card-inner select:focus {
+  border-color: #F97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25) !important;
+}
+
+/* أزرار برتقالية — متطابقة في الوضعين (هوية) */
+.form-card-inner .auth-orange-btn,
+.form-card-inner button[type="submit"] {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.45) !important;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.form-card-inner .auth-orange-btn:hover,
+.form-card-inner button[type="submit"]:hover {
+  background: linear-gradient(135deg, #fdba74 0%, #fb923c 50%, #f97316 100%) !important;
+  box-shadow: 0 8px 22px rgba(249, 115, 22, 0.6) !important;
+  transform: translateY(-1px);
+}
+
+.form-card-inner .auth-orange-btn:active,
+.form-card-inner button[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+.form-card-inner .auth-orange-btn:disabled,
+.form-card-inner button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ✅ تحسين الـ scrollbar في dark (مكمّل للسطر الموجود فوق) */
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+  border: 2px solid var(--bg-page);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
+}

@@ -136,6 +136,10 @@
   font-weight: 700;
   color: var(--text-dark);
 }
+/* ✅ Dark mode — عناوين الأقسام أبيض ناصع */
+.dark .home-section-head h2 {
+  color: #FFFFFF;
+}
 
 .home-link-btn {
   display: inline-flex;
@@ -155,52 +159,152 @@
 }
 .home-link-btn:hover { background: var(--orange-pale); }
 
-/* ════════ الأقسام ════════ */
+/* ════════ الأقسام — بطاقات موحّدة بـ Grid + أيقونات Lucide ════════ */
 .home-categories {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
 }
 
 .home-category-card {
+  /* ✅ ثبات تام: كل البطاقات نفس الارتفاع/العرض/الـ padding */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 150px;
+  height: 100%;
   background: var(--orange-pale);
-  border: none;
-  border-radius: 14px;
-  padding: 22px 30px;
-  min-width: 150px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 22px 16px;
   font-family: inherit;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-dark);
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.2s;
+  text-align: center;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.2s ease;
 }
 .home-category-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-card);
+  border-color: var(--orange);
+}
+
+/* ✅ Dark mode — بطاقات الأقسام كحلية شفافة مع حد برتقالي */
+.dark .home-category-card {
+  background: rgba(51, 65, 85, 0.55);
+  color: #FFFFFF;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .home-category-card:hover {
+  background: rgba(249, 115, 22, 0.18);
+  border-color: rgba(249, 115, 22, 0.50);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(249, 115, 22, 0.25);
 }
 
 .home-category-icon {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: var(--orange-light);
   color: var(--orange);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
-.home-category-icon img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  /* هذا السطر هو الحل: يقوم بإخفاء الخلفية البيضاء */
-  mix-blend-mode: multiply; 
+.home-category-card:hover .home-category-icon {
+  transform: scale(1.08);
+  background: var(--orange);
+  color: #fff;
+}
+
+/* ✅ Dark mode — دائرة الأيقونة أوضح */
+.dark .home-category-icon {
+  background: rgba(249, 115, 22, 0.20);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.30);
+}
+.dark .home-category-card:hover .home-category-icon {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+
+.home-category-label {
+  /* ✅ النص يأخذ سطر واحد متساوي + يقص لو طويل (للاحتياط) */
+  display: block;
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.4;
+  color: inherit;
+}
+
+/* ── Responsive: Tablet متوسط — بطاقتين في السطر ── */
+@media (max-width: 1024px) {
+  .home-categories {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .home-category-card {
+    min-height: 138px;
+    padding: 18px 12px;
+  }
+  .home-category-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .home-category-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ── Responsive: Tablet صغير / Mobile كبير — بطاقتين في السطر ── */
+@media (max-width: 768px) {
+  .home-categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .home-category-card {
+    min-height: 140px;
+    padding: 20px 14px;
+  }
+  .home-category-icon {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* ── Responsive: Mobile صغير — بطاقتين في السطر بنفس الحجم تماماً ── */
+@media (max-width: 480px) {
+  .home-categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .home-category-card {
+    min-height: 130px;
+    padding: 18px 10px;
+    border-radius: 14px;
+  }
+  .home-category-label {
+    font-size: 13px;
+  }
+  .home-category-icon {
+    width: 46px;
+    height: 46px;
+  }
+  .home-category-icon svg {
+    width: 22px;
+    height: 22px;
+  }
 }
 /* ════════ بانرات ════════ */
 .home-banners {
@@ -282,12 +386,22 @@
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border);
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: box-shadow 0.2s, transform 0.15s, background 0.3s ease;
   cursor: pointer;
+}
+.dark .home-product-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .home-product-card:hover {
   box-shadow: var(--shadow-card);
   transform: translateY(-2px);
+}
+.dark .home-product-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.4);
 }
 
 .home-product-img {
@@ -317,7 +431,13 @@
   border-radius: 999px;
   padding: 3px 10px;
   margin-bottom: 8px;
-align-self: flex-end;
+  align-self: flex-end;
+}
+/* ✅ Dark mode — شارة "متوفر" بتدرج أخضر يتناسب مع navy */
+.dark .home-product-status {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.30);
 }
 
 .home-product-info h4 {
@@ -325,6 +445,10 @@ align-self: flex-end;
   font-weight: 700;
   color: var(--text-dark);
   margin-bottom: 10px;
+}
+/* ✅ Dark mode — اسم المنتج أبيض ناصع */
+.dark .home-product-info h4 {
+  color: #FFFFFF;
 }
 
 .home-product-row {
@@ -338,10 +462,18 @@ align-self: flex-end;
   font-weight: 800;
   color: var(--orange);
 }
+/* ✅ Dark mode — السعر أفتح (أوضح على خلفية كحلية) */
+.dark .home-product-price {
+  color: #fb923c;
+}
 
 .home-product-qty {
   font-size: 12px;
   color: var(--text-muted);
+}
+/* ✅ Dark mode — كمية المنتج رمادي فاتح مريح */
+.dark .home-product-qty {
+  color: #94a3b8;
 }
 
 @media (max-width: 1024px) {
@@ -358,6 +490,10 @@ align-self: flex-end;
   font-weight: 700;
   margin-bottom: 28px;
 }
+/* ✅ Dark mode — عنوان "كيف يعمل سوق" أبيض */
+.dark .home-howitworks-title {
+  color: #FFFFFF;
+}
 
 .home-steps {
   display: grid;
@@ -371,7 +507,14 @@ align-self: flex-end;
   border-radius: 14px;
   padding: 26px 18px;
   text-align: center;
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: box-shadow 0.2s, transform 0.15s, background 0.3s ease;
+}
+
+.dark .home-step {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .home-step:hover {
   box-shadow: var(--shadow-card);
@@ -396,11 +539,19 @@ align-self: flex-end;
   color: var(--text-dark);
   margin-bottom: 6px;
 }
+/* ✅ Dark mode — عناوين الخطوات */
+.dark .home-step h4 {
+  color: #FFFFFF;
+}
 
 .home-step p {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.6;
+}
+/* ✅ Dark mode — وصف الخطوات */
+.dark .home-step p {
+  color: #cbd5e1;
 }
 
 @media (max-width: 900px) {

@@ -122,3 +122,27 @@
     padding: 24px 16px 48px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .pnf-wrapper { background: var(--bg-page); }
+
+.dark .pnf-banner {
+  background: rgba(239, 68, 68, 0.10);
+  border-right-color: #f87171;
+}
+.dark .pnf-banner-text { color: #fca5a5; }
+.dark .pnf-banner-icon { color: #fbbf24; }
+
+.dark .pnf-skeleton-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .pnf-skel-line { background: rgba(138, 158, 201, 0.20); }
+.dark .pnf-skel-image { background: rgba(148, 163, 184, 0.18); }
+
+.dark .pnf-back-btn { color: #FFFFFF; }
+.dark .pnf-back-btn:hover { background: #fb923c; }

@@ -299,3 +299,21 @@
   .skel-table-head > .skel:nth-child(n+4),
   .skel-table-row > .skel:nth-child(n+4) { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .skel,
+.dark .skel-line {
+  background: linear-gradient(90deg, rgba(138, 158, 201, 0.10) 0%, rgba(148, 163, 184, 0.22) 40%, rgba(138, 158, 201, 0.10) 80%);
+  background-size: 800px 100%;
+}
+
+.dark .skel-card,
+.dark .skel-block-card,
+.dark .skel-profile-head,
+.dark .skel-product-card,
+.dark .skel-product-detail {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+}

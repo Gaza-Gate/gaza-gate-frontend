@@ -238,6 +238,51 @@
 }
 .csp-msg-btn:active { transform: translateY(0); }
 
+/* ✅ Disabled state — لزائر بحساب "بائع" (المراسلة بين البائعين قيد التطوير) */
+.csp-msg-btn--disabled,
+.csp-msg-btn--disabled:hover {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.7;
+}
+
+/* ✅ Tooltip wrapper — يخلي الـ tooltip يظهر تحت الزر */
+.csp-msg-btn-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.csp-msg-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #1f2937;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: csp-tooltip-fade-in 0.18s ease-out;
+}
+.csp-msg-tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: 18px;
+  border: 6px solid transparent;
+  border-bottom-color: #1f2937;
+}
+@keyframes csp-tooltip-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .csp-icon-action {
   width: 42px;
   height: 42px;
@@ -1316,6 +1361,17 @@
   box-shadow: 0 8px 24px rgba(249, 115, 22, 0.45);
 }
 
+/* ✅ Disabled state للزر بتبويب "حول المتجر" — لزائر بحساب "بائع" */
+.csp-about-msg-btn--disabled,
+.csp-about-msg-btn--disabled:hover {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.7;
+}
+
 /* ══════════════════════════════════════
    10. EMPTY STATE
    ══════════════════════════════════════ */
@@ -1577,3 +1633,241 @@
   .csp-trust-text strong { font-size: 12.5px; }
   .csp-trust-text small { font-size: 10.5px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ─────────────────────────────────────────────────────────
+   Approach: نبدّل الـ CSS variables في الـ .dark scope + overrides
+   محددة للعناصر اللي فيها #fff hardcoded.
+   ═══════════════════════════════════════════════════════════════ */
+.dark {
+  --csp-text: #FFFFFF;
+  --csp-text-mid: #cbd5e1;
+  --csp-text-mute: #94a3b8;
+  --csp-border: rgba(90, 115, 168, 0.30);
+  --csp-border-strong: rgba(138, 158, 201, 0.45);
+  --csp-bg: #1e293b;
+  --csp-card: #334155;
+  --csp-primary-light: rgba(249, 115, 22, 0.15);
+  --csp-primary-soft: rgba(249, 115, 22, 0.25);
+  --csp-success-soft: rgba(16, 185, 129, 0.18);
+  --csp-warn-soft: rgba(245, 158, 11, 0.18);
+  --csp-danger-soft: rgba(239, 68, 68, 0.18);
+  --csp-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --csp-shadow: 0 6px 20px rgba(0, 0, 0, 0.40);
+  --csp-shadow-lg: 0 16px 50px rgba(0, 0, 0, 0.50);
+  --csp-gradient-soft: linear-gradient(135deg, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0.05) 100%);
+}
+
+.dark .csp-page { background: var(--csp-bg); }
+
+/* ── Hero ── */
+.dark .csp-hero { background: var(--csp-card); border-color: var(--csp-border); }
+.dark .csp-avatar,
+.dark .csp-avatar-img,
+.dark .csp-verified-badge {
+  background: rgba(51, 65, 85, 0.65);
+  border-color: var(--csp-card);
+  color: #fb923c;
+}
+
+.dark .csp-store-name { color: var(--csp-text); }
+.dark .csp-store-desc { color: var(--csp-text-mid); }
+.dark .csp-rating-text { color: var(--csp-text-mid); }
+
+.dark .csp-pill {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--csp-text-mid);
+  border-color: var(--csp-border);
+}
+
+/* ── Hero actions (message, share, follow) ── */
+.dark .csp-btn-msg,
+.dark .csp-btn-share,
+.dark .csp-btn-follow {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--csp-text-mid);
+  border-color: var(--csp-border);
+}
+.dark .csp-btn-msg:hover,
+.dark .csp-btn-share:hover,
+.dark .csp-btn-follow:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+/* ── Tabs ── */
+.dark .csp-tabs {
+  background: var(--csp-card);
+  border-color: var(--csp-border);
+}
+.dark .csp-tab {
+  color: var(--csp-text-mid);
+}
+.dark .csp-tab.active {
+  color: #fb923c;
+}
+.dark .csp-tab:hover { color: #fb923c; }
+
+/* ── Search bar ── */
+.dark .csp-search-input {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--csp-border);
+  color: #FFFFFF;
+}
+.dark .csp-search-input::placeholder { color: var(--csp-text-mute); }
+.dark .csp-search-input:focus {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: var(--csp-primary);
+}
+
+/* ── Category chips ── */
+.dark .csp-cat-chip {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--csp-border);
+  color: var(--csp-text-mid);
+}
+.dark .csp-cat-chip:hover {
+  border-color: var(--csp-primary);
+  color: #fb923c;
+}
+.dark .csp-cat-chip.active {
+  background: var(--csp-primary);
+  border-color: var(--csp-primary);
+  color: #fff;
+}
+
+/* ── Trust bar ── */
+.dark .csp-trust-bar { background: var(--csp-card); border-color: var(--csp-border); }
+.dark .csp-trust-item { color: var(--csp-text-mid); }
+.dark .csp-trust-item strong { color: #FFFFFF; }
+.dark .csp-trust-item small  { color: var(--csp-text-mute); }
+
+/* ── Info cards (about, contact, etc.) ── */
+.dark .csp-info-card { background: var(--csp-card); border-color: var(--csp-border); }
+.dark .csp-info-card-title { color: #FFFFFF; }
+.dark .csp-info-card-text  { color: var(--csp-text-mid); }
+.dark .csp-info-row { border-bottom-color: var(--csp-border); }
+.dark .csp-info-row-label { color: var(--csp-text-mute); }
+.dark .csp-info-row-value { color: #FFFFFF; }
+
+/* ── Section headers ── */
+.dark .csp-section-title { color: #FFFFFF; }
+.dark .csp-section-subtitle { color: var(--csp-text-mid); }
+.dark .csp-section-head { border-bottom-color: var(--csp-border); }
+
+/* ── Product cards ── */
+.dark .csp-product-card {
+  background: var(--csp-card);
+  border-color: var(--csp-border);
+}
+.dark .csp-product-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(249, 115, 22, 0.18);
+  border-color: rgba(249, 115, 22, 0.30);
+}
+.dark .csp-product-img-wrap { background: rgba(90, 115, 168, 0.15); }
+.dark .csp-product-name { color: #FFFFFF; }
+.dark .csp-product-price { color: #fb923c; }
+.dark .csp-product-status {
+  background: var(--csp-success-soft);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.30);
+}
+.dark .csp-product-badge {
+  background: var(--csp-warn-soft);
+  color: #fbbf24;
+}
+
+/* ── Add to cart button ── */
+.dark .csp-add-cart-btn {
+  background: var(--csp-primary);
+  color: #fff;
+}
+.dark .csp-add-cart-btn:hover { background: var(--csp-primary-dark); }
+
+/* ── Star ratings ── */
+.dark .csp-stars-empty { color: rgba(90, 115, 168, 0.40); }
+.dark .csp-rating-num  { color: #FFFFFF; }
+.dark .csp-rating-count { color: var(--csp-text-mute); }
+
+/* ── Sort dropdown + filter buttons ── */
+.dark .csp-sort-select,
+.dark .csp-filter-select {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--csp-border);
+  color: #FFFFFF;
+}
+.dark .csp-filter-btn,
+.dark .csp-sort-btn {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--csp-border);
+  color: var(--csp-text-mid);
+}
+.dark .csp-filter-btn:hover,
+.dark .csp-sort-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.30);
+  color: #fb923c;
+}
+.dark .csp-filter-btn.active,
+.dark .csp-sort-btn.active {
+  background: var(--csp-primary);
+  border-color: var(--csp-primary);
+  color: #fff;
+}
+
+/* ── Reviews section ── */
+.dark .csp-reviews-summary {
+  background: var(--csp-card);
+  border-color: var(--csp-border);
+}
+.dark .csp-dist-row { color: var(--csp-text-mid); }
+.dark .csp-dist-bar { background: rgba(90, 115, 168, 0.20); }
+
+.dark .csp-review-card {
+  background: var(--csp-card);
+  border-color: var(--csp-border);
+}
+.dark .csp-review-card:hover { border-color: rgba(249, 115, 22, 0.30); }
+.dark .csp-review-name { color: #FFFFFF; }
+.dark .csp-review-time { color: var(--csp-text-mute); }
+.dark .csp-review-comment { color: var(--csp-text-mid); }
+.dark .csp-review-reply {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(90, 115, 168, 0.30);
+}
+.dark .csp-review-reply-text { color: var(--csp-text-mid); }
+
+/* ── Empty / Error / Loading states ── */
+.dark .csp-empty,
+.dark .csp-error,
+.dark .csp-skeleton {
+  background: rgba(51, 65, 85, 0.4);
+  border-color: var(--csp-border);
+  color: var(--csp-text-mid);
+}
+.dark .csp-empty h3,
+.dark .csp-error h3 { color: #FFFFFF; }
+.dark .csp-empty p,
+.dark .csp-error p   { color: var(--csp-text-mute); }
+
+/* ── Social links / share popover ── */
+.dark .csp-share-popover,
+.dark .csp-social-links {
+  background: var(--csp-card);
+  border-color: var(--csp-border);
+}
+.dark .csp-social-link {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--csp-text-mid);
+  border-color: var(--csp-border);
+}
+.dark .csp-social-link:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+}
+
+/* ── Status indicators (open/closed, verified) ── */
+.dark .csp-status-open { background: var(--csp-success-soft); color: #34d399; }
+.dark .csp-status-closed { background: var(--csp-danger-soft); color: #fca5a5; }

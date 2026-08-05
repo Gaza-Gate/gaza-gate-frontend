@@ -358,7 +358,7 @@ export default function CustomerProfilePage() {
             <div className="cpp-reviews-title">
               <h2 className="cpp-section-title">
                 <Star size={18} className="cpp-section-icon" fill="currentColor" />
-                تقييمات البائنين عليه
+                تقييمات البائعين عليه
               </h2>
               <span className="cpp-reviews-summary">
                 {Number(reviews.averageRating ?? 0).toFixed(1)}{" "}
@@ -388,23 +388,43 @@ export default function CustomerProfilePage() {
                         <StarRow rating={rev.rating} size={14} />
                       </div>
                       <div className="cpp-review-seller">
-                        <Link
-                          to={seller.actionUrl || `/store/${seller.id || ""}`}
-                          className="cpp-review-seller-link"
-                          title={`زيارة متجر ${sellerName}`}
-                        >
-                          {seller.avatar ? (
-                            <img src={seller.avatar} alt={sellerName} className="cpp-review-avatar" />
-                          ) : (
-                            <span
-                              className="cpp-review-avatar cpp-review-avatar--placeholder"
-                              style={{ background: pickAvatarColor(sellerName) }}
-                            >
-                              {sellerName[0]}
-                            </span>
-                          )}
-                          <span className="cpp-review-store-name">{sellerName}</span>
-                        </Link>
+                        {seller.id ? (
+                          // ✅ دائماً نوجّه إلى CustomerStoreProfile (مسار الـ public view-only)
+                          //    الـ seller.actionUrl اللي بيرجعه الباك = "/store/{id}" (مسار StoreProfile)
+                          //    لكن المطلوب دائماً CustomerStoreProfile بناءً على طلب الـ user
+                          <Link
+                            to={`/customer/store/${seller.id}`}
+                            className="cpp-review-seller-link"
+                            title={`زيارة متجر ${sellerName}`}
+                            aria-label={`زيارة متجر ${sellerName}`}
+                          >
+                            {seller.avatar ? (
+                              <img src={seller.avatar} alt={sellerName} className="cpp-review-avatar" />
+                            ) : (
+                              <span
+                                className="cpp-review-avatar cpp-review-avatar--placeholder"
+                                style={{ background: pickAvatarColor(sellerName) }}
+                              >
+                                {sellerName[0]}
+                              </span>
+                            )}
+                            <span className="cpp-review-store-name">{sellerName}</span>
+                          </Link>
+                        ) : (
+                          <span className="cpp-review-seller-static" title={sellerName}>
+                            {seller.avatar ? (
+                              <img src={seller.avatar} alt={sellerName} className="cpp-review-avatar" />
+                            ) : (
+                              <span
+                                className="cpp-review-avatar cpp-review-avatar--placeholder"
+                                style={{ background: pickAvatarColor(sellerName) }}
+                              >
+                                {sellerName[0]}
+                              </span>
+                            )}
+                            <span className="cpp-review-store-name">{sellerName}</span>
+                          </span>
+                        )}
                       </div>
                       <p className="cpp-review-comment">{rev.comment || "—"}</p>
                     </div>

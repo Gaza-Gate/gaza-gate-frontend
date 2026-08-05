@@ -105,16 +105,41 @@ const AUTH_ENDPOINTS_NO_REFRESH = [
   '/api/auth/refresh-token',
 ]
 
+/**
+ * استخراج الـ path من URL كامل (يشيل الـ baseURL والـ query string)
+ */
+function getPathFromUrl(fullUrl) {
+  if (!fullUrl || typeof fullUrl !== "string") return ""
+  try {
+    // ✅ لو الـ URL كامل (مثلاً https://api.example.com/api/auth/.../login?page=1)
+    //    بنعمل URL object وناخد pathname
+    if (fullUrl.startsWith("http://") || fullUrl.startsWith("https://")) {
+      const urlObj = new URL(fullUrl)
+      return urlObj.pathname
+    }
+    // ✅ لو path فقط — نشيل query string يدوياً
+    return fullUrl.split("?")[0]
+  } catch {
+    return fullUrl.split("?")[0]
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
 
+    // ✅ استخرج الـ path فقط (بدون baseURL ولا query string)
+    //    عشان نتجنب المطابقات الخاطئة لما URL يحتوي على الـ auth path كـ substring
+    //    (مثلاً لو في endpoint ثاني فيه "login" بكلمة مشابهة)
+    const requestPath = getPathFromUrl(original.url)
+
     // إذا الطلب الفاشل هو أصلاً طلب تسجيل دخول/تسجيل → رجّعي الخطأ زي ما هو
     // بدون أي محاولة refresh أو تحويل لصفحة تانية
-    const isAuthEndpoint = AUTH_ENDPOINTS_NO_REFRESH.some((url) =>
-      original.url?.includes(url)
-    )
+    const isAuthEndpoint = AUTH_ENDPOINTS_NO_REFRESH.some((url) => {
+      // ✅ مطابقة exact على الـ path (مع أو بدون trailing slash)
+      return requestPath === url || requestPath === url + "/"
+    })
 
     if (isAuthEndpoint) {
       return Promise.reject(error)

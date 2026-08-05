@@ -339,3 +339,51 @@
     padding: 14px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-reports-page { background: var(--bg-page); }
+.dark .admin-reports-page__title { color: #FFFFFF; }
+.dark .admin-reports-page__subtitle { color: #94a3b8; }
+
+.dark .calendar-btn {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #cbd5e1;
+}
+.dark .calendar-btn:hover { border-color: #fb923c; color: #fb923c; }
+
+.dark .period-tabs { background: rgba(51, 65, 85, 0.55); }
+.dark .period-tab { color: #cbd5e1; }
+.dark .period-tab:hover { color: #FFFFFF; }
+.dark .period-tab.active { background: var(--orange); color: #fff; }
+
+.dark .reports-loading { color: #94a3b8; }
+
+.dark .reports-skel-chart-card,
+.dark .stat-card,
+.dark .chart-card,
+.dark .categories-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .stat-card__label { color: #cbd5e1; }
+.dark .stat-card__value { color: #fb923c; }
+.dark .stat-card__value--green { color: #34d399; }
+.dark .stat-card__hint { color: #94a3b8; }
+
+.dark .chart-card__header h3 { color: #FFFFFF; }
+.dark .legend-item { color: #cbd5e1; }
+.dark .legend-dot--revenue { background: #34d399; }
+.dark .legend-dot--orders { background: #60a5fa; }
+
+.dark .categories-card__title { color: #FFFFFF; }
+.dark .category-row__name { color: #cbd5e1; }
+.dark .category-row__bar-wrap { background: rgba(148, 163, 184, 0.18); }
+.dark .category-row__bar { background: #fb923c; }
+.dark .category-row__count { color: #94a3b8; }
+.dark .category-row__amount { color: #FFFFFF; }

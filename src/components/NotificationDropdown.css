@@ -1,0 +1,728 @@
+/* src/components/NotificationDropdown.css
+ *
+ * ✅ نافذة الإشعارات المنبثقة (Dropdown)
+ * ─────────────────────────────────────────────────────────
+ * - Glassmorphism (شفافية + blur) — متوافق مع light + dark
+ * - Header صغير (بدون بوكسات/ترويسات ضخمة)
+ * - List بنمط نظيف، أزرار صغيرة
+ * - Swipe-to-delete على الموبايل
+ * - Animation: slide-down + fade-in
+ */
+
+/* ── Backdrop (خفيف جداً — يبقى المحتوى ظاهر) ── */
+.ndd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: transparent;
+  animation: ndd-fade-in 0.15s ease;
+}
+
+/* ── Root ── */
+.ndd-root {
+  position: fixed;
+  top: 64px;            /* تحت الناف بار */
+  inset-inline-end: 16px; /* في وضع RTL: يلتصق بيمين الشاشة (البداية) */
+  z-index: 100;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  max-height: min(78vh, 640px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+  animation: ndd-slide-down 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  /* ✅ border + shadow محسّنين للـ dark */
+  border: 1px solid var(--border-glass);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(249, 115, 22, 0.04);
+}
+
+.dark .ndd-root {
+  background: rgba(51, 65, 85, 0.82);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(249, 115, 22, 0.12),
+    0 0 0 1px rgba(249, 115, 22, 0.06);
+}
+
+@media (max-width: 480px) {
+  .ndd-root {
+    top: 60px;
+    inset-inline-end: 8px;
+    inset-inline-start: 8px;
+    width: auto;
+    max-height: calc(100vh - 80px);
+    border-radius: 16px;
+  }
+}
+
+/* ═══════ Header (نظيف وصغير) ═══════ */
+.ndd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ndd-header-left,
+.ndd-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ndd-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.ndd-title svg {
+  color: var(--orange);
+}
+
+.ndd-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+}
+
+/* ── Icon buttons (refresh / theme / close) ── */
+.ndd-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.ndd-icon-btn:hover {
+  background: var(--orange-pale);
+  color: var(--orange);
+  border-color: var(--orange-light);
+}
+
+.dark .ndd-icon-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.25);
+}
+
+.ndd-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ndd-icon-btn--close:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.dark .ndd-icon-btn--close:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ═══════ Mark-all row ═══════ */
+.ndd-mark-all-row {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.ndd-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.12s;
+  font-family: inherit;
+}
+
+.ndd-link-btn:hover:not(:disabled) {
+  background: var(--orange-pale);
+}
+
+.ndd-link-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════ List ═══════ */
+.ndd-list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.ndd-list::-webkit-scrollbar { width: 6px; }
+.ndd-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+.ndd-list::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+
+/* ── Item wrapper (يحوي العنصر + الخلفية الحمراء للسحب) ── */
+.ndd-item-wrap {
+  position: relative;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ndd-item-wrap.ndd-item-unread {
+  background: linear-gradient(135deg, rgba(255, 247, 237, 0.7) 0%, rgba(254, 215, 170, 0.4) 100%);
+}
+
+.dark .ndd-item-wrap.ndd-item-unread {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%);
+}
+
+.ndd-item-wrap.ndd-item-removing {
+  animation: ndd-slide-out 0.28s ease-out forwards;
+}
+
+/* ── الخلفية الحمراء (تظهر مع السحب) ── */
+.ndd-item-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* RTL: الأيقونة في اليسار (نهاية) */
+  padding: 0 18px;
+  border-radius: 12px;
+  z-index: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* ── العنصر نفسه ── */
+.ndd-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  text-align: right;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+  border: 1px solid transparent;
+  touch-action: pan-y; /* نسمح بـ scroll عمودي، نمسك الأفقي */
+}
+
+.dark .ndd-item {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.ndd-item:hover {
+  background: var(--orange-pale);
+  border-color: var(--orange-light);
+}
+
+.dark .ndd-item:hover {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.18);
+}
+
+.ndd-item:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.ndd-item:active {
+  transform: scale(0.99);
+}
+
+/* ── الأيقونة ── */
+.ndd-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Body ── */
+.ndd-item-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ndd-item-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dark);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ndd-item-unread .ndd-item-title {
+  font-weight: 800;
+}
+
+.ndd-item-desc {
+  font-size: 11.5px;
+  color: var(--text-mid);
+  line-height: 1.5;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ndd-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ndd-item-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.1px;
+}
+
+.ndd-item-time {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Actions (تظهر عند hover/focus) ── */
+.ndd-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ndd-item:hover .ndd-item-actions,
+.ndd-item:focus-within .ndd-item-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  /* على الموبايل: نظهر الأزرار دائماً (السحب يكفي للحذف لكن الزر مهم للحالات الأخرى) */
+  .ndd-item-actions {
+    opacity: 0.85;
+  }
+}
+
+.ndd-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s;
+  padding: 0;
+}
+
+.ndd-mini-btn:hover {
+  background: var(--orange-pale);
+  color: var(--orange);
+  border-color: var(--orange-light);
+}
+
+.ndd-mini-btn--delete:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.dark .ndd-mini-btn--delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+/* ── Unread dot ── */
+.ndd-unread-dot {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+  z-index: 2;
+  pointer-events: none;
+  animation: ndd-pulse 2s ease-in-out infinite;
+}
+
+.dark .ndd-unread-dot {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25), 0 0 6px rgba(249, 115, 22, 0.4);
+}
+
+/* ═══════ Empty / Loading / Error states ═══════ */
+.ndd-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.ndd-skel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: 12px;
+}
+
+.dark .ndd-skel-item {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.ndd-skel-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(90deg, var(--border) 25%, var(--border-strong) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: ndd-shimmer 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.ndd-skel-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ndd-skel-line {
+  height: 9px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--border) 25%, var(--border-strong) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: ndd-shimmer 1.4s ease-in-out infinite;
+}
+
+.ndd-skel-line.w70 { width: 70%; }
+.ndd-skel-line.w40 { width: 40%; }
+
+.ndd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  gap: 10px;
+}
+
+.ndd-empty-art {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange-pale) 0%, var(--orange-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--orange);
+}
+
+.ndd-empty p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.ndd-empty span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ndd-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px 12px;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.ndd-retry-btn:hover {
+  opacity: 0.9;
+}
+
+/* ═══════ Footer (view all) ═══════ */
+.ndd-footer {
+  border-top: 1px solid var(--border);
+  padding: 8px;
+  flex-shrink: 0;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ndd-view-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--orange-light);
+  border-radius: 9px;
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.ndd-view-all:hover {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+
+.dark .ndd-view-all {
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.dark .ndd-view-all:hover {
+  background: var(--orange);
+  color: #fff;
+}
+
+/* ═══════ Animations ═══════ */
+.ndd-spin {
+  animation: ndd-spin 1s linear infinite;
+}
+
+@keyframes ndd-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ndd-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes ndd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ndd-slide-down {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ndd-slide-out {
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+    max-height: 0;
+    margin-bottom: 0;
+  }
+}
+
+@keyframes ndd-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18); }
+  50% { box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.06); }
+}
+
+/* ✅ Dark mode — تحسينات إضافية للـ navy palette */
+.dark .ndd-mark-all-row {
+  border-bottom-color: var(--border);
+}
+
+.dark .ndd-link-btn {
+  color: #fb923c;
+}
+.dark .ndd-link-btn:hover:not(:disabled) {
+  background: rgba(249, 115, 22, 0.12);
+}
+
+.dark .ndd-mini-btn {
+  border-color: rgba(90, 115, 168, 0.25);
+  color: var(--text-mid);
+}
+.dark .ndd-mini-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.dark .ndd-empty-art {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+}
+
+.dark .ndd-empty p {
+  color: #FFFFFF;
+}
+.dark .ndd-empty span {
+  color: var(--text-mute, #94a3b8);
+}
+
+.dark .ndd-footer {
+  border-top-color: var(--border);
+}
+
+.dark .ndd-item-title {
+  color: #FFFFFF;
+}
+
+.dark .ndd-item-desc {
+  color: #cbd5e1;
+}
+
+.dark .ndd-item-time {
+  color: #94a3b8;
+}
+
+/* ✅ Slide-out animations (كلا الاتجاهين) */
+.ndd-item-wrap.ndd-item-removing.ndd-removing-left {
+  animation: ndd-slide-out-left 0.28s ease-out forwards;
+}
+
+.ndd-item-wrap.ndd-item-removing.ndd-removing-right {
+  animation: ndd-slide-out-right 0.28s ease-out forwards;
+}
+
+@keyframes ndd-slide-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@keyframes ndd-slide-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+/* ✅ Legacy: نحتفظ بالـ ndd-slide-out للتوافق العكسي */
+@keyframes ndd-slide-out {
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+    max-height: 0;
+    margin-bottom: 0;
+  }
+}
+
+/* ✅ Position الـ bg trash icon — حسب اتجاه السحب */
+.ndd-item-bg {
+  /* background يُعرض على الجانب المطلوب (نهاية الاتجاه) */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 18px;
+}
+
+/* ✅ حسّن تجربة السحب بالـ touch — تأكيد من اللمس على الـ item */
+.ndd-item {
+  /* نسمح بالـ pan الأفقي فقط على الـ item — باقي الـ list يـ scroll عمودياً */
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ✅ Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ndd-item-wrap.ndd-item-removing,
+  .ndd-item-wrap.ndd-item-removing.ndd-removing-left,
+  .ndd-item-wrap.ndd-item-removing.ndd-removing-right {
+    animation-duration: 0.15s;
+  }
+  .ndd-unread-dot,
+  .ndd-spin,
+  .ndd-skel-icon,
+  .ndd-skel-line {
+    animation: none !important;
+  }
+}

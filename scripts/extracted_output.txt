@@ -1,0 +1,2314 @@
+================================================================================
+NAME: Create Product
+CATEGORY: Seller / Product
+METHOD: POST
+URL: /api/product/
+AUTH: true
+  RESPONSE 201 (Created):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "e199d300-169a-4793-bc61-0e2275e562d3",
+      "averageRating": 0,
+      "reviewsCount": 0,
+      "isDeleted": false,
+      "sellerId": "d61a8b6b-b8cd-48f7-96ec-e3eac839c3f7",
+      "categoryId": "f141af48-3d77-4bab-8832-3186e1fa7217",
+      "name": "iPhone 15",
+      "description": "new iPhone",
+      "price": 1200,
+      "stockType": "limited",
+      "quantity": 10,
+      "status": "active",
+      "updated_at": "2026-07-01T01:51:17.000Z",
+      "created_at": "2026-07-01T01:51:17.000Z",
+      "images": [
+        {
+          "id": "aa3735a2-27e2-42df-bcad-fd7014f1bace",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782870676/products/d61a8b6b-b8cd-48f7-96ec-e3eac839c3f7/r4zjace13yaxecgnnshe.jpg",
+          "isPrimary": true,
+          "position": 0
+        }
+      ]
+    }
+  }
+}
+  RESPONSE 201 (Created):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "75eeb3f7-baf3-45ea-8565-11272b34ef99",
+      "averageRating": 0,
+      "reviewsCount": 0,
+      "isDeleted": false,
+      "sellerId": "81c6e930-37c9-46ac-826a-79869153a324",
+      "categoryId": "fcdc88a9-6f3f-11f1-8493-a2aacad42e09",
+      "name": "pizza",
+      "description": "pizza margirta",
+      "price": 120,
+      "stockType": "limited",
+      "quantity": 10,
+      "status": "active",
+      "updated_at": "2026-07-03T22:04:59.575Z",
+      "created_at": "2026-07-03T22:04:59.575Z",
+      "images": [
+        {
+          "id": "aa130efe-2fef-4422-a971-b0c4b83e3a63",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783116298/products/81c6e930-37c9-46ac-826a-79869153a324/ir5v4fninnetqhxhgr19.png",
+          "isPrimary": true,
+          "isOptimized": true,
+          "position": 0
+        }
+      ]
+    }
+  }
+}
+  RESPONSE 201 (Created):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "28ee4837-9b24-42cc-b4f8-e1cb65a41b0e",
+      "averageRating": 0,
+      "reviewsCount": 0,
+      "isDeleted": false,
+      "sellerId": "a9f68723-a635-45ad-9faa-0e2ab5933939",
+      "categoryId": "1b29191b-769f-403a-bc9e-a0b27e7f1047",
+      "name": "pizza",
+      "description": "pizza margirta",
+      "price": 120,
+      "stockType": "limited",
+      "quantity": 10,
+      "status": "active",
+      "updated_at": "2026-07-04T10:59:15.152Z",
+      "created_at": "2026-07-04T10:59:15.152Z",
+      "images": [
+        {
+          "id": "230b8028-3977-41ab-961a-f4a7144ca27c",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783162754/products/a9f68723-a635-45ad-9faa-0e2ab5933939/yhged0ptsaopbdjnuiwh.jpg",
+          "isPrimary": true,
+          "isOptimized": true,
+          "position": 0
+        }
+      ]
+    }
+  }
+}
+
+================================================================================
+NAME: Get Seller Product Details
+CATEGORY: Seller / Product
+METHOD: GET
+URL: /api/product/{{PRODUCT_ID}}
+AUTH: true
+URL PARAMS: ["PRODUCT_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+      "name": "iPhone 8",
+      "description": "old iPhone",
+      "price": "600.00",
+      "stockType": "limited",
+      "quantity": 4,
+      "status": "active",
+      "averageRating": "4.00",
+      "reviewsCount": 1,
+      "createdAt": "2026-07-20T00:02:03.000Z",
+      "updatedAt": "2026-07-24T12:28:40.000Z",
+      "category": {
+        "id": "625205ce-7ae3-11f1-91cb-a2aa9fe8ab18",
+        "name": "الإلكترونيات"
+      },
+      "images": [
+        {
+          "id": "9664460c-f958-4522-9752-b556a55fb1df",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg",
+          "isPrimary": true,
+          "position": 0
+        }
+      ]
+    },
+    "reviews": {
+      "average": "4.00",
+      "total": 1,
+      "preview": [
+        {
+          "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+          "rating": 4,
+          "comment": "so good",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+          "createdAt": "2026-07-20T23:39:37.000Z",
+          "customer": {
+            "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+            "firstName": "Feras",
+            "lastName": "Hamdouna",
+            "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+            "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296"
+          }
+        }
+      ]
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+      "name": "iPhone 8",
+      "description": "old iPhone",
+      "price": "600.00",
+      "stockType": "limited",
+      "quantity": 4,
+      "status": "active",
+      "averageRating": "4.00",
+      "reviewsCount": 1,
+      "createdAt": "2026-07-20T00:02:03.000Z",
+      "updatedAt": "2026-07-24T12:28:40.000Z",
+      "category": {
+        "id": "625205ce-7ae3-11f1-91cb-a2aa9fe8ab18",
+        "name": "الإلكترونيات"
+      },
+      "images": [
+        {
+          "id": "9664460c-f958-4522-9752-b556a55fb1df",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg",
+          "isPrimary": true,
+          "position": 0
+        }
+      ]
+    },
+    "reviews": {
+      "average": "4.00",
+      "total": 1,
+      "preview": [
+        {
+          "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+          "rating": 4,
+          "comment": "so good",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+          "createdAt": "2026-07-20T23:39:37.000Z",
+          "customer": {
+            "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+            "firstName": "Feras",
+            "lastName": "Hamdouna",
+            "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+            "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+            "isTrustedBuyer": false
+          }
+        }
+      ]
+    }
+  }
+}
+
+================================================================================
+NAME: Get seller reviews
+CATEGORY: Seller / Review
+METHOD: GET
+URL: /api/seller/review
+AUTH: true
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "4.50",
+    "totalReviews": 2,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 1
+    },
+    "reviews": [
+      {
+        "rating": 5,
+        "comment": "Absolutely fantastic quality! The olive oil exceeded my expectations and arrived perfectly packaged.",
+        "createdAt": "2026-06-25T23:03:39.000Z",
+        "customer": {
+          "id": "d4d4d4d4-4444-4444-d4d4-1234567890ab",
+          "user": {
+            "firstName": "Ahmed",
+            "lastName": "Ali",
+            "avatar": "uploads/default-avatar.png"
+          }
+        },
+        "product": {
+          "name": "Premium Palestinian Olive Oil"
+        }
+      },
+      {
+        "rating": 4,
+        "comment": "Great product, tastes incredibly fresh. Taking one star off because the shipping took a couple of extra days.",
+        "createdAt": "2026-06-25T23:03:39.000Z",
+        "customer": {
+          "id": "e5e5e5e5-5555-4444-e5e5-1234567890ab",
+          "user": {
+            "firstName": "Sara",
+            "lastName": "Khaled",
+            "avatar": "uploads/default-avatar.png"
+          }
+        },
+        "product": {
+          "name": "Premium Palestinian Olive Oil"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "4.00",
+    "totalReviews": 1,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 0
+    },
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "customer": {
+          "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "firstName": "Feras",
+          "lastName": "Hamdouna",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "4.00",
+    "totalReviews": 1,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 0
+    },
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "sellerReply": null,
+        "sellerRepliedAt": null,
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "customer": {
+          "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "firstName": "Feras",
+          "lastName": "Hamdouna",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "isTrustedBuyer": false
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Reply To review
+CATEGORY: Seller / Review
+METHOD: POST
+URL: /api/seller/review/c409101f-d871-4e4e-96bc-a08111c644b9/reply
+AUTH: false
+BODY (raw): {
+    "reply":"sorry,i try to solve problem"
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "id": "c409101f-d871-4e4e-96bc-a08111c644b9",
+    "sellerReply": "sorry,i try to solve problem",
+    "sellerRepliedAt": "2026-07-17T14:44:59.238Z"
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "reviewId": "42a42267-075f-4c84-b593-b8f689b71909",
+    "productId": "5851947e-c2e3-4bdf-a1f1-b48444d80900",
+    "sellerReply": "شكرا لك ,دائما نسعى  لاسعادكم",
+    "sellerRepliedAt": "2026-07-24T20:43:39.552Z"
+  }
+}
+
+================================================================================
+NAME: Create Seller Customer Review
+CATEGORY: Seller / Review
+METHOD: POST
+URL: /api/seller/review/customer
+AUTH: true
+BODY (raw): {
+    "orderId": "{{ORDER_ID}}",
+    "rating": "4",
+    "comment": "greate customer"
+}
+  RESPONSE 201 (Created):
+  {
+  "status": "success",
+  "data": {
+    "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+    "orderId": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+    "customerId": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+    "rating": 4,
+    "comment": "greate customer",
+    "createdAt": "2026-07-20T16:34:16.000Z"
+  }
+}
+  RESPONSE 409 (Conflict):
+  {
+  "status": "fail",
+  "data": {
+    "message": "You have already reviewed this order."
+  }
+}
+  RESPONSE 400 (Bad Request):
+  {
+  "status": "fail",
+  "data": {
+    "message": "Only completed orders can be reviewed."
+  }
+}
+
+================================================================================
+NAME: Get All Products Public
+CATEGORY: Customer / Product
+METHOD: GET
+URL: /api/product/public
+AUTH: false
+QUERY: [{"key":"search","value":"iPhone"},{"key":"categoryId","value":"{{CATEGORY_ID}}"},{"key":"rice","value":"20"},{"key":"maxPrice","value":"100"},{"key":"sort","value":"price_asc"}]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [],
+    "pagination": {
+      "totalItems": 0,
+      "totalPages": 0,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      },
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      },
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "844987df-c946-4941-9e56-d981533d6af7",
+        "name": "iPhone 15",
+        "price": "1200.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958558/products/a9f68723-a635-45ad-9faa-0e2ab5933939/cj17m2ls5hwix6jv8szk.jpg"
+        }
+      },
+      {
+        "id": "d0b15892-c561-41fc-a347-3a96933707df",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+          "name": "Electronics"
+        },
+        "seller": {
+          "storeName": "Gaza Gate"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 2,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "ec93d98f-666a-455a-8e22-61c66c57d0c9",
+        "name": "cakeا",
+        "price": "30.00",
+        "stockType": "limited",
+        "quantity": 10,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "المأكولات المنزلية"
+        },
+        "seller": {
+          "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "storeName": "akilati",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/docqumxby/image/upload/v1784633788/products/cc65b83c-46df-46e2-b12b-312b3f1696f8/pgnewkck1nua12d9gc5r.png"
+        }
+      },
+      {
+        "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 6,
+        "averageRating": "4.00",
+        "reviewsCount": 1,
+        "category": {
+          "id": "625205ce-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "الإلكترونيات"
+        },
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      },
+      {
+        "id": "5ddcd790-b3c8-4805-8123-e9cb146420bb",
+        "name": "مشاوي مشكل",
+        "price": "120.00",
+        "stockType": "unlimited",
+        "quantity": null,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "المأكولات المنزلية"
+        },
+        "seller": {
+          "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "storeName": "akilati",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784311700/products/cc65b83c-46df-46e2-b12b-312b3f1696f8/e7f0m2zpdhlswkrbtev3.jpg"
+        }
+      },
+      {
+        "id": "01591565-236c-42ff-a2da-dc285e79a3a6",
+        "name": "oil",
+        "price": "120.00",
+        "stockType": "limited",
+        "quantity": 18,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "المأكولات المنزلية"
+        },
+        "seller": {
+          "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "storeName": "akilati",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784306942/products/cc65b83c-46df-46e2-b12b-312
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "ec93d98f-666a-455a-8e22-61c66c57d0c9",
+        "name": "cakeا",
+        "price": "30.00",
+        "stockType": "limited",
+        "quantity": 8,
+        "averageRating": "0.00",
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "المأكولات المنزلية"
+        },
+        "seller": {
+          "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "storeName": "akilati",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "isTrustedSeller": false
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/docqumxby/image/upload/v1784633788/products/cc65b83c-46df-46e2-b12b-312b3f1696f8/pgnewkck1nua12d9gc5r.png"
+        }
+      },
+      {
+        "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "stockType": "limited",
+        "quantity": 4,
+        "averageRating": "4.00",
+        "reviewsCount": 1,
+        "category": {
+          "id": "625205ce-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "الإلكترونيات"
+        },
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "isTrustedSeller": false
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      },
+      {
+        "id": "5ddcd790-b3c8-4805-8123-e9cb146420bb",
+        "name": "مشاوي مشكل",
+        "price": "120.00",
+        "stockType": "unlimited",
+        "quantity": null,
+        "averageRating": "3.00",
+        "reviewsCount": 1,
+        "category": {
+          "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "المأكولات المنزلية"
+        },
+        "seller": {
+          "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "storeName": "akilati",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "isTrustedSeller": false
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784311700/products/cc65b83c-46df-46e2-b12b-312b3f1696f8/e7f0m2zpdhlswkrbtev3.jpg"
+        }
+      },
+      {
+        "id": "01591565-236c-42ff-a2da-dc285e79a3a6",
+        "name": "oil",
+        "price": "120.00",
+        "stockType": "limited",
+        "quantity": 18,
+        "averageRating": "5.00",
+        "reviewsCount": 1,
+        "category": {
+          "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "المأكولات المنزلية"
+        },
+        "seller": {
+          "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "storeName": "akilati",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8",
+          "isTrustedSeller": false
+        },
+    
+
+================================================================================
+NAME: Get Product Details Public
+CATEGORY: Customer / Product
+METHOD: GET
+URL: /api/product/public/{{PRODUCT_ID}}
+AUTH: false
+URL PARAMS: ["PRODUCT_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "d0b15892-c561-41fc-a347-3a96933707df",
+      "name": "iPhone 8",
+      "description": "old iPhone",
+      "price": "600.00",
+      "stockType": "limited",
+      "quantity": 10,
+      "status": "active",
+      "averageRating": "0.00",
+      "reviewsCount": 0,
+      "category": {
+        "id": "54cabb55-c5e2-4d76-a8be-6c728b7ece26",
+        "name": "Electronics"
+      },
+      "seller": {
+        "id": "a9f68723-a635-45ad-9faa-0e2ab5933939",
+        "storeName": "Gaza Gate"
+      },
+      "images": [
+        {
+          "id": "f9b99691-aa72-455b-a898-2d5bd628cc19",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1782958592/products/a9f68723-a635-45ad-9faa-0e2ab5933939/zopgjjc9cob4yscvpcue.jpg",
+          "isPrimary": true,
+          "position": 0
+        }
+      ],
+      "isWishlisted": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "ec93d98f-666a-455a-8e22-61c66c57d0c9",
+      "name": "cakeا",
+      "description": null,
+      "price": "30.00",
+      "stockType": "limited",
+      "quantity": 10,
+      "status": "active",
+      "averageRating": "0.00",
+      "reviewsCount": 0,
+      "category": {
+        "id": "62520be2-7ae3-11f1-91cb-a2aa9fe8ab18",
+        "name": "المأكولات المنزلية"
+      },
+      "seller": {
+        "id": "cc65b83c-46df-46e2-b12b-312b3f1696f8",
+        "storeName": "akilati",
+        "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+        "actionUrl": "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8"
+      },
+      "images": [
+        {
+          "id": "821a2660-ef72-4016-85aa-9520af9295ff",
+          "imageUrl": "https://res.cloudinary.com/docqumxby/image/upload/v1784633788/products/cc65b83c-46df-46e2-b12b-312b3f1696f8/pgnewkck1nua12d9gc5r.png",
+          "isPrimary": true,
+          "position": 0
+        }
+      ],
+      "isWishlisted": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+      "name": "iPhone 8",
+      "description": "old iPhone",
+      "price": "600.00",
+      "stockType": "limited",
+      "quantity": 4,
+      "status": "active",
+      "averageRating": "4.00",
+      "reviewsCount": 1,
+      "category": {
+        "id": "625205ce-7ae3-11f1-91cb-a2aa9fe8ab18",
+        "name": "الإلكترونيات"
+      },
+      "seller": {
+        "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+        "storeName": "Gaza Gate",
+        "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+        "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+        "isTrustedSeller": false
+      },
+      "images": [
+        {
+          "id": "9664460c-f958-4522-9752-b556a55fb1df",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg",
+          "isPrimary": true,
+          "position": 0
+        }
+      ],
+      "isWishlisted": false
+    },
+    "reviews": {
+      "average": "4.00",
+      "total": 1,
+      "preview": [
+        {
+          "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+          "rating": 4,
+          "comment": "so good",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+          "createdAt": "2026-07-20T23:39:37.000Z",
+          "customer": {
+            "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+            "firstName": "Feras",
+            "lastName": "Hamdouna",
+            "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+            "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296"
+          }
+        }
+      ]
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "product": {
+      "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+      "name": "iPhone 8",
+      "description": "old iPhone",
+      "price": "600.00",
+      "stockType": "limited",
+      "quantity": 4,
+      "status": "active",
+      "averageRating": "4.00",
+      "reviewsCount": 1,
+      "category": {
+        "id": "625205ce-7ae3-11f1-91cb-a2aa9fe8ab18",
+        "name": "الإلكترونيات"
+      },
+      "seller": {
+        "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+        "storeName": "Gaza Gate",
+        "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+        "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+        "isTrustedSeller": false
+      },
+      "images": [
+        {
+          "id": "9664460c-f958-4522-9752-b556a55fb1df",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg",
+          "isPrimary": true,
+          "position": 0
+        }
+      ],
+      "isWishlisted": false
+    },
+    "reviews": {
+      "average": "4.00",
+      "total": 1,
+      "preview": [
+        {
+          "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+          "rating": 4,
+          "comment": "so good",
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+          "createdAt": "2026-07-20T23:39:37.000Z",
+          "customer": {
+            "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+            "firstName": "Feras",
+            "lastName": "Hamdouna",
+            "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+            "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+            "isTrustedBuyer": false
+          }
+        }
+      ]
+    }
+  }
+}
+
+================================================================================
+NAME: Create Review
+CATEGORY: Customer / Review
+METHOD: POST
+URL: /api/customer/review/
+AUTH: true
+  RESPONSE 201 (Created):
+  {
+  "status": "success",
+  "data": {
+    "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+    "productId": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+    "orderId": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+    "rating": 4,
+    "comment": "so good",
+    "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784506535/reviews/lwpbb3vviaz9lk3sw90p.jpg",
+    "createdAt": "2026-07-20T00:15:35.000Z"
+  }
+}
+  RESPONSE 409 (Conflict):
+  {
+  "status": "fail",
+  "data": {
+    "message": "You have already reviewed this product."
+  }
+}
+  RESPONSE 400 (Bad Request):
+  {
+  "status": "fail",
+  "data": {
+    "message": "This order is not eligible for review yet. It must remain in its current status for at least 5 days."
+  }
+}
+
+================================================================================
+NAME: Get My Reviews
+CATEGORY: Customer / Review
+METHOD: GET
+URL: /api/customer/review/my
+AUTH: true
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784506535/reviews/lwpbb3vviaz9lk3sw90p.jpg",
+        "createdAt": "2026-07-20T00:15:35.000Z",
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        },
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "sellerReply": null,
+        "sellerRepliedAt": null,
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        },
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "isTrustedSeller": false
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Update Review
+CATEGORY: Customer / Review
+METHOD: PATCH
+URL: /api/customer/review/{{REVIEW_ID}}
+AUTH: true
+BODY (raw): {
+   "rating": "3",
+   "comment": "good" 
+}
+URL PARAMS: ["REVIEW_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+    "productId": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+    "orderId": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+    "rating": 3,
+    "comment": "good",
+    "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784506535/reviews/lwpbb3vviaz9lk3sw90p.jpg",
+    "createdAt": "2026-07-20T00:15:35.000Z",
+    "updatedAt": "2026-07-20T00:27:47.000Z"
+  }
+}
+
+================================================================================
+NAME: Get My Received Seller Reviews
+CATEGORY: Customer / Review
+METHOD: GET
+URL: /api/customer/review/from-sellers
+AUTH: true
+QUERY: [{"key":"page","value":"1"}]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": 4,
+    "totalReviews": 1,
+    "reviews": [
+      {
+        "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+        "rating": 4,
+        "comment": "greate customer",
+        "createdAt": "2026-07-20T16:34:16.000Z",
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png"
+        },
+        "order": {
+          "id": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+          "orderNumber": "ORD-811041447"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": 5,
+    "totalReviews": 1,
+    "reviews": [
+      {
+        "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+        "rating": 5,
+        "comment": "greate customer",
+        "createdAt": "2026-07-20T23:41:18.000Z",
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1"
+        },
+        "order": {
+          "id": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+          "orderNumber": "ORD-811041447"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": 5,
+    "totalReviews": 1,
+    "reviews": [
+      {
+        "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+        "rating": 5,
+        "comment": "greate customer",
+        "createdAt": "2026-07-20T23:41:18.000Z",
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "isTrustedSeller": false
+        },
+        "order": {
+          "id": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+          "orderNumber": "ORD-811041447"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Get store products
+CATEGORY: Customer / Seller Store
+METHOD: GET
+URL: /api/customer/store/{{SELLER_ID}}/products
+AUTH: false
+URL PARAMS: ["SELLER_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "storeName": "متجر السلام",
+    "products": [
+      {
+        "id": "435cfd9f-7227-4300-b6b3-961f9a029d36",
+        "name": "كيك شوكلاتة",
+        "price": "50.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783546780/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/jhwneyrtg4pczlwlyb0o.png",
+        "quantity": null,
+        "stockType": "unlimited",
+        "category": "المأكولات المنزلية"
+      },
+      {
+        "id": "53181097-91f8-4f30-bcd9-f6761b9ee478",
+        "name": "زيت زيتون بكر",
+        "price": "60.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783542984/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/fiajkeph0xolmg9srnbc.jpg",
+        "quantity": null,
+        "stockType": "unlimited",
+        "category": "المأكولات المنزلية"
+      },
+      {
+        "id": "c448db69-e4b7-4137-a850-14f7e43c0f01",
+        "name": "فستان بني",
+        "price": "350.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783542322/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/c00pz9gti45bdqp7fnf6.jpg",
+        "quantity": 39,
+        "stockType": "limited",
+        "category": "ملابس"
+      },
+      {
+        "id": "246b1a64-a025-4af0-9fb1-d5cb97bfcbdc",
+        "name": "دونات",
+        "price": "15.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783542234/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/ckvynxsgbtzcuoj4ej6q.jpg",
+        "quantity": 17,
+        "stockType": "limited",
+        "category": "المأكولات المنزلية"
+      },
+      {
+        "id": "09d65038-f9c2-4fb6-9330-239d8590681f",
+        "name": "زيت زيتون",
+        "price": "40.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783541111/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/p1jiptnvfmegtukhrzn0.jpg",
+        "quantity": null,
+        "stockType": "unlimited",
+        "category": "المأكولات المنزلية"
+      },
+      {
+        "id": "f89058bf-e050-4eb7-babd-73487cf97450",
+        "name": "ثوب فلسطيني مطرز",
+        "price": "300.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783540973/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/kavwxqfdkvm8pvblgsfj.jpg",
+        "quantity": null,
+        "stockType": "unlimited",
+        "category": "ملابس"
+      },
+      {
+        "id": "6552a13e-fa7c-4ccb-a368-afb9b37e0b7e",
+        "name": "زيت زيتون فلسطيني",
+        "price": "29.99",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1783540922/products/8645c6b6-3a3e-498a-b7be-1ef9823ea49b/nrrbctcdcilglx5oqwah.jpg",
+        "quantity": null,
+        "stockType": "unlimited",
+        "category": "المأكولات المنزلية"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "totalItems": 7,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "storeName": "Gaza Gate",
+    "store": {
+      "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+      "storeName": "Gaza Gate",
+      "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+      "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1"
+    },
+    "products": [
+      {
+        "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+        "name": "iPhone 8",
+        "price": "600.00",
+        "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg",
+        "quantity": 6,
+        "stockType": "limited",
+        "category": "الإلكترونيات"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "totalItems": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Get All product
+CATEGORY: Admin / Product
+METHOD: GET
+URL: /api/admin/product
+AUTH: false
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "products": [
+      {
+        "id": "b0346208-5dfc-43eb-b263-8717522c1a61",
+        "name": "حقيبة كروشيه كلاسيكية بمقابض جلدية (Vintage)",
+        "price": 200,
+        "stockType": "limited",
+        "quantity": 39,
+        "status": "active",
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520c1e-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "الأشغال اليدوية"
+        },
+        "seller": {
+          "id": "0ce2ab04-bff6-4556-98e4-884e1f139155",
+          "storeName": "Handmade Touch",
+          "avatar": "https://lh3.googleusercontent.com/a/ACg8ocKuWsVrnVOfcFhEFa3OB72dW21jAMlBwrnkYuTfQK7pzlDa9Q=s96-c"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1785237096/products/0ce2ab04-bff6-4556-98e4-884e1f139155/wrmowhqylyscdt5nu0bc.jpg",
+          "publicId": "products/0ce2ab04-bff6-4556-98e4-884e1f139155/wrmowhqylyscdt5nu0bc"
+        },
+        "createdAt": "2026-07-28T11:11:36.000Z"
+      },
+      {
+        "id": "77da39e7-990e-4eb7-bb64-b495e7d1a392",
+        "name": "حقيبة كروشيه هندسية بوهيمية (ألوان دافئة)",
+        "price": 120,
+        "stockType": "limited",
+        "quantity": 49,
+        "status": "active",
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520c1e-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "الأشغال اليدوية"
+        },
+        "seller": {
+          "id": "0ce2ab04-bff6-4556-98e4-884e1f139155",
+          "storeName": "Handmade Touch",
+          "avatar": "https://lh3.googleusercontent.com/a/ACg8ocKuWsVrnVOfcFhEFa3OB72dW21jAMlBwrnkYuTfQK7pzlDa9Q=s96-c"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1785237038/products/0ce2ab04-bff6-4556-98e4-884e1f139155/b5sh5z32n0akyfcryckt.jpg",
+          "publicId": "products/0ce2ab04-bff6-4556-98e4-884e1f139155/b5sh5z32n0akyfcryckt"
+        },
+        "createdAt": "2026-07-28T11:10:39.000Z"
+      },
+      {
+        "id": "316814f8-11a9-44d1-81eb-fcd8a1a0f533",
+        "name": "حقيبة عباد الشمس والورود الجورية (كروشيه يدوي)",
+        "price": 180,
+        "stockType": "limited",
+        "quantity": 59,
+        "status": "active",
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520c1e-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "الأشغال اليدوية"
+        },
+        "seller": {
+          "id": "0ce2ab04-bff6-4556-98e4-884e1f139155",
+          "storeName": "Handmade Touch",
+          "avatar": "https://lh3.googleusercontent.com/a/ACg8ocKuWsVrnVOfcFhEFa3OB72dW21jAMlBwrnkYuTfQK7pzlDa9Q=s96-c"
+        },
+        "primaryImage": {
+          "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1785236903/products/0ce2ab04-bff6-4556-98e4-884e1f139155/pvvbtyqobqlo8uk5b5wq.jpg",
+          "publicId": "products/0ce2ab04-bff6-4556-98e4-884e1f139155/pvvbtyqobqlo8uk5b5wq"
+        },
+        "createdAt": "2026-07-28T11:08:23.000Z"
+      },
+      {
+        "id": "700649fa-2635-4969-9408-e77c37b233f3",
+        "name": "ثوب فلسطيني مطرز  احمر",
+        "price": 550,
+        "stockType": "unlimited",
+        "quantity": null,
+        "status": "active",
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "category": {
+          "id": "62520b20-7ae3-11f1-91cb-a2aa9fe8ab18",
+          "name": "ملابس"
+        },
+        "seller": {
+          "id": "6ded1954-028b-4955-
+
+================================================================================
+NAME: Get Product Reviews
+CATEGORY: Shared / Review
+METHOD: GET
+URL: /api/review/product/{{PRODUCT_ID}}
+AUTH: true
+URL PARAMS: ["PRODUCT_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "5.00",
+    "totalReviews": 1,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 1
+    },
+    "reviews": [
+      {
+        "id": "42a42267-075f-4c84-b593-b8f689b71909",
+        "rating": 5,
+        "comment": "متجر ممتاز طلبي وصل باسرع وقت",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784378520/reviews/wetnpwbawmf0oe7elht7.png",
+        "createdAt": "2026-07-18T12:42:01.000Z",
+        "customer": {
+          "id": "e16563e2-2e5b-4a83-95d8-bb0c7e8193e6",
+          "firstName": "Mohammed",
+          "lastName": "Ahmed",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "4.00",
+    "totalReviews": 1,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 0
+    },
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "customer": {
+          "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "firstName": "Feras",
+          "lastName": "Hamdouna",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "isTrustedBuyer": false
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Customer Seller Reviews
+CATEGORY: Shared / Review
+METHOD: GET
+URL: /api/review/customer/{{CUSTOMER_ID}}/seller-reviews
+AUTH: true
+URL PARAMS: ["CUSTOMER_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": 5,
+    "totalReviews": 1,
+    "reviews": [
+      {
+        "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+        "rating": 5,
+        "comment": "greate customer",
+        "createdAt": "2026-07-20T23:41:18.000Z",
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png"
+        },
+        "order": {
+          "id": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+          "orderNumber": "ORD-811041447"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": 5,
+    "totalReviews": 1,
+    "reviews": [
+      {
+        "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+        "rating": 5,
+        "comment": "greate customer",
+        "createdAt": "2026-07-20T23:41:18.000Z",
+        "seller": {
+          "id": "6e950e49-baf8-4a64-b287-80b0fe3e16c1",
+          "storeName": "Gaza Gate",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/store/6e950e49-baf8-4a64-b287-80b0fe3e16c1"
+        },
+        "order": {
+          "id": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+          "orderNumber": "ORD-811041447"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Customer Product Reviews
+CATEGORY: Shared / Review
+METHOD: GET
+URL: /api/review/customer/{{CUSTOMER_ID}}/product-reviews
+AUTH: true
+URL PARAMS: ["CUSTOMER_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Seller Product Reviews
+CATEGORY: Shared / Review
+METHOD: GET
+URL: /api/review/seller/{{SELLER_ID}}/product-reviews
+AUTH: true
+URL PARAMS: ["SELLER_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "4.00",
+    "totalReviews": 1,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 0
+    },
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "customer": {
+          "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "firstName": "Feras",
+          "lastName": "Hamdouna",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": "4.00",
+    "totalReviews": 1,
+    "distribution": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 0
+    },
+    "reviews": [
+      {
+        "id": "9f4aba96-9ed2-4654-b437-194d2a2b000e",
+        "rating": 4,
+        "comment": "so good",
+        "imageUrl": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784590777/reviews/txpebctqujjs4dawudhx.jpg",
+        "sellerReply": null,
+        "sellerRepliedAt": null,
+        "createdAt": "2026-07-20T23:39:37.000Z",
+        "customer": {
+          "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "firstName": "Feras",
+          "lastName": "Hamdouna",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png",
+          "actionUrl": "/profile/customer/ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "isTrustedBuyer": false
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+
+================================================================================
+NAME: Seller Customer Reviews
+CATEGORY: Shared / Review
+METHOD: GET
+URL: /api/review/seller/{{SELLER_ID}}/customer-reviews
+AUTH: true
+URL PARAMS: ["SELLER_ID"]
+  RESPONSE 200 (OK):
+  {
+  "status": "success",
+  "data": {
+    "averageRating": 5,
+    "totalReviews": 1,
+    "reviews": [
+      {
+        "id": "a2a97d8e-9e75-43b4-b4f2-158f6e437a5a",
+        "rating": 5,
+        "comment": "greate customer",
+        "createdAt": "2026-07-20T23:41:18.000Z",
+        "customer": {
+          "id": "ac03e1ae-01b1-46c9-9c1a-e371e01ef296",
+          "firstName": "Feras",
+          "lastName": "Hamdouna",
+          "avatar": "https://res.cloudinary.com/dq0z2abbv/image/upload/f_auto,q_auto/v1782715016/1782700270979_strw1t.png"
+        },
+        "order": {
+          "id": "72ff87e0-f93b-4726-8a3a-aaa511520680",
+          "orderNumber": "ORD-811041447"
+        },
+        "product": {
+          "id": "b4d2cdb5-da54-4237-8e69-679d4d6ee0f3",
+          "name": "iPhone 8",
+          "image": "https://res.cloudinary.com/dq0z2abbv/image/upload/v1784505721/products/6e950e49-baf8-4a64-b287-80b0fe3e16c1/taufwjgjbeuciu24bxha.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 1,
+      "totalPages": 1,
+      "currentPage": 1,
+      "pageSize": 10,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}

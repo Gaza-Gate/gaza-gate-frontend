@@ -4,7 +4,7 @@ import { Wallet, CreditCard, Zap, Shield, Lock, CheckCircle } from "lucide-react
 import CustomerNavbar from "../components/CustomerNavbar";
 import CheckoutSteps from "../components/CheckoutSteps";
 import { useCart } from "../context/CartContext";
-import { createOrder } from "../services/authService";
+import { createOrder } from "../services/orderService";
 import logo from "../assets/logo.png";
 import "./CustomerCheckout.css";
 
@@ -50,7 +50,10 @@ export default function CustomerCheckoutPayment() {
     return null;
   }
 
-  const tax = Math.round(total * 0.1);
+  // ✅ إلغاء الضريبة: المنتجات الفلسطينية معفاة من ضريبة 10% حالياً.
+  //    نخليها دائماً 0 لتجنّب أي إضافات تلقائية على المجموع.
+  //    الإجمالي = سعر المنتجات + رسوم التوصيل فقط (بدون ضرائب).
+  const tax = 0;
   const storeName = items[0]?.store || "متجر التقنية";
 
   const handleCardChange = (field, value) => {
@@ -81,7 +84,6 @@ export default function CustomerCheckoutPayment() {
 
       // تجميع المنتجات حسب البائع
       const groupedBySeller = items.reduce((acc, item) => {
-        console.log("Processing item:", item);
         const sellerId = item.sellerId || item.seller?._id || item.seller?.id;
         if (!sellerId) {
           console.warn("Item missing sellerId:", item);
@@ -91,11 +93,11 @@ export default function CustomerCheckoutPayment() {
         if (!acc[sellerId]) {
           acc[sellerId] = [];
         }
+        // ✅ الأمان: نرسل فقط productId و quantity للباك
+        //    الباك يحسب السعر والـ total بنفسه من قاعدة البيانات
         acc[sellerId].push({
           productId: item.id || item._id,
-          quantity: item.quantity,
-          productName: item.name,
-          unitPrice: item.price
+          quantity: item.quantity
         });
         return acc;
       }, {});
@@ -106,21 +108,14 @@ export default function CustomerCheckoutPayment() {
         return;
       }
 
-      console.log("Creating orders for sellers:", sellerIds);
-      console.log("Order data:", groupedBySeller);
-      console.log("Items in cart:", items);
-
       // إنشاء طلب منفصل لكل بائع
+      // ✅ الباك يحسب السعر والـ total بنفسه — لا نرسل productName/unitPrice/totalAmount
       const orderPromises = Object.entries(groupedBySeller).map(([sellerId, orderItems]) => {
-        console.log("Creating order for seller:", sellerId, "with items:", orderItems);
-        const orderTotal = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
         const orderData = {
           items: orderItems,
-          paymentMethod: method === "cod" ? "cash_on_delivery" : method,
-          totalAmount: orderTotal
+          paymentMethod: method === "cod" ? "cash_on_delivery" : method
         };
-        console.log("Sending order data:", JSON.stringify(orderData, null, 2));
-        return createOrder(orderData, token);
+        return createOrder(orderData);
       });
 
       await Promise.all(orderPromises);
@@ -285,10 +280,8 @@ export default function CustomerCheckoutPayment() {
                 <span className="ck-free">مجاناً</span>
               </div>
 
-              <div className="ck-summary-row">
-                <span>الضريبة (10%)</span>
-                <span>{tax}₪</span>
-              </div>
+              {/* ✅ صف الضريبة محذوف: المنتجات معفاة من ضريبة 10% حالياً.
+                  الإجمالي يعكس سعر المنتجات + رسوم التوصيل فقط. */}
 
               <div className="ck-summary-total">
                 <span>الإجمالي</span>

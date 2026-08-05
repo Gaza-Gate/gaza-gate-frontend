@@ -465,3 +465,107 @@
 .od-review-star-btn:hover {
   transform: scale(1.1);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ═══════════════════════════════════════════════════════════════ */
+.dark .od-root { background: var(--bg-page); }
+
+.dark .od-back,
+.dark .od-back:hover { color: #fb923c; }
+.dark .od-title    { color: #FFFFFF; }
+.dark .od-subtitle { color: #94a3b8; }
+
+/* ── Success banner ── */
+.dark .od-success-banner {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+  color: #34d399;
+}
+
+/* ── Status badges (الألوان تظل لكن بشفافية أعمق) ── */
+.dark .od-badge-yellow { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+.dark .od-badge-green  { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.dark .od-badge-blue   { background: rgba(37, 99, 235, 0.18);  color: #60a5fa; }
+.dark .od-badge-purple { background: rgba(147, 51, 234, 0.18); color: #c084fc; }
+.dark .od-badge-gray   { background: rgba(90, 115, 168, 0.18); color: #cbd5e1; }
+
+/* ── Workflow card ── */
+.dark .od-workflow-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .od-section-title    { color: #FFFFFF; }
+.dark .od-step-pending {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: var(--border);
+  color: #94a3b8;
+}
+.dark .od-step-line        { background: rgba(90, 115, 168, 0.30); }
+.dark .od-step-line-done   { background: #16a34a; }
+.dark .od-step-label       { color: #94a3b8; }
+.dark .od-step-label-current { color: #FFFFFF; }
+.dark .od-update-block     { border-top-color: var(--border); }
+.dark .od-update-note      { color: #94a3b8; }
+.dark .od-btn-update       { background: var(--orange); color: #fff; }
+.dark .od-btn-update:hover { background: var(--orange-dark); }
+
+/* ── Info cards + products card ── */
+.dark .od-info-card,
+.dark .od-products-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .od-info-header {
+  color: #FFFFFF;
+  border-bottom-color: var(--border);
+}
+.dark .od-info-key        { color: #94a3b8; }
+.dark .od-info-value      { color: #FFFFFF; }
+.dark .od-info-row-single { color: #94a3b8; }
+
+/* ── Products rows ── */
+.dark .od-product-row    { border-bottom-color: var(--border); }
+.dark .od-product-total { color: #FFFFFF; }
+.dark .od-product-name  { color: #FFFFFF; }
+.dark .od-product-sub   { color: #94a3b8; }
+.dark .od-product-icon  {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+/* ── Summary ── */
+.dark .od-summary-row    { color: #94a3b8; }
+.dark .od-summary-total {
+  color: #FFFFFF;
+  border-top-color: var(--border);
+}
+
+/* ── Reject form ── */
+.dark .od-btn-cancel-reject {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+  color: #cbd5e1;
+}
+.dark .od-btn-cancel-reject:hover { background: rgba(249, 115, 22, 0.10); }
+.dark .od-reject-textarea {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+  color: #FFFFFF;
+}
+.dark .od-reject-textarea::placeholder { color: #94a3b8; }
+
+/* ── Review card ── */
+.dark .od-review-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+}
+.dark .od-review-done-text {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+  color: #34d399;
+}

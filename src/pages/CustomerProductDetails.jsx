@@ -115,6 +115,9 @@ export default function CustomerProductDetails() {
   // يستخدم contactStore helper الموحّد من utils/chatHelpers.js
   // — صفحة /messages بتقرأ الـ state وتستدعي createConversation بنفسها
   //   (لتفادي duplicate calls ولتمركز الـ logic بمكان واحد)
+  // ✅ السماح بالمراسلة الذاتية: لو البائع والمشتري نفس الـ user
+  //    (المستخدم بيدخل على منتجه الخاص)، الـ button بيظهر وبيشتغل طبيعي.
+  //    ممنوع نحط شرط يمنع senderId === receiverId في الواجهة.
   const handleMessageStore = () => {
     if (messagingStore) return; // prevent double-clicks
 
@@ -131,6 +134,9 @@ export default function CustomerProductDetails() {
       console.warn("[ProductDetails] لا يمكن مراسلة المتجر: sellerId مفقود من المنتج");
       return;
     }
+
+    // ✅ بدون فحص ذاتي: لو currentUser.id === sellerId (نفس المستخدم بيبيع ويشتري)
+    //    — نسمحله يفتح محادثة مع نفسه عادي. الحظر يكون على الباك فقط.
 
     // 3) نوجّه على /messages مع state — صفحة الرسائل بتتولّى إنشاء/فتح المحادثة
     contactStore(navigate, {

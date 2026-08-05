@@ -4,14 +4,12 @@
 // و user.hasCustomerProfile من AuthContext (بدون fetch إضافي).
 //
 //   customer → seller:
-//     ✅ hasSellerProfile === true  → AuthContext.switchRole("seller")
-//        (بيرجّع accessToken + user محدّث، منحدّث الـ state فوراً)
+//     ✅ hasSellerProfile === true  → AuthContext.switchRoleAndNavigate("seller", navigate)
+//        (atomic: state + tokens + socket → navigate)
 //     ❌ hasSellerProfile === false → navigate("/customer/become-seller")
-//        (ما نستدعي switch-role لأنه رح يرجّع 409 —
-//         بدالها نوجّهه لصفحة إنشاء المتجر مرة واحدة فقط)
 //
 //   seller → customer:
-//     ✅ hasCustomerProfile === true  → AuthContext.switchRole("customer")
+//     ✅ hasCustomerProfile === true  → AuthContext.switchRoleAndNavigate("customer", navigate)
 //     ❌ hasCustomerProfile === false → AuthContext.becomeCustomer()
 //        (حالة نادرة، بس الـ smart logic يغطيها)
 //
@@ -33,8 +31,11 @@ export default function SwitchRoleButton() {
     currentRole,
     hasSellerProfile,
     hasCustomerProfile,
-    switchRole,
+    switchRoleAndNavigate,
     becomeCustomer,
+    isSwitchingRole,
+    isBecomingCustomer,
+    isBecomingSeller,
   } = useAuth();
   const navigate = useNavigate();
   const [localError, setLocalError] = useState("");
@@ -42,13 +43,13 @@ export default function SwitchRoleButton() {
   const isSeller = currentRole === "seller";
   const targetRole = isSeller ? "customer" : "seller";
   const label = isSeller ? "التحويل لوضع المشتري" : "التحويل لوضع البائع";
+  const busy = isSwitchingRole || isBecomingCustomer || isBecomingSeller;
 
   async function handleClick() {
     setLocalError("");
 
     // ─── 1) Smart gate: customer → seller بدون متجر ───
     if (targetRole === "seller" && !hasSellerProfile) {
-      // ❌ ما عندوش متجر → روح لصفحة "إنشاء المتجر" (once-only)
       navigate("/customer/become-seller");
       return;
     }
@@ -57,7 +58,8 @@ export default function SwitchRoleButton() {
     if (targetRole === "customer" && hasCustomerProfile === false) {
       try {
         await becomeCustomer();
-        navigate("/home/customer");
+        // ✅ navigate بعد ما الـ state يلتقط (atomic via flushStateUpdates)
+        navigate("/home/customer", { replace: true });
       } catch (err) {
         setLocalError(
           err?.response?.data?.data?.message ||
@@ -69,24 +71,14 @@ export default function SwitchRoleButton() {
       return;
     }
 
-    // ─── 3) عنده الـ profile → AuthContext.switchRole ───
+    // ─── 3) عنده الـ profile → AuthContext.switchRoleAndNavigate ───
+    //    atomic: state + tokens + socket → navigate
     try {
-      const result = await switchRole(targetRole);
-
-      // (اختياري) socket reconnect: لو الباك طلب إعادة الاتصال
-      if (result?.reconnectSocket) {
-        try {
-          const { connectSocket, disconnectSocket } = await import(
-            "../utils/socket"
-          );
-          disconnectSocket();
-          connectSocket();
-        } catch {
-          /* socket ليس متاحاً دائماً، بنتجاهل الخطأ */
-        }
-      }
-
-      navigate(targetRole === "seller" ? "/seller/dashboard" : "/home/customer");
+      await switchRoleAndNavigate(targetRole, navigate, {
+        path: targetRole === "seller" ? "/seller/dashboard" : "/home/customer",
+        replace: true,
+      });
+      // ✅ navigate صار من جوا الـ helper — ما في شي نعمله هون
     } catch (err) {
       setLocalError(
         err?.response?.data?.data?.message ||
@@ -106,6 +98,8 @@ export default function SwitchRoleButton() {
         type="button"
         className={`srb-btn ${isSeller ? "srb-btn-to-buyer" : "srb-btn-to-seller"}`}
         onClick={handleClick}
+        disabled={busy}
+        aria-busy={busy}
       >
         <ArrowLeftRight size={16} />
         {label}

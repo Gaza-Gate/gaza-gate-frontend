@@ -457,11 +457,28 @@
   color: inherit;
   padding: 2px 4px;
   border-radius: 6px;
-  transition: background 0.15s ease;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .cpp-review-seller-link:hover {
   background: var(--cpp-orange-soft);
+}
+
+.cpp-review-seller-link:active {
+  transform: scale(0.98);
+}
+
+.cpp-review-seller-link:focus-visible {
+  outline: 2px solid var(--cpp-orange);
+  outline-offset: 2px;
+}
+
+.cpp-review-seller-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
 }
 
 .cpp-review-avatar {
@@ -492,6 +509,9 @@
 
 .cpp-review-seller-link:hover .cpp-review-store-name {
   color: var(--cpp-orange-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
 }
 
 .cpp-review-comment {
@@ -626,4 +646,207 @@
 
 .cpp-retry-btn:active {
   transform: scale(0.98);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ═══════════════════════════════════════════════════════════════ */
+.dark {
+  --cpp-bg: #1e293b;
+  --cpp-card: #334155;
+  --cpp-border: rgba(90, 115, 168, 0.30);
+  --cpp-text: #FFFFFF;
+  --cpp-text-soft: #cbd5e1;
+  --cpp-text-mute: #94a3b8;
+  --cpp-orange-soft: rgba(249, 115, 22, 0.15);
+  --cpp-green-soft: rgba(16, 185, 129, 0.18);
+  --cpp-teal-soft: rgba(13, 148, 136, 0.18);
+  --cpp-amber-soft: rgba(245, 158, 11, 0.18);
+  --cpp-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --cpp-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --cpp-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.40);
+}
+
+.dark .cpp-page { background: var(--cpp-bg); }
+
+/* ── Topbar (back button) ── */
+.dark .cpp-back-btn {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--cpp-text-soft);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-back-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+/* ── Hero (cover + profile) ── */
+.dark .cpp-hero {
+  background: var(--cpp-card);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-cover {
+  background: linear-gradient(135deg, var(--cpp-orange) 0%, var(--cpp-orange-deep) 100%);
+}
+.dark .cpp-avatar-ring {
+  background: var(--cpp-card);
+  border-color: var(--cpp-card);
+}
+.dark .cpp-avatar {
+  background: rgba(51, 65, 85, 0.65);
+  color: #fb923c;
+}
+.dark .cpp-name   { color: #FFFFFF; }
+.dark .cpp-username,
+.dark .cpp-bio    { color: var(--cpp-text-soft); }
+
+.dark .cpp-stat-pill {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+  color: var(--cpp-text-soft);
+}
+.dark .cpp-stat-pill strong { color: #FFFFFF; }
+
+.dark .cpp-trust-pill {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--cpp-text-soft);
+  border-color: var(--cpp-border);
+}
+
+/* ── Action buttons (message, follow, etc.) ── */
+.dark .cpp-btn-primary {
+  background: var(--cpp-orange);
+  color: #fff;
+}
+.dark .cpp-btn-primary:hover { background: var(--cpp-orange-deep); }
+
+.dark .cpp-btn-secondary,
+.dark .cpp-btn-ghost {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+  color: var(--cpp-text-soft);
+}
+.dark .cpp-btn-secondary:hover,
+.dark .cpp-btn-ghost:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+.dark .cpp-btn-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.30);
+}
+.dark .cpp-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.20);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.50);
+}
+
+/* ── Section cards ── */
+.dark .cpp-section {
+  background: var(--cpp-card);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-section-header {
+  border-bottom-color: var(--cpp-border);
+}
+.dark .cpp-section-title  { color: #FFFFFF; }
+.dark .cpp-last-order     { color: var(--cpp-text-soft); }
+.dark .cpp-section-icon   { color: #fb923c; }
+
+/* ── Pills (badges) ── */
+.dark .cpp-pill--green {
+  background: var(--cpp-green-soft);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.30);
+}
+.dark .cpp-pill--teal {
+  background: var(--cpp-teal-soft);
+  color: #2dd4bf;
+  border-color: rgba(13, 148, 136, 0.30);
+}
+.dark .cpp-pill--amber {
+  background: var(--cpp-amber-soft);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.30);
+}
+.dark .cpp-pill--orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+/* ── Top categories / lists ── */
+.dark .cpp-top-cat-row {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-top-cat-name  { color: #FFFFFF; }
+.dark .cpp-top-cat-count { color: var(--cpp-text-mute); }
+.dark .cpp-top-cat-bar   { background: rgba(90, 115, 168, 0.20); }
+.dark .cpp-top-cat-bar-fill { background: var(--cpp-orange); }
+
+/* ── Orders list ── */
+.dark .cpp-order-row {
+  background: rgba(51, 65, 85, 0.45);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-order-row:hover {
+  background: rgba(51, 65, 85, 0.65);
+  border-color: rgba(249, 115, 22, 0.25);
+}
+.dark .cpp-order-id    { color: #FFFFFF; }
+.dark .cpp-order-meta  { color: var(--cpp-text-mute); }
+.dark .cpp-order-total { color: #fb923c; }
+.dark .cpp-order-status {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--cpp-text-soft);
+  border-color: var(--cpp-border);
+}
+
+/* ── Reviews ── */
+.dark .cpp-review-card {
+  background: rgba(51, 65, 85, 0.45);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-review-name   { color: #FFFFFF; }
+.dark .cpp-review-time   { color: var(--cpp-text-mute); }
+.dark .cpp-review-comment { color: var(--cpp-text-soft); }
+.dark .cpp-review-reply {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(90, 115, 168, 0.30);
+}
+
+/* ── Skeletons / Empty / Error ── */
+.dark .cpp-skeleton-card,
+.dark .cpp-skeleton,
+.dark .cpp-empty,
+.dark .cpp-error {
+  background: rgba(51, 65, 85, 0.4);
+  border-color: var(--cpp-border);
+  color: var(--cpp-text-soft);
+}
+.dark .cpp-empty h3,
+.dark .cpp-error h3 { color: #FFFFFF; }
+.dark .cpp-empty p,
+.dark .cpp-error p   { color: var(--cpp-text-mute); }
+
+/* ── Inputs / forms ── */
+.dark .cpp-input,
+.dark .cpp-textarea,
+.dark .cpp-select {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+  color: #FFFFFF;
+}
+.dark .cpp-input::placeholder,
+.dark .cpp-textarea::placeholder { color: var(--cpp-text-mute); }
+.dark .cpp-input:focus,
+.dark .cpp-textarea:focus,
+.dark .cpp-select:focus {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: var(--cpp-orange);
 }

@@ -4,7 +4,12 @@ import "./NotificationsPage.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 import { connectSocket } from "../utils/socket";
-import { resolveNotificationRoute } from "../utils/notificationRoutes";
+import {
+  resolveNotificationRoute,
+  extractProductIdFromNotification,
+  extractReviewIdFromNotification,
+  isReviewNotification,
+} from "../utils/notificationRoutes";
 import {
   isSellerNotification,
   shouldAcceptSellerSocketEvent,
@@ -340,19 +345,42 @@ export default function NotificationsPage() {
     }
   };
 
-  //   فتح الإشعار: بيوديك دايماً على صفحته (actionUrl لو موجود، وإلا مسار
-  // احتياطي حسب نوع الإشعار من FALLBACK_ROUTE_BY_TYPE) — بدون أي Modal.
-const openNotif = (n) => {
-  if (!n.isRead) markRead(n._id);
+  /* ── فتح الإشعار (النقر على عنصر في القائمة) ──
+     ✅ الخطوات:
+        1) تعليم كمقروء (PATCH /api/seller/notification/:id/read)
+        2) استخراج المعرّفات (productId, reviewId) من الإشعار
+        3) حلّ المسار عبر resolveNotificationRoute
+           - تقييم/مراجعة: → /seller/products?productId=xxx (يفتح ProductDetailsModal)
+           - fallback بدون productId: → /seller/ratings (قسم التقييمات الرئيسي)
+           - أو /seller/dashboard كآخر حل
+        4) التنقل للمسار
+  */
+  const openNotif = (n) => {
+    if (!n.isRead) markRead(n._id);
 
-  // ✅ مصدر الحقيقة الموحّد: utils/notificationRoutes.js
-  //    (postman contract: /api/seller/notification, /api/customer/notification)
-  const resolved = resolveNotificationRoute(n, "seller");
-  const target = resolved?.path || "/seller/dashboard";
+    // ✅ مصدر الحقيقة الموحّد: utils/notificationRoutes.js
+    //    (postman contract: /api/seller/notification, /api/customer/notification)
+    const resolved = resolveNotificationRoute(n, "seller");
+    const target = resolved?.path || "/seller/dashboard";
 
-  console.log("🔎 openNotif →", { type: n.type, actionUrl: n.actionUrl, target });
-  navigate(target);
-};
+    // تشخيص لإشعار التقييم
+    if (isReviewNotification(n)) {
+      // eslint-disable-next-line no-console
+      console.log("🔎 openNotif (review) →", {
+        type: n.type,
+        productId: extractProductIdFromNotification(n),
+        reviewId: extractReviewIdFromNotification(n),
+        actionUrl: n.actionUrl,
+        target,
+        label: resolved?.label,
+        key: resolved?.key,
+      });
+    } else {
+      // eslint-disable-next-line no-console
+      console.log("🔎 openNotif →", { type: n.type, actionUrl: n.actionUrl, target });
+    }
+    navigate(target);
+  };
   const markAllRead = async () => {
     try {
       if (IS_API_READY) await markAllReadAPI();

@@ -420,3 +420,67 @@
   margin-bottom: 6px;
   object-fit: cover;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .fcw-panel {
+  background: rgba(30, 41, 59, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.dark .fcw-header {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+}
+
+.dark .fcw-body { background: transparent; }
+.dark .fcw-empty { color: #94a3b8; }
+
+.dark .fcw-msg-bubble--them {
+  background: rgba(51, 65, 85, 0.85);
+  color: #cbd5e1;
+  border: 1px solid rgba(138, 158, 201, 0.20);
+}
+.dark .fcw-msg-bubble--me {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+  color: #fff;
+}
+
+.dark .fcw-msg-time--them { color: #94a3b8; }
+.dark .fcw-msg-time--me { color: rgba(255, 255, 255, 0.85); }
+
+.dark .fcw-composer {
+  background: rgba(30, 41, 59, 0.85);
+  border-top-color: rgba(138, 158, 201, 0.20);
+}
+.dark .fcw-text-input {
+  background: rgba(51, 65, 85, 0.85);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .fcw-text-input::placeholder { color: #94a3b8; }
+.dark .fcw-text-input:focus {
+  border-color: #fb923c;
+  background: rgba(51, 65, 85, 0.95);
+}
+
+.dark .fcw-attach-btn { color: #94a3b8; }
+.dark .fcw-attach-btn:hover { color: #fb923c; }
+.dark .fcw-attach-btn:disabled { color: rgba(138, 158, 201, 0.30); }
+
+.dark .fcw-image-preview-row {
+  background: rgba(51, 65, 85, 0.65);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .fcw-image-preview-remove { color: #f87171; }
+
+.dark .fcw-send-btn {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+}
+.dark .fcw-send-btn:disabled { background: rgba(138, 158, 201, 0.20); }
+
+.dark .fcw-fab {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.45);
+}

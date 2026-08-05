@@ -373,3 +373,57 @@
     height: 54px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .ccw-panel {
+  background: rgba(30, 41, 59, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.dark .ccw-fab {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.45);
+}
+
+.dark .ccw-header {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+}
+
+.dark .ccw-body { background: transparent; }
+.dark .ccw-empty { color: #94a3b8; }
+
+.dark .ccw-msg-bubble--them {
+  background: rgba(51, 65, 85, 0.85);
+  color: #cbd5e1;
+  border: 1px solid rgba(138, 158, 201, 0.20);
+}
+.dark .ccw-msg-bubble--me {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+  color: #fff;
+}
+
+.dark .ccw-msg-time { color: rgba(255, 255, 255, 0.85); }
+.dark .ccw-msg-time--them { color: #94a3b8; }
+
+.dark .ccw-composer {
+  background: rgba(30, 41, 59, 0.85);
+  border-top-color: rgba(138, 158, 201, 0.20);
+}
+.dark .ccw-text-input {
+  background: rgba(51, 65, 85, 0.85);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .ccw-text-input::placeholder { color: #94a3b8; }
+.dark .ccw-text-input:focus {
+  border-color: #fb923c;
+  background: rgba(51, 65, 85, 0.95);
+}
+
+.dark .ccw-send-btn {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%);
+}
+.dark .ccw-send-btn:disabled { background: rgba(138, 158, 201, 0.20); }

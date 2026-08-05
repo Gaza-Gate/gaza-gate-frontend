@@ -432,3 +432,75 @@
     font-size: 17px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .cprof-wrapper { background: var(--bg-page); }
+.dark .cprof-breadcrumb { color: #94a3b8; }
+.dark .cprof-breadcrumb button { color: #94a3b8; }
+.dark .cprof-breadcrumb button:hover { color: #fb923c; }
+
+.dark .cprof-banner { background: linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%); }
+
+.dark .cprof-addresses {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .cprof-addresses-title { color: #FFFFFF; }
+
+.dark .cprof-form {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .cprof-form-title { color: #FFFFFF; }
+.dark .cprof-field label { color: #cbd5e1; }
+.dark .cprof-field input {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .cprof-field input::placeholder { color: #94a3b8; }
+.dark .cprof-field input:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+}
+
+.dark .cprof-form-cancel {
+  background: transparent;
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #fb923c;
+}
+.dark .cprof-form-cancel:hover { border-color: #fb923c; }
+
+.dark .cprof-address-card {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .cprof-address-label,
+.dark .cprof-address-name { color: #FFFFFF; }
+.dark .cprof-address-phone { color: #94a3b8; }
+.dark .cprof-address-text { color: #cbd5e1; }
+.dark .cprof-default-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.dark .cprof-set-default { color: #60a5fa; }
+.dark .cprof-set-default:hover { color: #93c5fd; }
+.dark .cprof-address-pin { background: rgba(30, 41, 59, 0.85); color: #94a3b8; }
+.dark .cprof-address-pin--active {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fb923c;
+}
+
+.dark .cprof-logout {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #f87171;
+}
+.dark .cprof-logout:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.45);
+}

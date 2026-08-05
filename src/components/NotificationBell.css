@@ -23,6 +23,10 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+.dark .nb-bell:hover {
+  background: rgba(249, 115, 22, 0.1);
+}
+
 .nb-bell:active {
   transform: scale(0.94);
 }
@@ -30,6 +34,24 @@
 .nb-bell:focus-visible {
   outline: 2px solid #f97316;
   outline-offset: 2px;
+}
+
+/* ── Active state (الـ dropdown مفتوح) ── */
+.nb-bell.nb-bell--active {
+  background: rgba(249, 115, 22, 0.12);
+}
+
+.nb-bell.nb-bell--active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  inset-inline-start: 50%;
+  transform: translateX(50%);
+  width: 0;
+  height: 0;
+  border-inline-start: 6px solid transparent;
+  border-inline-end: 6px solid transparent;
+  border-bottom: 6px solid var(--orange);
 }
 
 /* ── Badge (العداد) ── */

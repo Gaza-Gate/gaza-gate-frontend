@@ -286,17 +286,19 @@
 }
 
 .co-timeline-icon--done {
-  background: #10b981;
+  background: var(--orange);
   color: #fff;
 }
 
 .co-timeline-icon--current {
   background: var(--orange);
   color: #fff;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
 }
 
 .co-timeline-icon--current.co-timeline-icon--done {
   background: var(--orange);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
 }
 
 .co-timeline-label {
@@ -318,7 +320,7 @@
 }
 
 .co-timeline-line--done {
-  background: #10b981;
+  background: var(--orange);
 }
 
 /* ── حالة الإلغاء ── */
@@ -417,3 +419,116 @@
     height: 24px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ═══════════════════════════════════════════════════════════════ */
+.dark .co-wrapper { background: var(--bg-page); }
+
+.dark .co-header h1 { color: #FFFFFF; }
+.dark .co-header p  { color: #cbd5e1; }
+
+/* ── Privacy banner ── */
+.dark .co-privacy-banner {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .co-privacy-title { color: #fb923c; }
+.dark .co-privacy-desc  { color: #cbd5e1; }
+.dark .co-privacy-btn {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+.dark .co-privacy-btn:hover {
+  background: rgba(249, 115, 22, 0.20);
+  border-color: rgba(249, 115, 22, 0.40);
+}
+
+/* ── Order cards ── */
+.dark .co-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .co-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.30);
+}
+.dark .co-card-id    { color: #FFFFFF; }
+.dark .co-card-meta  { color: #94a3b8; }
+.dark .co-card-img   { background: rgba(90, 115, 168, 0.15); }
+.dark .co-card-arrow { color: #94a3b8; }
+
+/* ── Status badges ── */
+.dark .co-status--waiting {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.30);
+}
+.dark .co-status--approved,
+.dark .co-status--preparing {
+  background: rgba(37, 99, 235, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.30);
+}
+.dark .co-status--delivery {
+  background: var(--orange);
+  color: #fff;
+  border: 1px solid var(--orange);
+}
+.dark .co-status--completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.30);
+}
+.dark .co-status--cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.30);
+}
+
+.dark .co-card-total { color: #fb923c; }
+
+/* ── Cancel link ── */
+.dark .co-card-actions { border-top-color: var(--border); }
+.dark .co-cancel-link {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #fca5a5;
+}
+.dark .co-cancel-link:hover {
+  background: rgba(239, 68, 68, 0.20);
+  border-color: rgba(239, 68, 68, 0.50);
+  color: #fecaca;
+}
+
+/* ── Timeline ── */
+.dark .co-timeline-icon {
+  background: rgba(90, 115, 168, 0.20);
+  color: #94a3b8;
+}
+.dark .co-timeline-icon--done    { background: var(--orange); color: #fff; }
+.dark .co-timeline-icon--current { background: var(--orange); color: #fff; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.22); }
+.dark .co-timeline-label         { color: #94a3b8; }
+.dark .co-timeline-label--active { color: #FFFFFF; }
+.dark .co-timeline-line          { background: rgba(90, 115, 168, 0.30); }
+.dark .co-timeline-line--done    { background: var(--orange); }
+
+/* ── Cancelled note ── */
+.dark .co-cancelled-note {
+  background: rgba(239, 68, 68, 0.10);
+  color: #fca5a5;
+}
+
+/* ── Empty state ── */
+.dark .co-empty {
+  background: rgba(51, 65, 85, 0.4);
+  border-color: var(--border);
+  color: #cbd5e1;
+}
+.dark .co-empty h3 { color: #FFFFFF; }
+.dark .co-empty p  { color: #94a3b8; }
