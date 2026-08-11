@@ -177,16 +177,21 @@ export default function SellerNavbar() {
         </button>
       </div>
 
-      <button
-        className="snb-hamburger-btn"
-        aria-label="فتح القائمة"
-        onClick={(e) => {
-          e.stopPropagation();
-          setMobileMenuOpen((s) => !s);
-        }}
-      >
-        {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-      </button>
+      {/* ✅ شريط الأفعال للموبايل — جرس الإشعارات ظاهر دائماً جنب زر القائمة
+           حتى ما يضطر المستخدم يفتح القائمة كل مرة يبي يشوف إشعار جديد. */}
+      <div className="snb-actions snb-actions-mobile" aria-label="إجراءات سريعة">
+        <NotificationBell role="seller" />
+        <button
+          className="snb-hamburger-btn"
+          aria-label="فتح القائمة"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMobileMenuOpen((s) => !s);
+          }}
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
 
       {mobileMenuOpen && (
         <div className="snb-mobile-menu" onClick={(e) => e.stopPropagation()}>

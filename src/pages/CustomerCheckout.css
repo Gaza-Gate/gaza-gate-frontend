@@ -58,6 +58,236 @@
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+/* ✅ wrapper للرسالة + زر الإجراء جنب بعض */
+.ck-error-message .ck-error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+
+.ck-error-message .ck-error-text {
+  flex: 1;
+  text-align: start;
+  line-height: 1.6;
+}
+
+/* ✅ تخطيط مرن: الرسالة فوق، الزر تحت (في الموبايل) أو جنب (في الديسكتوب) */
+.ck-error-message {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ck-error-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ✅ زر الإجراء داخل رسالة الخطأ */
+.ck-error-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #991b1b;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.ck-error-action-btn:hover:not(:disabled) {
+  background: #7f1d1d;
+}
+
+.ck-error-action-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ck-error-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ✅ بانر إشعار تزامن السلة — يظهر لما السيرفر فيه منتجات ما كانت بالسلة المحلية */
+.ck-cart-sync-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid;
+  flex-wrap: wrap;
+}
+
+.ck-cart-sync-notice--added {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.ck-cart-sync-notice--removed {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #075985;
+}
+
+.ck-cart-sync-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.ck-cart-sync-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ck-cart-sync-text {
+  flex: 1;
+}
+
+.ck-cart-sync-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.ck-cart-sync-items {
+  margin: 4px 0 0 0;
+  font-size: 0.82rem;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.ck-cart-sync-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ck-cart-sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.ck-cart-sync-btn--primary {
+  background: #c2410c;
+  color: #ffffff;
+}
+
+.ck-cart-sync-btn--primary:hover {
+  background: #9a3412;
+}
+
+.ck-cart-sync-btn--primary:active {
+  transform: scale(0.98);
+}
+
+.ck-cart-sync-btn--secondary {
+  background: transparent;
+  color: inherit;
+  padding: 6px 10px;
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.ck-cart-sync-btn--secondary:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark .ck-cart-sync-notice--added {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.30);
+  color: #fdba74;
+}
+
+.dark .ck-cart-sync-notice--added .ck-cart-sync-btn--primary {
+  background: #f97316;
+  color: #1a1a1a;
+}
+
+.dark .ck-cart-sync-notice--removed {
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.30);
+  color: #7dd3fc;
+}
+
+.dark .ck-cart-sync-notice--removed .ck-cart-sync-btn--primary {
+  background: #0ea5e9;
+  color: #1a1a1a;
+}
+
+.dark .ck-cart-sync-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ✅ متغيرات للنوع — تمييز بصري حسب نوع الخطأ */
+.ck-error-message--unavailable {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.ck-error-message--unavailable .ck-error-action-btn {
+  background: #c2410c;
+}
+
+.ck-error-message--unavailable .ck-error-action-btn:hover:not(:disabled) {
+  background: #9a3412;
+}
+
+.ck-error-message--auth {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.ck-error-message--empty_cart {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.ck-error-message--empty_cart .ck-error-action-btn {
+  background: #b45309;
+}
+
+.ck-error-message--empty_cart .ck-error-action-btn:hover:not(:disabled) {
+  background: #92400e;
+}
+
+.ck-error-message--network {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
 }
 
 .ck-subtitle {
@@ -614,6 +844,24 @@
   background: rgba(239, 68, 68, 0.10);
   border-color: rgba(239, 68, 68, 0.30);
   color: #f87171;
+}
+
+.dark .ck-error-message--unavailable {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.30);
+  color: #fdba74;
+}
+
+.dark .ck-error-message--empty_cart {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #fcd34d;
+}
+
+.dark .ck-error-message--network {
+  background: rgba(59, 130, 246, 0.10);
+  border-color: rgba(59, 130, 246, 0.30);
+  color: #93c5fd;
 }
 
 .dark .ck-store-card,

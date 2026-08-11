@@ -159,6 +159,8 @@ export default function NotificationDropdown({
   const [deletingId, setDeletingId] = useState(null);
   const [removingId, setRemovingId] = useState(null); // للـ swipe-out animation
   const inFlightRef = useRef(false);
+  // ✅ بنمنع تكرار الـ auto mark-all-read في نفس الجلسة (ref مش state عشان ما يعيد render)
+  const autoMarkedRef = useRef(false);
 
   const isCustomer = role === "customer";
 
@@ -204,9 +206,51 @@ export default function NotificationDropdown({
     }
   }, [isAuthorized, isOpen, svc, isCustomer]);
 
+  /* ── Mark all as read (مُعرَّف هنا قبل أي useEffect يستخدمه — لتفادي TDZ) ── */
+  const markAll = useCallback(async () => {
+    if (markingAll) return;
+    const unread = notifs.filter((n) => !isRead(n));
+    if (unread.length === 0) return;
+    setMarkingAll(true);
+    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+    try {
+      await svc.markAll();
+    } catch (err) {
+      // rollback
+      setNotifs((prev) => prev.map((n) => ({ ...n, isRead: false, read: false })));
+    } finally {
+      setMarkingAll(false);
+    }
+  }, [markingAll, notifs, svc]);
+
   useEffect(() => {
     if (isOpen) load();
   }, [isOpen, load]);
+
+  /* ── Auto mark-all-read عند فتح الـ panel ──
+     ✅ السلوك: لما المستخدم يفتح الجرس → كل الإشعارات الموجودة بتتعليم كمقروءة تلقائياً
+     - بنعملها مرة واحدة فقط لكل جلسة فتح (autoMarkedRef)
+     - بننتظر حتى يخلص الـ load() عشان نضمن إن عندي الإشعارات
+     - لو في unread → بنادي markAll() الموجودة (optimistic + API)
+     - الإشعارات الجديدة اللي بتوصل عبر السوكت بعد الفتح → بتبقى unread (الـ mark-all يطّبق على snapshot وقت الفتح)
+  */
+  useEffect(() => {
+    if (!isOpen) {
+      // ن reset الـ ref لما ينقفل، عشان الفتح القادم يأخذ نفس السلوك
+      autoMarkedRef.current = false;
+      return;
+    }
+    if (autoMarkedRef.current) return;
+    if (loading) return; // نستنى الـ load يخلص
+    const unread = notifs.filter((n) => !isRead(n));
+    if (unread.length === 0) {
+      // حتى لو ما في unread، نسجّل إنو تم الـ auto-mark بهالجلسة
+      autoMarkedRef.current = true;
+      return;
+    }
+    autoMarkedRef.current = true;
+    markAll();
+  }, [isOpen, loading, notifs, markAll]);
 
   /* ── Real-time: socket listener ── */
   useEffect(() => {
@@ -287,23 +331,6 @@ export default function NotificationDropdown({
     },
     [svc]
   );
-
-  /* ── Mark all as read ── */
-  const markAll = useCallback(async () => {
-    if (markingAll) return;
-    const unread = notifs.filter((n) => !isRead(n));
-    if (unread.length === 0) return;
-    setMarkingAll(true);
-    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
-    try {
-      await svc.markAll();
-    } catch (err) {
-      // rollback
-      setNotifs((prev) => prev.map((n) => ({ ...n, isRead: false, read: false })));
-    } finally {
-      setMarkingAll(false);
-    }
-  }, [markingAll, notifs, svc]);
 
   /* ── Delete one ── */
   const deleteOne = useCallback(

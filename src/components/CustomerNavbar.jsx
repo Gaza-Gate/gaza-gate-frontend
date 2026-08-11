@@ -37,6 +37,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     logout: authLogout,
     hasSellerProfile,
     switchRoleAndNavigate,
+    syncProfileFlags,
     currentRole,
     isSwitchingRole,
     isBecomingSeller,
@@ -54,12 +55,18 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   ];
 
   // ✅ خانة "التحول لبائع" تتغير حسب حالة المستخدم:
-  //   - عنده متجر → "العودة لوضع البائع" (switchRole)
-  //   - ما عندوش → "التحول لبائع" (navigate to become-seller)
+  //   - عنده متجر (حسب state المحلي) → "العودة لوضع البائع" (switchRole)
+  //   - ما عندوش متجر (حسب state المحلي) → "التحول لبائع" (نفس الـ action الذكي
+  //     اللي بيجرب switch أولاً — بيعالج حالة الـ stale state)
   //   - بنخبيها بالكامل لمن يكون بالفعل بائع (لتجنب التكرار)
+  //
+  // 📌 الإصلاح: حتى لو الـ state المحلي يقول ما عندوش متجر، الـ action دايماً
+  //    "switch-to-seller" — الـ handler بيجرب الباك (syncProfileFlags + switchRole)
+  //    قبل ما يقرر يودّيه لصفحة become-seller. كذا بنعالج الـ bug "البائع المسجّل
+  //    بيوصل لصفحة إنشاء المتجر بدون logout/login".
   const becomeSellerItem = hasSellerProfile
     ? { path: null, label: "العودة لوضع البائع", Icon: ArrowLeftRight, action: "switch-to-seller" }
-    : { path: "/customer/become-seller", label: "التحول لبائع", Icon: ArrowLeftRight, action: null };
+    : { path: null, label: "التحول لبائع", Icon: ArrowLeftRight, action: "switch-to-seller" };
 
   const moreItems = [
     { path: "/profile/customer", label: "الملف الشخصي", Icon: User },
@@ -95,13 +102,28 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   // ✅ handler ذكي للتحول للبائع — يستخدم switch-role إذا عنده متجر
   //    الدور الموحّد: الـ RoleSwitchOverlay بيدير شاشة الانتظار.
   //    هنا ما بنعرض أي نص "جاري التحويل" — الزر بيبقى disabled لحظياً.
+  //
+  // 🔑 الإصلاح: قبل ما نحاول switch، بنعمل syncProfileFlags() عشان نعالج
+  //    الـ stale state (المستخدم بائع فعلاً بس الـ state المحلي يقول غير ذلك).
+  //    فقط لما الباك يفشل بـ 404/403 (ما عندوش متجر) → نحوّله لصفحة become-seller.
   async function handleMoreItemClick(item) {
     setMobileMenuOpen(false);
     setShowMore(false);
 
     if (item.action === "switch-to-seller") {
       if (isConverting) return; // ✅ بنمنع الضغط المتعدد
-      // عنده متجر → switchRoleAndNavigate (atomic: state + tokens + socket → navigate)
+
+      // ✅ 1) sync state مع الباك (silent — ما بيلمس isBootstrapping)
+      try {
+        await syncProfileFlags();
+      } catch (syncErr) {
+        console.warn(
+          "[CustomerNavbar] syncProfileFlags فشل، بنكمّل بالـ switch:",
+          syncErr?.message
+        );
+      }
+
+      // ✅ 2) بنجرّب switch-role (الباك هو المرجع)
       try {
         await switchRoleAndNavigate("seller", navigate, {
           path: "/seller/dashboard",
@@ -109,7 +131,16 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
         });
         // ✅ navigate صار من جوا الـ helper
       } catch (err) {
-        // fallback: navigate to become-seller (في حالة غريبة)
+        // ✅ fallback: الباك أكد إنه ما عندوش متجر → صفحة إنشاء المتجر
+        const status = err?.response?.status;
+        if (status === 404 || status === 403 || status === 409) {
+          console.info(
+            "[CustomerNavbar] switch-role رفض الطلب — المستخدم ما عندوش seller profile → become-seller"
+          );
+          navigate("/customer/become-seller");
+          return;
+        }
+        // أي خطأ تاني (شبكة، توكن منتهي، إلخ) — بنفس الـ fallback القديم
         console.warn(
           "[CustomerNavbar] switch-role فشل، بنحوّل لصفحة become-seller:",
           err?.message

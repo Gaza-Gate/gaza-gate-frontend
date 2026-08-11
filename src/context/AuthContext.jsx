@@ -22,7 +22,7 @@
 //      const { user, currentRole, hasSellerProfile, hasCustomerProfile,
 //              isAuthenticated, isBootstrapping,
 //              login, becomeSeller, becomeCustomer, switchRole, switchRoleAndNavigate,
-//              logout, refreshSession,
+//              logout, refreshSession, syncProfileFlags,
 //              isSwitchingRole, isBecomingSeller, isBecomingCustomer,
 //              switchingToRole, pendingNavigation,
 //              getHomePathForRole, clearRoleCaches,
@@ -44,6 +44,7 @@ import {
   fetchProfileFlags,
 } from "../services/roleService";
 import { decodeJwt, isTokenExpired } from "../utils/jwt";
+import { useAutoRefreshToken } from "../hooks/useAutoRefreshToken";
 
 // ✅ Lazy load: بنستوردهم بس وقت الاستخدام (عشان ما نكسر SSR / التست)
 async function getSocketHelpers() {
@@ -135,6 +136,13 @@ function flushStateUpdates() {
 }
 
 export function AuthProvider({ children }) {
+  // ── ✅ Auto refresh token: يشتغل مرة وحدة لما AuthProvider يحمّل ──
+  //    كل 10 دقائق بيحاول يجدد التوكن بالخلفية (silent).
+  //    وكمان لما المستخدم يرجع للتب (visibility change).
+  //    لاحظ: ما بيستخدم `isAuthenticated` كـ dependency عشان
+  //    ما يعيد الـ interval لما الـ user يتغيّر.
+  useAutoRefreshToken();
+
   // ── الإقلاع: قراءة sync من localStorage فقط ──
   const [user, setUserState] = useState(readUserFromStorage);
   const [currentRole, setCurrentRole] = useState(() =>
@@ -228,6 +236,18 @@ export function AuthProvider({ children }) {
 
   /**
    * ✅ Public API: login({ user, accessToken, refreshToken? })
+   *
+   * بيعمل 3 أشياء بالترتيب:
+   *   1) يحفظ الـ session فوراً (token + user) → localStorage + React state
+   *   2) يبعت event → باقي الـ components (cart, wishlist, navbar) تنحدّث
+   *   3) يجيب profile flags من الباك (hasSellerProfile, hasCustomerProfile)
+   *      ويدمجها بالـ user. هذا يخلي الـ navbar يعرض "Switch to Seller"
+   *      **فوراً** بعد الدخول، بدون ما يحتاج page reload.
+   *
+   * 📌 الـ flag fetch شغّال بالخلفية (fire-and-forget) — ما بنستناه.
+   *    السبب: الـ caller (Login.jsx) بيستنى token + user وبيعمل navigate.
+   *    إذا خلّيناه يستنى الـ flags، الـ login بيصير أبطأ بشوي.
+   *    والـ flags بتوصل بعد ~100ms وبتحدّث الـ state تلقائياً.
    */
   const login = useCallback(
     ({ user: newUser, accessToken, refreshToken } = {}) => {
@@ -235,9 +255,38 @@ export function AuthProvider({ children }) {
         console.warn("[AuthContext] login() requires a user object");
         return;
       }
+      // ✅ Step 1: احفظ الـ session فوراً
       persistSession({ user: newUser, accessToken, refreshToken });
       setError(null);
+      // ✅ Step 2: ابعت event → navbar و غيرهم ينحدّثوا
       window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+
+      // ✅ Step 3: اجلب الـ flags من الباك (background)
+      //    بنستخدم fetchProfileFlags (مش syncProfileFlags) لأنه
+      //    login فيه user جاهز بـ role معروف — ما بنحتاج نلمس
+      //    isBootstrapping ولا نمس caches.
+      (async () => {
+        try {
+          const flags = await fetchProfileFlags();
+          if (!flags) return;
+
+          // بندمج الـ flags مع الـ user الموجود — role نخليه زي ما هو
+          const currentUser = readUserFromStorage() || {};
+          const mergedUser = {
+            ...currentUser,
+            ...flags,
+            role: currentUser.role, // ✅ ما نغيّر role — التبديل صار عبر switchRole
+          };
+          persistSession({ user: mergedUser });
+          window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+        } catch (err) {
+          // ما بنفجّر error — الـ flags اختيارية والـ login الأساسي نجح
+          console.warn(
+            "[AuthContext] login: post-login flag sync فشل (مش حاسم):",
+            err?.message
+          );
+        }
+      })();
     },
     [persistSession]
   );
@@ -248,6 +297,10 @@ export function AuthProvider({ children }) {
    *   1) الإقلاع: لو localStorage فيه user ناقص الـ flags
    *   2) بعد ما يصير بائع: للتأكد إن الـ flags صاروا true عند الباك
    *   3) عند الـ 401 من الباك
+   *
+   * ⚠️ هذا الـ helper بيستخدم لحالة الـ bootstrap — بيعلّم `isBootstrapping: true`
+   *    لحظياً فبتشتغل حراس المسارات بشاشة تحميل. للأماكن التانية (مثلاً
+   *    SwitchRoleButton) استخدموا `syncProfileFlags()` بدالها.
    */
   const refreshSession = useCallback(async () => {
     const token = readTokenFromStorage();
@@ -279,6 +332,66 @@ export function AuthProvider({ children }) {
       return null;
     } finally {
       setIsBootstrapping(false);
+    }
+  }, [persistSession]);
+
+  /**
+   * ✅ Public API: syncProfileFlags()
+   *
+   * نسخة "هادئة" من refreshSession — بتعمل نفس الشي (تجلب الـ flags من
+   * الباك وتدمجها بـ user state + localStorage) **بدون** ما تلمس
+   * `isBootstrapping`. مخصصة للاستخدام من الـ components العادية
+   * (مثل SwitchRoleButton) لما تحتاج تحدّث الـ flags بدون ما تشغّل
+   * شاشة التحميل لحراس المسارات.
+   *
+   * 📌 الـ flow:
+   *   1) بنقرأ الـ token — لو منتهي/مفقود → null
+   *   2) بنستدعي fetchProfileFlags() (parallel check على seller/customer)
+   *   3) بندمج الـ flags بالـ user الحالي (مع الحفاظ على role الموجود)
+   *   4) بنحدّث localStorage + React state + AUTH_CHANGED_EVENT
+   *   5) بنرجّع الـ user المدمج
+   *
+   * 🔑 استخدام نموذجي:
+   *   const fresh = await syncProfileFlags();
+   *   if (!fresh?.hasSellerProfile) { ... }
+   */
+  const syncProfileFlags = useCallback(async () => {
+    const token = readTokenFromStorage();
+    if (!token) return null;
+
+    if (isTokenExpired(token)) {
+      console.info(
+        "[AuthContext] syncProfileFlags: token منتهي محلياً → logout"
+      );
+      logoutRef.current?.();
+      return null;
+    }
+
+    try {
+      const flags = await fetchProfileFlags();
+      if (!flags) {
+        return null;
+      }
+
+      // ✅ ندمج الـ flags بالـ user الحالي + نحافظ على role الموجود
+      //    (ما بنغيّر role هون — هذا مو من اختصاصنا، التبديل صار عبر switchRole)
+      const currentUser = readUserFromStorage() || {};
+      const mergedUser = {
+        ...currentUser,
+        ...flags,
+        // role نخليه زي ما هو — syncProfileFlags هدفها تحديث الـ flags فقط
+        role: currentUser.role,
+      };
+
+      persistSession({ user: mergedUser });
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+      return mergedUser;
+    } catch (err) {
+      console.warn(
+        "[AuthContext] syncProfileFlags failed:",
+        err?.message
+      );
+      return null;
     }
   }, [persistSession]);
 
@@ -715,6 +828,7 @@ export function AuthProvider({ children }) {
       switchRoleAndNavigate, // ✅ helper جديد
       logout,
       refreshSession,
+      syncProfileFlags, // ✅ نسخة هادئة — بدون لمس isBootstrapping
       // ── helpers ──
       getHomePathForRole,
       clearRoleCaches,
@@ -736,6 +850,7 @@ export function AuthProvider({ children }) {
       switchRoleAndNavigate,
       logout,
       refreshSession,
+      syncProfileFlags,
       getHomePathForRole,
       clearRoleCaches,
     ]

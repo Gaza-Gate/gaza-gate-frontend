@@ -428,17 +428,24 @@
 }
 
 /* ── comment ── */
+/* ✅ Responsive text: prevents overflow with long URLs / unbroken strings / Arabic diacritics.
+   Chain guarantees: parent is flex/min-width:0, then text has every wrap rule available. */
 .bprs-review-comment {
   font-size: 14px;
   color: var(--bprs-text-mid);
   line-height: 1.75;
   margin: 0 0 12px;
-  word-wrap: break-word;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  white-space: pre-wrap;
+  /* Wrap safety net (in order of aggressiveness) */
+  word-wrap: break-word;      /* legacy alias for overflow-wrap */
+  overflow-wrap: anywhere;    /* breaks anywhere if no break opportunity */
+  word-break: break-word;     /* fallback for older engines */
+  white-space: pre-wrap;      /* keep user line-breaks, collapse remaining whitespace */
+  /* Sizing safety net */
   max-width: 100%;
   min-width: 0;
+  /* Hard guarantee: text cannot escape the card even if all wraps fail */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 /* ── image ── */
@@ -637,10 +644,12 @@
   color: var(--bprs-text);
   line-height: 1.75;
   margin: 0;
+  /* ✅ Same responsive wrap chain as .bprs-review-comment */
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: anywhere;
   word-break: break-word;
+  hyphens: auto;
   padding-right: 44px; /* يعادل عرض الأفاتار + gap */
   position: relative;
   z-index: 1;

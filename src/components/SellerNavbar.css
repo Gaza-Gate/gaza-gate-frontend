@@ -131,6 +131,12 @@
   gap: 16px;
 }
 
+/* ✅ حاوية الأفعال الخاصة بالموبايل — بنخفيها على الديسكتوب
+   (الديسكتوب بيستخدم .snb-actions-desktop بدالها) */
+.snb-actions-mobile {
+  display: none;
+}
+
 .snb-bell-btn {
   background: none;
   border: none;
@@ -170,7 +176,7 @@
   .snb-hamburger-btn { display: flex; }
   .snb-nav {
     position: relative;
-    padding: 0 16px;
+    padding: 0 12px;
     height: 64px;
   }
   .snb-logo { height: 56px; }
@@ -207,6 +213,13 @@
   .snb-links-desktop,
   .snb-actions-desktop {
     display: none !important;
+  }
+
+  /* ✅ حاوية الأفعال للموبايل — بنظهرها (تحتوي على جرس الإشعارات + الهامبرغر) */
+  .snb-actions-mobile {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .snb-hamburger-btn {
@@ -284,6 +297,53 @@
   .snb-mobile-logout {
     color: #f97316;
     font-weight: 600;
+  }
+}
+
+/* ══════════════════════════════════════
+   تحسينات الموبايل الصغيرة (≤ 480px)
+   - تكبير مساحة اللمس لجرس الإشعارات
+   - ضمان تباين كافٍ وخلفية خفيفة لإبراز الجرس
+   - منع التكدس بين اللوغو والأفعال
+   ══════════════════════════════════════ */
+@media (max-width: 480px) {
+  .snb-nav {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .snb-logo { height: 50px; }
+
+  /* جرس الإشعارات — لمس مريح + إبراز بصري */
+  .snb-actions-mobile .nb-bell {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    background: rgba(249, 115, 22, 0.08);
+    border-radius: 12px;
+  }
+  .snb-actions-mobile .nb-bell:hover {
+    background: rgba(249, 115, 22, 0.15);
+  }
+  .dark .snb-actions-mobile .nb-bell {
+    background: rgba(249, 115, 22, 0.12);
+  }
+  .dark .snb-actions-mobile .nb-bell:hover {
+    background: rgba(249, 115, 22, 0.22);
+  }
+
+  /* زر القائمة — نفس مساحة اللمس البالغة 44px */
+  .snb-hamburger-btn {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .snb-hamburger-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .dark .snb-hamburger-btn:hover {
+    background: rgba(249, 115, 22, 0.1);
   }
 }
 .snb-link-btn {

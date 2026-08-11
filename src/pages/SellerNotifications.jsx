@@ -48,7 +48,6 @@ import {
   markSellerNotificationRead,
   markAllSellerNotificationsRead,
   deleteSellerNotification,
-  deleteAllSellerNotifications,
   extractNotifications,
   extractStats,
   extractPagination,
@@ -60,6 +59,7 @@ import { isSellerNotification } from "../utils/notificationRoleFilter";
 
 import { useAuth } from "../context/AuthContext";
 import { formatApiError } from "../utils/errorHelper";
+import { useSwipeToDismiss } from "../hooks/useSwipeToDismiss";
 
 import "./NotificationsPage.css";
 
@@ -305,7 +305,6 @@ export default function SellerNotifications() {
   const [error, setError] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
   const inFlightRef = useRef(false);
 
@@ -448,25 +447,6 @@ export default function SellerNotifications() {
     }
   }, [notifs, deletingId]);
 
-  /* ── Delete all ── */
-  const clearAll = useCallback(async () => {
-    if (stats.total === 0) return;
-    const snapshot = notifs;
-    const snapshotStats = stats;
-    setNotifs([]);
-    setStats({ total: 0, order: 0, general: 0, system: 0, promotional: 0, unRead: 0 });
-
-    try {
-      await deleteAllSellerNotifications();
-    } catch (err) {
-      console.error("Delete all error:", err);
-      setNotifs(snapshot);
-      setStats(snapshotStats);
-    } finally {
-      setConfirmClearAll(false);
-    }
-  }, [notifs, stats]);
-
   /* ── Tabs (filtering) ── */
   const visible = useMemo(() => {
     if (activeTab === "all") return notifs;
@@ -507,13 +487,6 @@ export default function SellerNotifications() {
     },
     [selectedNotif, navigate, markOneRead, closeNotif]
   );
-
-  const statCards = [
-    { key: "total",  label: "إجمالي الإشعارات", value: stats.total,  icon: Inbox,      accent: "#6b7280" },
-    { key: "unRead", label: "غير مقروءة",        value: stats.unRead, icon: Bell,       accent: "#f97316" },
-    { key: "order",  label: "الطلبات",           value: stats.order,  icon: ShoppingBag, accent: "#2563eb" },
-    { key: "system", label: "النظام",            value: stats.system, icon: Settings,   accent: "#475569" },
-  ];
 
   /* ── حارس العرض: لو مش بوضعية البائع ── */
   if (!isBootstrapping && !isSellerMode) {
@@ -569,24 +542,6 @@ export default function SellerNotifications() {
           </div>
         </div>
 
-        {/* ── Stats cards ── */}
-        <div className="np-stats">
-          {statCards.map((s) => {
-            const Icon = s.icon;
-            return (
-              <div className="np-stat-card" key={s.key}>
-                <div className="np-stat-icon" style={{ background: `${s.accent}15`, color: s.accent }}>
-                  <Icon size={18} />
-                </div>
-                <div className="np-stat-info">
-                  <span className="np-stat-value">{s.value}</span>
-                  <span className="np-stat-label">{s.label}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         {/* ── Tabs ── */}
         <div className="np-tabs">
           <div className="np-tabs-list">
@@ -604,15 +559,6 @@ export default function SellerNotifications() {
               );
             })}
           </div>
-          <button
-            className="np-btn-clear-all"
-            onClick={() => setConfirmClearAll(true)}
-            disabled={stats.total === 0}
-            title="حذف كل الإشعارات"
-          >
-            <Trash2 size={14} />
-            حذف الكل
-          </button>
         </div>
 
         {/* ── List ── */}
@@ -655,65 +601,15 @@ export default function SellerNotifications() {
               </p>
             </div>
           ) : (
-            visible.map((n) => {
-              const id = getId(n);
-              const meta = getMeta(n.type);
-              const Icon = meta.icon;
-              const read = isRead(n);
-              const title = getTitle(n);
-              const content = getContent(n);
-              const sender = getSender(n);
-              const order = getOrder(n);
-              const date = getNotifDate(n);
-              return (
-                <div
-                  key={id}
-                  className={`np-item-wrap ${!read ? "np-item-unread" : ""}`}
-                >
-                  <button
-                    type="button"
-                    className="np-item"
-                    onClick={() => openNotif(n)}
-                  >
-                    <div className="np-item-icon" style={{ background: meta.bg, color: meta.color }}>
-                      <Icon size={18} strokeWidth={2} />
-                    </div>
-                    <div className="np-item-body">
-                      {title && <div className="np-item-title">{title}</div>}
-                      {content && <div className="np-item-desc">{content}</div>}
-                      <div className="np-item-meta">
-                        <span className="np-item-type-tag" style={{ background: meta.bg, color: meta.color }}>
-                          {meta.label}
-                        </span>
-                        {order?.orderNumber && (
-                          <span className="np-item-order-tag">{order.orderNumber}</span>
-                        )}
-                        {date && <span className="np-item-time">{timeAgo(date)}</span>}
-                      </div>
-                      {sender?.name && (
-                        <div className="np-item-sender">من: {sender.name}</div>
-                      )}
-                    </div>
-                    <div className="np-item-right">
-                      {!read && <span className="np-unread-dot" aria-label="غير مقروء" />}
-                      <Eye size={14} color="#cbd5e1" style={{ marginTop: 4 }} />
-                    </div>
-                  </button>
-                  <button
-                    className="np-item-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm("حذف هذا الإشعار؟")) deleteOne(id);
-                    }}
-                    disabled={deletingId === id}
-                    aria-label="حذف"
-                    title="حذف"
-                  >
-                    {deletingId === id ? <Loader2 size={14} className="np-spin" /> : <X size={14} />}
-                  </button>
-                </div>
-              );
-            })
+            visible.map((n) => (
+              <NotificationRow
+                key={getId(n)}
+                n={n}
+                onOpen={() => openNotif(n)}
+                onDelete={() => deleteOne(getId(n))}
+                deletingId={deletingId}
+              />
+            ))
           )}
 
           {/* ── Pagination ── */}
@@ -748,27 +644,6 @@ export default function SellerNotifications() {
           onClose={closeNotif}
           onAction={handleActionClick}
         />
-      )}
-
-      {/* ── Confirm clear all modal ── */}
-      {confirmClearAll && (
-        <div className="np-modal-overlay" onClick={(e) => e.target === e.currentTarget && setConfirmClearAll(false)}>
-          <div className="np-modal np-modal-confirm" dir="rtl" role="dialog" aria-modal="true">
-            <div className="np-modal-body" style={{ textAlign: "center", padding: 24 }}>
-              <div className="np-empty-art" style={{ background: "#fef2f2", color: "#ef4444", margin: "0 auto 16px" }}>
-                <Trash2 size={32} />
-              </div>
-              <h3>حذف كل الإشعارات؟</h3>
-              <p style={{ color: "#64748b", margin: "8px 0 20px" }}>لا يمكن التراجع عن هذا الإجراء.</p>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                <button className="np-btn-mark-all" onClick={() => setConfirmClearAll(false)}>إلغاء</button>
-                <button className="np-retry-btn" onClick={clearAll} style={{ background: "#ef4444", color: "#fff" }}>
-                  نعم، احذف الكل
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
@@ -897,6 +772,82 @@ function NotificationDetailModal({ notif, onClose, onAction }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── NotificationRow ────────────────────────────────────────
+   ✅ Swipe-to-delete (mobile) + tap-to-open (desktop).
+      استبدلنا زر الحذف الصريح (np-item-delete + window.confirm) بـ swipe gesture
+      بديهية — تطابق تجربة CustomerNotifications.
+────────────────────────────────────────────────────────── */
+function NotificationRow({ n, onOpen, onDelete, deletingId }) {
+  const id = getId(n);
+  const meta = getMeta(n.type);
+  const Icon = meta.icon;
+  const read = isRead(n);
+  const title = getTitle(n);
+  const content = getContent(n);
+  const sender = getSender(n);
+  const order = getOrder(n);
+  const date = getNotifDate(n);
+  const isDeleting = deletingId === id;
+
+  // ✅ السحب (RTL/LTR aware) لحذف الإشعار
+  const swipe = useSwipeToDismiss({
+    onDismiss: () => {
+      if (!isDeleting) onDelete?.();
+    },
+    direction: "both",
+    enabled: !isDeleting,
+  });
+
+  return (
+    <div className={`np-item-wrap ${!read ? "np-item-unread" : ""}`}>
+      {/* الخلفية الحمراء (تظهر مع السحب) */}
+      <div className="np-item-bg" style={swipe.bgStyle} aria-hidden="true">
+        <Trash2 size={18} />
+      </div>
+
+      <button
+        type="button"
+        className="np-item"
+        onClick={onOpen}
+        {...swipe.bind()}
+        style={swipe.style}
+        disabled={isDeleting}
+        aria-label={title || "إشعار"}
+      >
+        <div
+          className="np-item-icon"
+          style={{ background: meta.bg, color: meta.color }}
+        >
+          <Icon size={18} strokeWidth={2} />
+        </div>
+        <div className="np-item-body">
+          {title && <div className="np-item-title">{title}</div>}
+          {content && <div className="np-item-desc">{content}</div>}
+          <div className="np-item-meta">
+            <span
+              className="np-item-type-tag"
+              style={{ background: meta.bg, color: meta.color }}
+            >
+              {meta.label}
+            </span>
+            {order?.orderNumber && (
+              <span className="np-item-order-tag">{order.orderNumber}</span>
+            )}
+            {date && <span className="np-item-time">{timeAgo(date)}</span>}
+          </div>
+          {sender?.name && (
+            <div className="np-item-sender">من: {sender.name}</div>
+          )}
+        </div>
+        <div className="np-item-right">
+          {!read && <span className="np-unread-dot" aria-label="غير مقروء" />}
+          <Eye size={14} color="#cbd5e1" style={{ marginTop: 4 }} />
+        </div>
+      </button>
     </div>
   );
 }

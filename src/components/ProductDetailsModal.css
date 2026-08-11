@@ -347,20 +347,178 @@
   margin: 10px 0 0;
 }
 
-/* على الشاشات الصغيرة: نرجع للترتيب العمودي حتى ما تنضغط الصورة كتير */
-@media (max-width: 640px) {
+/* ═══════════════════════════════════════════════════════════════
+   Responsive — تابلت وموبايل (≤ 1024px)
+   - نرجع للترتيب العمودي
+   - الصورة بـ aspect-ratio طبيعي (ما تنقطع)
+   - padding و font-sizes مضبوطة للموبايل
+   - !important على الـ flex-direction والـ width عشان نضمن
+     إنه ما يصير فيه race condition مع أي rule تانية
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .pdm-overlay {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+
+  .pdm-card {
+    max-width: 100% !important;
+    max-height: 100vh !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
   .pdm-main {
-    flex-direction: column;
-    overflow-y: auto;
+    flex-direction: column !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+    align-items: stretch !important;  /* ✅ يجبر الأطفال ياخدوا العرض الكامل */
+  }
+
+  /* الصورة: عرض كامل مع نسبة عرض لارتفاع ثابتة — بتدرج بشكل أنيق
+     ومش بتنفجر أو تنقص عن الـ container */
+  .pdm-img-wrap {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 4 / 3;
+    max-height: 320px;
+    flex-shrink: 0 !important;
+    align-self: stretch !important;  /* ✅ تأكيد إضافي */
+  }
+
+  .pdm-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+
+  .pdm-img-empty {
+    min-height: 220px;
+  }
+
+  /* ✅ FIX — pdm-side لازم ياخد العرض الكامل بوضوح.
+     السبب: في بعض المتصفحات، flex item بـ min-width: 0 و overflow-y:auto
+     ممكن يحسب العرض بناءً على المحتوى بدل الـ container.
+     همن نجبر width: 100% + box-sizing: border-box + align-self: stretch. */
+  .pdm-side {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding: 16px 16px 24px !important;
+    overflow-y: visible !important;
+    align-self: stretch !important;
+    box-sizing: border-box !important;
+  }
+
+  .pdm-body,
+  .pdm-reviews {
+    width: 100%;
+  }
+
+  .pdm-title  { font-size: 18px; }
+  .pdm-price  { font-size: 17px; margin-bottom: 8px; }
+  .pdm-stock  { font-size: 13px; margin-bottom: 8px; }
+  .pdm-description { font-size: 13px; line-height: 1.55; margin-bottom: 8px; }
+  .pdm-meta   { font-size: 12px; }
+
+  /* ✅ قسم التقييمات — نرصّص الـ summary فوق الـ distribution بدل جنب بعض
+     حتى ما يطلع ضيق وما ينضغط على الموبايل */
+  .pdm-reviews-top {
+    flex-direction: column !important;
+    gap: 14px;
+    align-items: stretch !important;
+  }
+
+  .pdm-reviews-summary {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px;
+    padding-left: 0 !important;
+    padding-bottom: 12px;
+    border-left: none !important;
+    border-bottom: 1px solid #eee;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pdm-reviews-avg { font-size: 18px; }
+  .pdm-reviews-total { font-size: 12px; }
+
+  /* الـ distribution يتمدّد عرض كامل */
+  .pdm-distribution {
+    width: 100% !important;
+  }
+
+  .pdm-dist-row {
+    width: 100%;
+  }
+
+  /* زر الإغلاق — أكبر قليلاً على الموبايل (touch target ≥ 40px) */
+  .pdm-close {
+    width: 36px;
+    height: 36px;
+    top: 10px;
+    left: 10px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive — موبايل صغير جدًا (≤ 420px)
+   - padding أضيق
+   - font-sizes أصغر
+   - مساحة الصورة أقل حتى يبقى فيها محتوى للقراءة
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 420px) {
+  .pdm-side {
+    padding: 14px 12px 20px !important;
   }
 
   .pdm-img-wrap {
-    width: 100%;
-    height: 220px;
+    aspect-ratio: 16 / 10;
+    max-height: 220px;
   }
 
-  .pdm-side {
-    overflow-y: visible;
+  .pdm-img-empty {
+    min-height: 160px;
+  }
+
+  .pdm-title    { font-size: 17px; }
+  .pdm-price    { font-size: 16px; }
+  .pdm-reviews-avg { font-size: 16px; }
+
+  .pdm-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .pdm-review-item {
+    padding: 10px 12px;
+  }
+
+  .pdm-review-author  { font-size: 12px; }
+  .pdm-review-comment { font-size: 12px; line-height: 1.45; }
+  .pdm-review-date    { font-size: 10px; }
+
+  .pdm-reply-form-actions {
+    flex-wrap: wrap;
+  }
+
+  .pdm-btn-submit-reply,
+  .pdm-btn-cancel-reply {
+    flex: 1 1 auto;
+    min-width: 100px;
+    padding: 8px 12px;
+  }
+}
+
+/* ✅ Dark mode — حدود ملائمة عند تكديس الـ reviews على الموبايل */
+@media (max-width: 1024px) {
+  .dark .pdm-reviews-summary {
+    border-bottom-color: rgba(138, 158, 201, 0.18);
   }
 }
 
@@ -487,7 +645,19 @@
 .dark .pdm-close:hover { background: rgba(51, 65, 85, 0.95); color: #fb923c; }
 
 .dark .pdm-img-wrap { background: rgba(30, 41, 59, 0.85); }
-.dark .pdm-side { background: transparent; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ FIX — الوضع الليلي: لون نص أساسي لـ pdm-side
+   ─────────────────────────────────────────────────────────
+   المشكلة: pdm-side كان عندو background: transparent بس ما عندوش
+   color واضح، فالنصوص كانت بترث لون غامق من الـ body وبالكاد تظهر
+   على الخلفية الكحلية. هون بنحط لون فاتح أساسي (E2E8F0) — وأي
+   عنصر داخلي بيعمل override بألوان أفتح يبقى باين.
+   ═══════════════════════════════════════════════════════════════ */
+.dark .pdm-side {
+  background: transparent;
+  color: #E2E8F0;  /* ← اللون الأساسي لكل النصوص داخل المودال */
+}
 
 .dark .pdm-badge { color: #cbd5e1; }
 
@@ -497,12 +667,12 @@
    باللون الفاتح #E2E8F0 حتى تبقى النصوص واضحة على الخلفية الكحلية.
    البرتقالي يبقى كما هو (هوية بصرية للمشروع).
    ═══════════════════════════════════════════════════════════════ */
-.dark .pdm-title        { color: #E2E8F0; }
+.dark .pdm-title        { color: #F1F5F9; }  /* أفتح شوي من E2E8F0 للتباين الأعلى */
 .dark .pdm-description  { color: #cbd5e1; }
 .dark .pdm-meta         { color: #cbd5e1; }
-.dark .pdm-meta-label   { color: #E2E8F0; }
+.dark .pdm-meta-label   { color: #F1F5F9; }
 .dark .pdm-stock        { color: #cbd5e1; }
-.dark .pdm-reviews-avg  { color: #E2E8F0; }
+.dark .pdm-reviews-avg  { color: #F1F5F9; }
 .dark .pdm-reviews-total { color: #94a3b8; }
 .dark .pdm-reviews-empty { color: #94a3b8; }
 .dark .pdm-reviews-status { color: #cbd5e1; }
@@ -520,8 +690,8 @@
   background: rgba(51, 65, 85, 0.55);
   border: 1px solid rgba(90, 115, 168, 0.18);
 }
-.dark .pdm-review-author  { color: #E2E8F0; }
-.dark .pdm-review-comment { color: #E2E8F0; }
+.dark .pdm-review-author  { color: #F1F5F9; }
+.dark .pdm-review-comment { color: #F1F5F9; }
 .dark .pdm-review-date    { color: #94a3b8; }
 .dark .pdm-review-avatar-empty { background: rgba(90, 115, 168, 0.30); }
 
@@ -534,7 +704,7 @@
 .dark .pdm-seller-reply-label,
 .dark .pdm-reply-header { color: #cbd5e1; }
 .dark .pdm-seller-reply-text,
-.dark .pdm-reply-text { color: #E2E8F0; }
+.dark .pdm-reply-text { color: #F1F5F9; }
 .dark .pdm-edit-reply { color: #fb923c; }
 .dark .pdm-btn-reply,
 .dark .pdm-btn-cancel-reply {
@@ -550,7 +720,7 @@
 .dark .pdm-reply-textarea {
   background: rgba(30, 41, 59, 0.65);
   border-color: rgba(148, 163, 184, 0.30);
-  color: #E2E8F0;
+  color: #F1F5F9;
 }
 .dark .pdm-btn-submit-reply { background: #fb923c; }
 .dark .pdm-btn-submit-reply:hover { background: #f97316; }

@@ -38,9 +38,27 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
   // جلب قائمة الفئات من الباك اند عند فتح المودال
   useEffect(() => {
     if (!open) return;
+    console.log("🔍 [ProductFormModal] جاري جلب الفئات...");
     getCategories()
-      .then((res) => setCategories(res.data?.categories ?? []))
-      .catch(() => setCategories([]));
+      .then((list) => {
+        console.log("✅ [ProductFormModal] الفئات المستلمة:", list);
+        setCategories(Array.isArray(list) ? list : []);
+      })
+      .catch((err) => {
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message || err?.message;
+        console.error("❌ [ProductFormModal] فشل جلب الفئات:", {
+          status,
+          message,
+          url: err?.config?.url,
+          fullError: err,
+        });
+        setCategories([]);
+        setErrors((prev) => ({
+          ...prev,
+          categoryId: `تعذّر جلب الفئات (${status || "network"}) — ${message || ""}`,
+        }));
+      });
   }, [open]);
 
   useEffect(() => {
@@ -286,12 +304,22 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
             <label>الفئة *</label>
             <select name="categoryId" value={form.categoryId} onChange={handleChange}>
               <option value="" disabled>
-                اختر الفئة
+                {categories.length === 0 ? "لا توجد فئات متاحة" : "اختر الفئة"}
               </option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {categories.length === 0 && !errors.categoryId && (
+              <p className="pfm-hint">
+                لا توجد فئات في النظام. أضف فئات من لوحة الأدمن
+                {" "}
+                <a href="/admin/categories" style={{ color: "#f59e0b", textDecoration: "underline" }}>
+                  (/admin/categories)
+                </a>
+                {" "}لتستطيع إضافة المنتجات.
+              </p>
+            )}
             {errors.categoryId && <p className="pfm-error">{errors.categoryId}</p>}
           </div>
 

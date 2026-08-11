@@ -590,7 +590,15 @@
   line-height: 1.6;
   text-align: right;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  /* ✅ Responsive text — نفس الـ chain المستخدم في .bprs-review-comment
+     عشان نضمن إن النص الطويل / الروابط / العربي بالديكرتيكس ما يتجاوز الـ modal */
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  white-space: pre-wrap;
+  hyphens: auto;
 }
 
 .rm-success-image {

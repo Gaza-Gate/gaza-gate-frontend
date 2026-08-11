@@ -11,6 +11,19 @@ import { ThemeProvider, initTheme } from "./hooks/useTheme.jsx";
 
 initTheme();
 
+// ── PWA Service Worker Registration ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('[App] SW registered:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('[App] SW registration failed:', error);
+      });
+  });
+}
+
 // نقوم بإنشاء الجذر الخاص بالتطبيق وإحاطة التطبيق بـ BrowserRouter
 // لتمكين نظام التنقل بين الصفحات بشكل صحيح
 ReactDOM.createRoot(document.getElementById('root')).render(

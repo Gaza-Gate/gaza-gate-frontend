@@ -2,9 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, Heart, Plus, Star, Store, SlidersHorizontal,
-  ShoppingBag, Monitor, Shirt, Hammer, UtensilsCrossed,
-  BookOpen, Sparkles, Trophy, Gamepad2, Sofa, Package, Loader2,
-  ChevronRight, ChevronLeft, X, AlertCircle,
+  ShoppingBag, Loader2, ChevronRight, ChevronLeft, X, AlertCircle,
 } from "lucide-react";
 
 import { useCart } from "../context/CartContext";
@@ -23,56 +21,32 @@ import {
 import "./CustomerProducts.css";
 
 /**
- * خريطة الأيقونات حسب iconKey
+ * الـ "الكل" pseudo-category — دائماً أول عنصر بالـ carousel
+ * (مش من الـ API — الباك ما عنده فكرة عن زر "الكل")
  */
-const ICON_BY_KEY = {
-  food:        UtensilsCrossed,
-  clothes:     Shirt,
-  handicraft:  Hammer,
-  electronics: Monitor,
-  books:       BookOpen,
-  beauty:      Sparkles,
-  sports:      Trophy,
-  toys:        Gamepad2,
-  furniture:   Sofa,
-  default:     Package,
+const ALL_PSEUDO_CATEGORY = {
+  id: "all",
+  name: "all",
+  nameAr: "الكل",
+  iconKey: "default",
 };
 
 /**
- * Fallback categories — تُستخدم لما الباك ما يرجع فئات من /api/category/public
- *
- * كل فئة لها:
- *  - id:         معرّف محلي (نبدأ بـ "__" لتمييزه عن UUIDs الحقيقية)
- *  - nameAr:     الاسم بالعربي للعرض
- *  - nameMatches: مصفوفة بأسماء (بالإنجليزي أو العربي) تُطابق product.category.name
- *                عند الفلترة client-side (لأن الـ id محلي)
- *  - isFallback: true = فلتر client-side
+ * ✅ Fallback categories — تتعرض لما الـ API يرجّع فاضي أو يفشل
+ * (نفس الـ shape يلي بيرجّعه `mapCategory` بالـ service)
+ * الهدف: الـ carousel يضل فيه تصنيفات ظاهرة دائماً جنب زر "الكل"
+ * حتى لو الباك رجّع 401/403/500 أو الـ DB فاضية.
  */
 const FALLBACK_CATEGORIES = [
-  {
-    id: "all", name: "all", nameAr: "الكل", iconKey: "default",
-    nameMatches: [], isFallback: true,
-  },
-  {
-    id: "__food", name: "food", nameAr: "المأكولات المنزلية", iconKey: "food",
-    nameMatches: ["Food", "food", "المأكولات المنزلية", "مأكولات منزلية", "Home Food", "home food", "homemade"],
-    isFallback: true,
-  },
-  {
-    id: "__clothes", name: "clothes", nameAr: "ملابس", iconKey: "clothes",
-    nameMatches: ["Clothes", "clothes", "ملابس", "Clothing", "clothing", "Fashion", "fashion"],
-    isFallback: true,
-  },
-  {
-    id: "__handicraft", name: "handicraft", nameAr: "الأشغال اليدوية", iconKey: "handicraft",
-    nameMatches: ["Handicraft", "handicraft", "Handicrafts", "handicrafts", "الأشغال اليدوية", "أشغال يدوية", "Hand Made", "Handmade", "handmade"],
-    isFallback: true,
-  },
-  {
-    id: "__electronics", name: "electronics", nameAr: "الإلكترونيات", iconKey: "electronics",
-    nameMatches: ["Electronics", "electronics", "Electronic", "electronic", "الإلكترونيات", "إلكترونيات", "Tech", "tech"],
-    isFallback: true,
-  },
+  { id: "fb-electronics", name: "electronics", nameAr: "الإلكترونيات",  iconKey: "electronics", productCount: 0 },
+  { id: "fb-food",        name: "food",        nameAr: "المأكولات المنزلية", iconKey: "food",        productCount: 0 },
+  { id: "fb-clothes",     name: "clothes",     nameAr: "ملابس",          iconKey: "clothes",     productCount: 0 },
+  { id: "fb-handicraft",  name: "handicraft",  nameAr: "الأشغال اليدوية",  iconKey: "handicraft",  productCount: 0 },
+  { id: "fb-books",       name: "books",       nameAr: "الكتب",          iconKey: "books",       productCount: 0 },
+  { id: "fb-beauty",      name: "beauty",      nameAr: "الجمال والعناية",  iconKey: "beauty",      productCount: 0 },
+  { id: "fb-sports",      name: "sports",      nameAr: "الرياضة",        iconKey: "sports",      productCount: 0 },
+  { id: "fb-toys",        name: "toys",        nameAr: "الألعاب",        iconKey: "toys",        productCount: 0 },
+  { id: "fb-furniture",   name: "furniture",   nameAr: "الأثاث",         iconKey: "furniture",   productCount: 0 },
 ];
 
 export default function CustomerProducts() {
@@ -96,8 +70,7 @@ export default function CustomerProducts() {
 
   // ── Pagination meta من الباك (للأزرار Prev/Next) ──
   // الباك يرجّع: { totalItems, totalPages, currentPage, pageSize, hasNextPage, hasPreviousPage }
-  // بستخدمها بس للـ "all" + categoryId الحقيقية من الباك.
-  // للـ fallback categories (فلترة client-side): بنخفي الـ pagination — مش منطقي نقسمها صفحات.
+  // بستخدمها للـ "all" + categoryId الحقيقية من الباك (نفس المنطق للـ "كل" والتصنيفات).
   // ملاحظة: الـ pageSize ما بنحدده بالـ frontend — الباك هو اللي بيقرر
   const [pagination, setPagination] = useState({
     totalItems: 0,
@@ -108,8 +81,8 @@ export default function CustomerProducts() {
     hasPreviousPage: false,
   });
 
-  // ── الفئات من الباك أو fallback ──
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  // ── الفئات من الباك (مثل البائع تماماً — مصفوفة فاضية بالبداية) ──
+  const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // ── Carousel state للـ categories ──
@@ -155,18 +128,19 @@ export default function CustomerProducts() {
         setCategoriesLoading(true);
         const list = await getPublicCategories();
         if (cancelled) return;
-        if (Array.isArray(list) && list.length > 0) {
-          // الباك رجّع فئات حقيقية — استخدمها
-          setCategories([
-            { id: "all", name: "all", nameAr: "الكل", iconKey: "default", nameMatches: [], isFallback: true },
-            ...list.map((c) => ({ ...c, isFallback: false })),
-          ]);
-        } else {
-          setCategories(FALLBACK_CATEGORIES);
-        }
+        // نفس منطق البائع: استخدم اللي رجّعه الـ API مباشرة
+        // ونضيف "الكل" بالبداية كـ pseudo-category للـ reset
+        const apiCategories = Array.isArray(list) ? list : [];
+        // ✅ لو الـ API رجّع فاضي → نعرض الـ fallback عشان الـ carousel ما يطلع فاضي
+        const visible = apiCategories.length > 0 ? apiCategories : FALLBACK_CATEGORIES;
+        setCategories([ALL_PSEUDO_CATEGORY, ...visible]);
       } catch (err) {
-        console.warn("[categories] fallback to local list:", err.message);
-        setCategories(FALLBACK_CATEGORIES);
+        console.warn("[categories] فشل جلب الفئات:", err?.message);
+        if (!cancelled) {
+          // ✅ حتى لو فشل الـ API (401/403/500/Network) → نعرض "الكل" + fallback
+          // عشان المشتري يشوف التصنيفات ويستعملها بدل ما يطلعله carousel فاضي
+          setCategories([ALL_PSEUDO_CATEGORY, ...FALLBACK_CATEGORIES]);
+        }
       } finally {
         if (!cancelled) setCategoriesLoading(false);
       }
@@ -179,9 +153,6 @@ export default function CustomerProducts() {
     const categoryFromUrl = searchParams.get("category");
     if (categoryFromUrl) setActiveCategory(categoryFromUrl);
   }, [searchParams]);
-
-  // البحث عن الفئة النشطة (للحصول على isFallback)
-  const activeCat = categories.find((c) => c.id === activeCategory) || categories[0];
 
   // ── جلب المنتجات (مع فلترة ذكية) ──
   // ملاحظة: أي تغيير بالـ search/category/minPrice/maxPrice/sortBy لازم يرجع للصفحة 1
@@ -209,33 +180,12 @@ export default function CustomerProducts() {
       setLoading(true);
       setError(null);
 
-      const isFallbackCat = activeCat?.isFallback;
       const baseFilters = { page, search: search || undefined };
       if (minPrice) baseFilters.minPrice = minPrice;
       if (maxPrice) baseFilters.maxPrice = maxPrice;
       if (sortBy) baseFilters.sort = sortBy;
 
-      if (isFallbackCat && activeCategory !== "all") {
-        // ── فلتر محلي: نجيب كل المنتجات ثم نفلتر حسب nameMatches ──
-        const res = await getPublicProductsWithFilters({ ...baseFilters, page: 1 });
-        const all = res.data?.products || [];
-        setAllProducts(all);
-        const nameMatches = activeCat.nameMatches.map((n) => n.toLowerCase());
-        const filtered = all.filter((p) => {
-          const catName = String(p.category?.name || "").toLowerCase();
-          return nameMatches.some((m) => catName === m || catName.includes(m));
-        });
-        setProducts(filtered);
-        // ✅ بنخفي أزرار الـ pagination بالـ fallback (الفلترة محلية)
-        setPagination({
-          totalItems: filtered.length,
-          totalPages: 1,
-          currentPage: 1,
-          pageSize: res.data?.pagination?.pageSize ?? filtered.length,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        });
-      } else if (activeCategory === "all") {
+      if (activeCategory === "all") {
         // ── كل المنتجات (مع pagination من الباك) ──
         const res = await getPublicProductsWithFilters(baseFilters);
         const list = res.data?.products || [];
@@ -253,6 +203,7 @@ export default function CustomerProducts() {
         );
       } else {
         // ── فئة حقيقية من الباك — نرسل categoryId (مع pagination من الباك) ──
+        // (نفس منطق البائع — الـ ID دايماً UUID حقيقي من الـ API)
         const res = await getPublicProductsWithFilters({
           ...baseFilters,
           categoryId: activeCategory,
@@ -423,7 +374,6 @@ export default function CustomerProducts() {
                   <div className="cp-categories-empty">لا توجد فئات</div>
                 ) : (
                   categories.map((cat) => {
-                    const Icon = ICON_BY_KEY[cat.iconKey] || Package;
                     const isActive = activeCategory === cat.id;
                     return (
                       <button
@@ -435,7 +385,6 @@ export default function CustomerProducts() {
                         }}
                         title={cat.nameAr}
                       >
-                        <Icon size={15} />
                         <span className="cp-category-label">{cat.nameAr}</span>
                         {cat.productCount > 0 && cat.id !== "all" && (
                           <span className="cp-category-count">{cat.productCount}</span>

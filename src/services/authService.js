@@ -212,6 +212,16 @@ export async function logoutAll() {
 // ── Cart (kept here for now — يحتاج refactor لـ cartService.js) ─────
 
 /**
+ * GET /api/customer/cart/
+ * جلب عناصر السلة من السيرفر (مصدر الحقيقة — الباك بقرأ منها عند إنشاء الطلب)
+ * @returns {Promise<{items: Array, cartTotal: number}>}
+ */
+export async function getCart() {
+  const res = await api.get("/api/customer/cart/");
+  return res.data?.data ?? { items: [], cartTotal: 0 };
+}
+
+/**
  * POST /api/customer/cart
  * إضافة منتج للسلة
  * ⚠️ التوكن بيُضاف تلقائياً عبر الـ axios interceptor
@@ -221,6 +231,27 @@ export async function logoutAll() {
 export async function addToCart(productId, quantity) {
   const res = await api.post("/api/customer/cart", { productId, quantity });
   return res.data?.data?.item || res.data?.item || res.data;
+}
+
+/**
+ * DELETE /api/customer/cart/:cartItemId
+ * حذف عنصر واحد من السلة
+ * يُستخدم لتنظيف العناصر اللي صارت غير متاحة قبل إنشاء الطلب
+ * @param {string} cartItemId
+ */
+export async function removeCartItem(cartItemId) {
+  if (!cartItemId) throw new Error("cartItemId is required");
+  const res = await api.delete(`/api/customer/cart/${cartItemId}`);
+  return res.data?.data ?? res.data;
+}
+
+/**
+ * DELETE /api/customer/cart/
+ * مسح كامل السلة من السيرفر
+ */
+export async function clearServerCart() {
+  const res = await api.delete("/api/customer/cart/");
+  return res.data?.data ?? res.data;
 }
 
 // ── Token Refresh (دوال مساعدة لـ useAutoRefreshToken) ─────

@@ -159,37 +159,38 @@
 }
 .home-link-btn:hover { background: var(--orange-pale); }
 
-/* ════════ الأقسام — بطاقات موحّدة بـ Grid + أيقونات Lucide ════════ */
+/* ════════ الأقسام — بطاقات مضغوطة ومتينة جنب بعض ════════ */
 .home-categories {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 10px;
 }
 
 .home-category-card {
-  /* ✅ ثبات تام: كل البطاقات نفس الارتفاع/العرض/الـ padding */
-  display: flex;
-  flex-direction: column;
+  /* ✅ مضغوط: بس ارتفاع النص + padding معقول — لا مساحات فاضية */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
   width: 100%;
-  min-height: 150px;
-  height: 100%;
+  min-height: 48px;
   background: var(--orange-pale);
   border: 1px solid transparent;
-  border-radius: 16px;
-  padding: 22px 16px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
   color: var(--text-dark);
   cursor: pointer;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.2s ease;
 }
 .home-category-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-card);
   border-color: var(--orange);
 }
@@ -208,62 +209,82 @@
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(249, 115, 22, 0.25);
 }
 
-.home-category-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--orange-light);
-  color: var(--orange);
+/* (✅ تم حذف قواعد .home-category-icon — لم تعد مستعملة بعد إزالة الأيقونة) */
+
+.home-category-label {
+  /* ✅ نص مميّز بخط Cairo العريض — سطر واحد فقط */
+  display: inline-block;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* ── Loading state — spinner + نص بنمط الأيقونة الموجودة ── */
+.home-categories-loading {
+  grid-column: 1 / -1; /* ياخد عرض الـ grid كامل */
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-.home-category-card:hover .home-category-icon {
-  transform: scale(1.08);
-  background: var(--orange);
-  color: #fff;
-}
-
-/* ✅ Dark mode — دائرة الأيقونة أوضح */
-.dark .home-category-icon {
-  background: rgba(249, 115, 22, 0.20);
-  color: #fb923c;
-  border: 1px solid rgba(249, 115, 22, 0.30);
-}
-.dark .home-category-card:hover .home-category-icon {
-  background: var(--orange);
-  color: #fff;
-  border-color: var(--orange);
-}
-
-.home-category-label {
-  /* ✅ النص يأخذ سطر واحد متساوي + يقص لو طويل (للاحتياط) */
-  display: block;
-  width: 100%;
+  gap: 10px;
+  min-height: 138px;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-soft, #f0f0f0);
+  border-radius: 16px;
   font-size: 14px;
-  line-height: 1.4;
-  color: inherit;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
 }
 
-/* ── Responsive: Tablet متوسط — بطاقتين في السطر ── */
+.dark .home-categories-loading {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(249, 115, 22, 0.20);
+  color: #cbd5e1;
+}
+
+/* ── Empty state — لما الباك فاضي وفلتر الـ fallback كمان ما في فئات ── */
+.home-categories-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 138px;
+  background: var(--bg-card, #fff);
+  border: 1px dashed var(--border-soft, #e5e7eb);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted, #9ca3af);
+}
+
+.dark .home-categories-empty {
+  background: rgba(51, 65, 85, 0.35);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #94a3b8;
+}
+
+/* ── Spin animation للـ Loader2 ── */
+.home-spin {
+  animation: home-spin 0.7s linear infinite;
+  color: var(--orange, #f97316);
+}
+@keyframes home-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive: Tablet متوسط — 4 أعمدة مع padding أصغر ── */
 @media (max-width: 1024px) {
   .home-categories {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px;
   }
   .home-category-card {
-    min-height: 138px;
-    padding: 18px 12px;
-  }
-  .home-category-icon {
-    width: 48px;
-    height: 48px;
-  }
-  .home-category-icon svg {
-    width: 22px;
-    height: 22px;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 14px;
   }
 }
 
@@ -271,15 +292,12 @@
 @media (max-width: 768px) {
   .home-categories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px;
   }
   .home-category-card {
-    min-height: 140px;
-    padding: 20px 14px;
-  }
-  .home-category-icon {
-    width: 50px;
-    height: 50px;
+    min-height: 46px;
+    padding: 10px 14px;
+    font-size: 14.5px;
   }
 }
 
@@ -287,23 +305,13 @@
 @media (max-width: 480px) {
   .home-categories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 6px;
   }
   .home-category-card {
-    min-height: 130px;
-    padding: 18px 10px;
-    border-radius: 14px;
-  }
-  .home-category-label {
-    font-size: 13px;
-  }
-  .home-category-icon {
-    width: 46px;
-    height: 46px;
-  }
-  .home-category-icon svg {
-    width: 22px;
-    height: 22px;
+    min-height: 42px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    font-size: 13.5px;
   }
 }
 /* ════════ بانرات ════════ */

@@ -82,7 +82,7 @@ export default function CustomerCart() {
                   </div>
 
                   <div className="cart-item-img">
-                    <img src={item.primaryImage?.imageUrl || item.image} alt={item.name} />
+                    <img src={item.image} alt={item.name} />
                   </div>
                 </li>
               ))}
@@ -95,7 +95,10 @@ export default function CustomerCart() {
                 </span>
                 <span className="cart-total-value">{total}₪</span>
               </div>
-              <button className="cart-checkout-btn" onClick={() => navigate("/checkout/review")}>
+              <button
+                className="cart-checkout-btn"
+                onClick={() => navigate("/checkout/review")}
+              >
                 المتابعة للدفع
               </button>
             </footer>
