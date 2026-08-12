@@ -33,6 +33,10 @@ import {
   extractNotificationFromPayload,
 } from "../utils/notificationRoleFilter";
 
+// ✅ اسم الحدث اللي بيطلقه AuthContext بعد أي role switch
+//    (نفس المعرّف المُعرَّف بـ AuthContext.jsx لازم يكون متطابق)
+const ROLE_CACHE_CLEAR_EVENT = "gaza-gate-role-cache-clear";
+
 /**
  * هوك جلب عدد الإشعارات غير المقروءة لدور معيّن.
  *
@@ -59,6 +63,23 @@ export function useNotificationCount(role) {
 
   const endpoint = role === "seller" ? "/api/seller/notification" : "/api/customer/notification";
 
+  /**
+   * ✅ عدّ الإشعارات غير المقروءة من اللائحة بعد فلترتها حسب الدور.
+   *
+   * 🔑 السبب الرئيسي للإصلاح:
+   *    الباك بيرجّع `res.data.data.stats.unRead` بدون فلترة دقيقة حسب الـ
+   *    role الحالي — مثلاً إشعار "new order on your product" (نوعه ORDER
+   *    وموجود بكلا الدورين) ممكن يطلع بالـ count حتى لو الـ user بـ customer
+   *    mode. الحل: نحسب من اللائحة بعد ما نطبّق عليها نفس فلتر الـ
+   *    NotificationDropdown → التطابق بين العداد واللائحة 100%.
+   */
+  const countUnread = useCallback((rawList) => {
+    if (!Array.isArray(rawList)) return 0;
+    // ✅ فلترة حسب الدور (نفس الفلتر اللي بيستخدمه NotificationDropdown)
+    const filtered = rawList.filter((n) => isNotificationForRole(n, role));
+    return filtered.filter((n) => !n.isRead).length;
+  }, [role]);
+
   const refresh = useCallback(async () => {
     if (!isActive) {
       setCount(0);
@@ -67,16 +88,21 @@ export function useNotificationCount(role) {
     setLoading(true);
     try {
       const res = await api.get(endpoint);
+      // ✅ نحسب من اللائحة المُفلترة — مش من stats.unRead مباشرة
+      //    عشان نضمن تطابق العداد مع NotificationDropdown
+      const list =
+        res.data?.data?.notifications ?? res.data?.notifications ?? [];
+      if (Array.isArray(list) && list.length > 0) {
+        if (isMountedRef.current) setCount(countUnread(list));
+        return;
+      }
+      // Fallback: لو الباك ما بعتش list (نادراً) → نثق بـ stats.unRead
       const statsUnread = res.data?.data?.stats?.unRead;
       if (typeof statsUnread === "number") {
         if (isMountedRef.current) setCount(statsUnread);
         return;
       }
-      // Fallback: عد من اللائحة
-      const list =
-        res.data?.data?.notifications ?? res.data?.notifications ?? [];
-      const unread = Array.isArray(list) ? list.filter((n) => !n.isRead).length : 0;
-      if (isMountedRef.current) setCount(unread);
+      if (isMountedRef.current) setCount(0);
     } catch (err) {
       // 401/403 → تبديل دور متوقع، ما نسجل خطأ
       const status = err?.response?.status;
@@ -86,7 +112,7 @@ export function useNotificationCount(role) {
     } finally {
       if (isMountedRef.current) setLoading(false);
     }
-  }, [endpoint, isActive]);
+  }, [endpoint, isActive, countUnread]);
 
   // ⬇️ تخفيض محلي (optimistic) عند قراءة إشعار
   const decrement = useCallback((by = 1) => {
@@ -107,6 +133,23 @@ export function useNotificationCount(role) {
       isMountedRef.current = false;
     };
   }, [isActive, refresh]);
+
+  // ⬇️ ✅ safety net: الاستماع لحدث gaza-gate-role-cache-clear
+  //    (بيطلقه AuthContext بعد كل role switch ناجح عبر clearRoleCaches).
+  //    الهدف: reset فوري للعداد → 0 لحظة التبديل، ثم الـ useEffect فوق
+  //    بيعمل re-fetch لما الـ React state يلتقط الـ currentRole الجديد.
+  //    بدون هذا الـ listener ممكن يظهر الـ badge بقيمة قديمة لـ tick واحد.
+  useEffect(() => {
+    function onRoleCacheClear() {
+      if (!isMountedRef.current) return;
+      // ✅ reset فوري — الـ useEffect فوق رح يعمل refresh تلقائياً
+      setCount(0);
+    }
+    window.addEventListener(ROLE_CACHE_CLEAR_EVENT, onRoleCacheClear);
+    return () => {
+      window.removeEventListener(ROLE_CACHE_CLEAR_EVENT, onRoleCacheClear);
+    };
+  }, []);
 
   // ⬇️ socket listener (بس إذا نشط + نشتري على نفس الـ role)
   useEffect(() => {
