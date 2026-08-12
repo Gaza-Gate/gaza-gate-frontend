@@ -1,0 +1,372 @@
+/* ════════════════════════════════════════════════════════════════
+   HeroSlider — بديل الـ Hero Banner القديم
+   ─────────────────────────────────────────────────────────
+   • Desktop: aspect-ratio: 3/2 = نسبة الصور → تملأ العرض بدون قص
+   • Mobile: min-height + object-fit: cover → تملأ العرض بدون فراغ جانبي
+   • النص في الفراغ على يسار الصورة (مع تدرج للقراءة)
+   • Fade transition سلس (CSS opacity)
+   • RTL-aware arrows (التالي = يسار بصرياً)
+   • Responsive: Desktop / Tablet / Mobile
+   ════════════════════════════════════════════════════════════════ */
+
+.hero-slider {
+  position: relative;
+  width: 100%;
+  /* ✅ Desktop: نسبة 3:2 تطابق الصور بالضبط → تملأ العرض بدون أي قص أو فراغ */
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  /* خلفية احتياطية دافئة — تظهر للحظة قبل تحميل الصور */
+  background: linear-gradient(135deg, #f9f3eb 0%, #f0e2cf 100%);
+  outline: none;
+  isolation: isolate;
+}
+.hero-slider:focus-visible {
+  outline: 2px solid var(--orange, #F97316);
+  outline-offset: -2px;
+}
+
+/* ── Viewport + slides ── */
+.hero-slider-viewport {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1000ms ease-in-out;
+  pointer-events: none;
+  will-change: opacity;
+}
+.hero-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* ✅ الصورة تملأ الـ hero كامل بدون أي قص (نسبة العرض للارتفاع متطابقة) */
+.hero-slide-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  /* Ken Burns خفيف — zoom بطيء يعطي إحساس premium */
+  transform: scale(1);
+  transition: transform 7000ms ease-out;
+}
+.hero-slide.is-active .hero-slide-img {
+  transform: scale(1.04);
+}
+
+/* تدرج يغطي كامل الـ hero — غامق على اليسار (فوق النص) وشفاف على اليمين
+   (فوق موضوع الصورة). يضمن قراءة النص الأبيض فوق أي خلفية صورة */
+.hero-slide-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.58) 20%,
+    rgba(0, 0, 0, 0.38) 40%,
+    rgba(0, 0, 0, 0.15) 60%,
+    transparent 78%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── المحتوى النصي ──
+   • موضع مطلق على يسار الـ viewport
+   • مكدّس عمودياً: pill → title → tagline → CTA
+   • key={current} في JSX يعيد تشغيل animation عند تغيير الشريحة */
+.hero-content {
+  position: absolute;
+  top: 50%;
+  left: 5%;
+  transform: translateY(-50%);
+  width: 44%;
+  max-width: 560px;
+  z-index: 5;
+  text-align: right;
+  color: #fff;
+  animation: hero-content-in 800ms ease-out 250ms both;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  /* في RTL: flex-start = يمين بصرياً (نهاية الكونتينر = قرب مركز الصورة) */
+  align-items: flex-start;
+  gap: 14px;
+}
+
+@keyframes hero-content-in {
+  from { opacity: 0; transform: translateY(calc(-50% + 14px)); }
+  to   { opacity: 1; transform: translateY(-50%); }
+}
+
+/* 1) Pill ترحيب */
+.hero-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  margin-bottom: 4px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 2) العنوان الرئيسي */
+.hero-title {
+  font-family: "Tajawal", "Cairo", sans-serif;
+  font-size: clamp(28px, 4.2vw, 48px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  margin: 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* 3) Tagline */
+.hero-tagline {
+  font-family: "Tajawal", "Cairo", sans-serif;
+  font-size: clamp(14px, 1.5vw, 18px);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  font-weight: 500;
+  max-width: 480px;
+}
+
+/* 4) CTA */
+.hero-cta {
+  background: var(--orange, #F97316);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 42px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(249, 115, 22, 0.40);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  margin-top: 4px;
+}
+.hero-cta:hover  { background: var(--orange-dark, #EA6D0E); }
+.hero-cta:active { transform: scale(0.97); }
+
+/* ── Arrows (في RTL: التالي = يسار بصرياً، السابق = يمين بصرياً) ── */
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
+  opacity: 0.88;
+}
+.hero-arrow:hover {
+  background: rgba(255, 255, 255, 0.32);
+  opacity: 1;
+}
+.hero-arrow:active { transform: translateY(-50%) scale(0.92); }
+
+.hero-arrow--prev {
+  right: 22px; /* في RTL: السابق يظهر يمين */
+}
+.hero-arrow--next {
+  left: 22px;  /* في RTL: التالي يظهر يسار */
+}
+
+/* ── Pagination dots ── */
+.hero-dots {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 6;
+  padding: 7px 13px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: width 320ms ease, background 240ms ease, border-radius 240ms ease;
+}
+.hero-dot:hover { background: rgba(255, 255, 255, 0.75); }
+
+.hero-dot.is-active {
+  width: 28px;
+  border-radius: 4px;
+  background: var(--orange, #F97316);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Responsive — Tablet (نفس فكرة الديسكتوب: aspect-ratio)
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .hero-content {
+    width: 50%;
+    max-width: 480px;
+    left: 4%;
+  }
+  .hero-title {
+    font-size: clamp(26px, 4.5vw, 38px);
+  }
+  .hero-tagline {
+    font-size: 14.5px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Responsive — Mobile
+   • مثل اللابتوب بالضبط: صورة بعرض الشاشة + النص فوقها
+   • object-fit: cover → تملأ العرض بدون فراغ جانبي
+   • النص أصغر ويوضع على اليسار (نفس فكرة الديسكتوب)
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .hero-slider {
+    /* نفس aspect-ratio الديسكتوب → شكل زي اللابتوب */
+    aspect-ratio: 3 / 2;
+    min-height: 260px;   /* حد أدنى عشان النص ما ينضغط كثير */
+    height: auto;
+  }
+  /* الـ viewport يرجع absolute عادي (مش flex column) */
+  .hero-slider-viewport {
+    position: absolute;
+    inset: 0;
+  }
+  .hero-slide {
+    position: absolute;
+    inset: 0;
+  }
+  .hero-slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;    /* ← تملأ العرض بدون فراغ جانبي */
+  }
+  /* التدرج: يغطي كل الـ hero (نفس فكرة الديسكتوب) */
+  .hero-slide-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.78) 0%,
+      rgba(0, 0, 0, 0.62) 22%,
+      rgba(0, 0, 0, 0.42) 45%,
+      rgba(0, 0, 0, 0.18) 65%,
+      transparent 82%
+    );
+  }
+
+  /* النص: فوق الصورة (نفس فكرة الديسكتوب، بس أصغر) */
+  .hero-content {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    transform: translateY(-50%);
+    width: 65%;
+    max-width: none;
+    padding: 0;
+    text-align: right;
+    color: #fff;
+    background: none;
+    animation: hero-content-in 700ms ease-out 200ms both;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .hero-pill {
+    font-size: 10.5px;
+    padding: 4px 11px;
+    margin-bottom: 0;
+  }
+  .hero-title {
+    font-size: 19px;
+    line-height: 1.2;
+  }
+  .hero-tagline {
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: none;
+  }
+  .hero-cta {
+    padding: 8px 22px;
+    font-size: 12.5px;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+
+  /* الأسهم: على يمين/يسار الصورة، بنص الارتفاع */
+  .hero-arrow {
+    width: 34px;
+    height: 34px;
+  }
+  .hero-arrow--prev { right: 8px; }
+  .hero-arrow--next { left: 8px; }
+  /* الـ dots: أسفل الصورة (نفس الديسكتوب) */
+  .hero-dots {
+    bottom: 12px;
+    padding: 5px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-slider { min-height: 240px; }
+  .hero-content { width: 70%; left: 4%; }
+  .hero-pill { font-size: 10px; padding: 3px 10px; }
+  .hero-title { font-size: 17px; }
+  .hero-tagline { font-size: 11.5px; }
+  .hero-cta { padding: 7px 18px; font-size: 12px; }
+  .hero-arrow { width: 30px; height: 30px; }
+  .hero-arrow--prev { right: 6px; }
+  .hero-arrow--next { left: 6px; }
+  .hero-dots { bottom: 10px; padding: 4px 9px; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Reduce motion — احترام إعداد المتصفح
+   ════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide,
+  .hero-slide-img,
+  .hero-content,
+  .hero-dot,
+  .hero-arrow {
+    transition: none !important;
+    animation: none !important;
+  }
+}

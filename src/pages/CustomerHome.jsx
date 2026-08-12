@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -13,8 +13,7 @@ import {
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getPublicProducts, getPublicCategories } from "../services/productService";
-import { getCurrentUser } from "../services/authService";
-import heroBanner from "../assets/hero-banner.webp";
+import HeroSlider from "../components/HeroSlider";
 import logoFallback from "../assets/logo.png";
 import "./CustomerHome.css";
 
@@ -103,14 +102,6 @@ export default function CustomerHome() {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
-  // ✅ اسم حقيقي من auth (يقرأ من localStorage بدون API call)
-  const userName = useMemo(() => {
-    const user = getCurrentUser();
-    if (!user) return "ضيف";
-    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
-    return name || user.email?.split("@")[0] || "ضيف";
-  }, []);
-
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -169,37 +160,8 @@ export default function CustomerHome() {
     <div className="home-wrapper" dir="rtl">
       
 
-      {/* ── Hero ── */}
-      <section className="home-hero">
-        {/* ✅ WebP فقط — أصغر 99% من PNG الأصلي (~96KB vs 14MB) — مدعوم في 96%+ من المتصفحات */}
-        <img
-          src={heroBanner}
-          alt=""
-          className="home-hero-bg"
-          // ✅ above-the-fold → eager + high priority عشان تظهر فوراً
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-          width={1920}
-          height={600}
-        />
-        <div className="home-hero-overlay" />
-
-        <div className="home-hero-content">
-          <span className="home-hero-pill">مرحبا {userName} </span>
-          <h1 className="home-hero-title">
-            تسوق بذكاء
-            <br />
-            وعش الفرق
-          </h1>
-          <p className="home-hero-text">
-            آلاف المنتجات من أفضل المتاجر بأسعار لا تُقاوم. شحن مجاني وإرجاع سهل خلال 14 يوم.
-          </p>
-          <button className="home-hero-btn" onClick={goToProducts}>
-            تسوق الان
-          </button>
-        </div>
-      </section>
+      {/* ── Hero Slider (يستبدل الـ Hero Banner القديم) ── */}
+      <HeroSlider />
 
       {/* ── الأقسام ── */}
       <section className="home-section">
