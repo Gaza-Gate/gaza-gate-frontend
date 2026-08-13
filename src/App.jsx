@@ -1,6 +1,12 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuth } from './context/AuthContext'
+import {
+  shouldShowFloatingThemeToggle,
+  shouldShowSellerChatWidget,
+  shouldShowCustomerChatWidget,
+  isHomeRoute,
+} from './utils/visibility'
 
 // ✅ مسارات الـ Auth & Initial — سابقاً كانت تُغلَّف بـ AuthShell بخلفية كحلية.
 //    الآن كل الشاشات ديناميكية مع الثيم (ThemeProvider + CSS variables).
@@ -158,19 +164,26 @@ export default function App() {
   const { currentRole } = useAuth();
 
   // ← 3) شرط: الويدجت يظهر بس إذا المسار الحالي يبلش بـ /seller
-  const isSellerArea = location.pathname.startsWith('/seller');
+  //    (مُستبدل بشرط مركزي: يظهر فقط في الـ Seller Home عبر visibility.js)
+  const isSellerArea = shouldShowSellerChatWidget(location.pathname);
   // ✅ الـ CustomerChatWidget يظهر فقط للزائر اللي دوره customer
   //    * مش للضيوف، ومش للبائعين، ومش للأدمن
+  //    * فقط على الـ Customer Home (route-based central)
   //    * ومش على الصفحات public view-only (بروفايل/متجر)
   const isCustomerArea =
     currentRole === 'customer' &&
-    isCustomerPath(location.pathname) &&
+    shouldShowCustomerChatWidget(location.pathname) &&
     !isPublicViewOnly(location.pathname);
 
   // ✅ زر تبديل الثيم العائم (FAB)
-  //    • يظهر من Onboarding وما بعده (مش على Splash "/")
+  //    • مركزي عبر visibility.js → يظهر فقط في الـ Home (Customer/Seller)
   //    • z-index عالي (10000) فيطفو فوق كل المحتوى
-  const showFloatingThemeToggle = location.pathname !== '/';
+  //    • السلوك القديم: location.pathname !== '/' (ما عدا Splash)
+  //      — حافظنا على هذا عبر helper (يرجع false على "/").
+  const showFloatingThemeToggle = shouldShowFloatingThemeToggle(location.pathname);
+
+  // ملاحظة: isHomeRoute محجوز للقراءة/الاختبار — لا حاجة لاستخدامه هنا
+  void isHomeRoute;
 
   return (
     <>

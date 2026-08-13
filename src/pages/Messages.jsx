@@ -43,6 +43,7 @@ import {
   formatConvTime,
 } from "../utils/chatHelpers";
 import { customerProfilePath } from "../utils/sellerHelpers";
+import { canSendMessage } from "../utils/featureFlags";
 
 import "./Messages.css";
 import SellerNavbar from "../components/SellerNavbar";
@@ -332,11 +333,28 @@ export default function Messages() {
 
   const totalUnread = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
+  // مشتق من الـ Feature Flag — يقرأ في كل render
+  const sendEnabled = canSendMessage();
+
   // ── إرسال رسالة عبر REST (مع optimistic) ──
   const handleSend = useCallback(
     async (override) => {
       const text = (override ?? messageText).trim();
       if (!text || !selectedId || sending) return;
+
+      // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
+      // لو MESSAGING_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
+      //   ضغط Enter أو استدعى الـ handler أو استدعى الـ API مباشرة.
+      //   لا REST call، لا إنشاء رسالة في الـ DB، لا تحديث conversation state.
+      if (!canSendMessage()) {
+        console.info(
+          "[Messages] إرسال الرسالة معطّل عبر Feature Flag (MESSAGING_SEND_ENABLED=false)."
+        );
+        // نفرّغ الـ input (UX متوقع)، لكن ما نضيف أي رسالة.
+        setMessageText("");
+        return;
+      }
+
       setMessageText("");
       setSending(true);
 
@@ -988,7 +1006,7 @@ export default function Messages() {
                 )}
 
                 <div className="messages-input-area">
-                  {messages.length > 0 && (
+                  {messages.length > 0 && sendEnabled && (
                     <div className="messages-quick-replies">
                       {SELLER_QUICK_REPLIES.map((q) => (
                         <button
@@ -1007,7 +1025,7 @@ export default function Messages() {
                     <button
                       className="messages-send-btn"
                       onClick={() => handleSend()}
-                      disabled={sending || !messageText.trim()}
+                      disabled={sending || !sendEnabled || !messageText.trim()}
                       aria-label="إرسال"
                     >
                       {sending ? (
@@ -1026,15 +1044,17 @@ export default function Messages() {
                           handleSend();
                         }
                       }}
-                      placeholder="اكتب ردك للعميل..."
+                      placeholder={sendEnabled ? "اكتب ردك للعميل..." : "إرسال الرسائل معطّل حالياً"}
                       className="messages-text-input"
                       rows={1}
+                      disabled={!sendEnabled}
                     />
                     <button
                       className="messages-emoji-btn"
                       type="button"
                       aria-label="إيموجي"
                       onClick={() => setMessageText((t) => `${t} 😊`)}
+                      disabled={!sendEnabled}
                     >
                       <Smile size={18} />
                     </button>
@@ -1045,6 +1065,7 @@ export default function Messages() {
                       onClick={() =>
                         setError("ميزة إرفاق الصور ستتوفر قريباً 📎")
                       }
+                      disabled={!sendEnabled}
                     >
                       <Paperclip size={18} />
                     </button>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./FloatingChatWidget.css";
 import api from "../utils/api";
+import { canSendChatbot } from "../utils/featureFlags";
 
 // ══════════════════════════════════════════════════
 //  ⚙️  متوافق مع الـ API الحقيقي (حسب Postman collection):
@@ -184,6 +185,19 @@ const FloatingChatWidget = () => {
     // لازم يكون في نص أو صورة على الأقل
     if ((!text && !file) || sending) return;
 
+    // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
+    // لو CHATBOT_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
+    //   ضغط Enter أو استدعى الـ handler مباشرة. لا API call، لا تحديث
+    //   للـ conversation state.
+    if (!canSendChatbot()) {
+      console.info(
+        "[FloatingChatWidget] الإرسال معطّل عبر Feature Flag (CHATBOT_SEND_ENABLED=false)."
+      );
+      // نفرّغ الـ input فقط (UX متوقع)، لكن ما نضيف الرسالة للقائمة.
+      setInput("");
+      return;
+    }
+
     setShowQuickReplies(false);
     setInput("");
 
@@ -236,6 +250,9 @@ const FloatingChatWidget = () => {
       handleSend();
     }
   };
+
+  // مشتق من الـ Feature Flag — يقرأ في كل render حتى لو تغيّر الـ flag
+  const sendEnabled = canSendChatbot();
 
   return (
     <>
@@ -341,7 +358,7 @@ const FloatingChatWidget = () => {
               type="button"
               className="fcw-attach-btn"
               onClick={handlePickImage}
-              disabled={sending}
+              disabled={sending || !sendEnabled}
               aria-label="إرفاق صورة"
             >
               <PaperclipIcon />
@@ -349,17 +366,17 @@ const FloatingChatWidget = () => {
             <input
               type="text"
               className="fcw-input"
-              placeholder="اكتب رسالتك..."
+              placeholder={sendEnabled ? "اكتب رسالتك..." : "إرسال الرسائل معطّل حالياً"}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={sending}
+              disabled={sending || !sendEnabled}
             />
             <button
               type="button"
               className="fcw-send-btn"
               onClick={() => handleSend()}
-              disabled={sending || (!input.trim() && !imageFile)}
+              disabled={sending || !sendEnabled || (!input.trim() && !imageFile)}
             >
               <SendIcon />
             </button>

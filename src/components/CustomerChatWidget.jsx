@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, ShoppingBag, Mail, Sparkles } from "lucide-react";
 import api from "../utils/api";
+import { canSendChatbot } from "../utils/featureFlags";
 import "./CustomerChatWidget.css";
 
 /**
@@ -85,6 +86,19 @@ export default function CustomerChatWidget() {
     const question = (text || "").trim();
     if (!question || sending) return;
 
+    // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
+    // لو CHATBOT_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
+    //   ضغط Enter أو استدعى الـ handler مباشرة. لا API call، لا تحديث
+    //   للـ conversation state، لا ظهور رد من البوت.
+    if (!canSendChatbot()) {
+      console.info(
+        "[CustomerChatWidget] إرسال السؤال معطّل عبر Feature Flag (CHATBOT_SEND_ENABLED=false)."
+      );
+      // نفرّغ الـ input فقط (UX متوقع)، لكن ما نضيف أي رسالة للقائمة.
+      setInput("");
+      return;
+    }
+
     setInput("");
     setFallbackInfo(null);
     pushUser(question);
@@ -147,6 +161,9 @@ export default function CustomerChatWidget() {
     if (sending) return;
     sendQuestion(label);
   };
+
+  // مشتق من الـ Feature Flag — يقرأ في كل render
+  const sendEnabled = canSendChatbot();
 
   return (
     <>
@@ -228,8 +245,8 @@ export default function CustomerChatWidget() {
             )}
           </div>
 
-          {/* ردود سريعة — تظهر فقط لما ما في sending جاري */}
-          {!sending && (
+          {/* ردود سريعة — تظهر فقط لما ما في sending جاري والإرسال مفعّل */}
+          {!sending && sendEnabled && (
             <div className="ccw-quick-replies">
               {CUSTOMER_QUICK_REPLIES.map((q) => (
                 <button
@@ -249,17 +266,17 @@ export default function CustomerChatWidget() {
               ref={inputRef}
               type="text"
               className="ccw-text-input"
-              placeholder="اكتب سؤالك هنا..."
+              placeholder={sendEnabled ? "اكتب سؤالك هنا..." : "إرسال الرسائل معطّل حالياً"}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={sending}
+              disabled={sending || !sendEnabled}
             />
             <button
               type="button"
               className="ccw-send-btn"
               onClick={handleSend}
-              disabled={sending || !input.trim()}
+              disabled={sending || !sendEnabled || !input.trim()}
               aria-label="إرسال"
             >
               <Send size={16} style={{ transform: "scaleX(-1)" }} />
