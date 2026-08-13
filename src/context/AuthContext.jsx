@@ -774,9 +774,27 @@ export function AuthProvider({ children }) {
     }
   }, [persistSession, clearRoleCaches, getHomePathForRole]);
 
-  /** تسجيل الخروج — محلي فقط، الـ API call بيسويه الـ component */
+  /** ✅ تسجيل الخروج — local + React state + caches cleanup.
+   *
+   * الـ API call بيتم من الـ component (authService.logout).
+   * هذا الـ callback مسؤول عن:
+   *   1) قطع الـ socket فوراً
+   *   2) مسح كل مفاتيح الـ auth من localStorage/sessionStorage
+   *      (token, refreshToken, user, userType, sellerId, و "user" + "userType"
+   *       keys اللي بيكتبها authSession.js)
+   *   3) تصفير React state فوراً (user, currentRole, error, pendingNavigation)
+   *   4) إطلاق AUTH_CHANGED_EVENT + ROLE_CACHE_CLEAR_EVENT
+   *      (CartContext, WishlistContext, NotificationContext يسمعوها ويمسحوا
+   *       الـ cached items — مهم جداً عشان البيانات تختفي فوراً)
+   *   5) مسح أي cart/wishlist local storage keys مرتبطة بالمستخدم
+   *      (scoped keys: gaza-gate-cart:<userId>, gaza-gate-wishlist:<userId>)
+   *
+   * 📌 السبب: كانت المشكلة السابقة إنه الـ logout بمسح الـ session
+   *    بس الـ user يضل ظاهر "كأنه مسجل" لأن الـ Cart/Wishlist caches
+   *    ما تنمسح. الآن بنمسح كل شي ذرّي.
+   */
   const logout = useCallback(() => {
-    // ✅ نقفل الـ socket فوراً
+    // ✅ 1) قطع الـ socket فوراً
     getSocketHelpers().then((helpers) => {
       try {
         helpers?.disconnectSocket();
@@ -785,18 +803,58 @@ export function AuthProvider({ children }) {
       }
     });
 
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(USER_TYPE_KEY);
-    localStorage.removeItem(SELLER_ID_KEY);
+    // ✅ 2) مسح كل مفاتيح الـ session من localStorage + sessionStorage
+    try {
+      localStorage.removeItem(TOKEN_KEY); // "token"
+      localStorage.removeItem(REFRESH_TOKEN_KEY); // "refreshToken"
+      localStorage.removeItem(USER_KEY); // "user"
+      localStorage.removeItem(USER_TYPE_KEY); // "userType"
+      localStorage.removeItem(SELLER_ID_KEY); // "sellerId"
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch {
+      /* ignore */
+    }
+
+    // ✅ 3) مسح الـ cart/wishlist caches المرتبطة بالمستخدم اللي كان مسجل
+    //    بنمر على كل مفاتيح localStorage وبنمسح أي شي نمطه:
+    //    gaza-gate-cart:* أو gaza-gate-wishlist:*
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (
+          k.startsWith("gaza-gate-cart:") ||
+          k.startsWith("gaza-gate-wishlist:") ||
+          k === "gaza-gate-cart" ||
+          k === "gaza-gate-wishlist"
+        ) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {
+      /* ignore */
+    }
+
+    // ✅ 4) تصفير React state فوراً
     setUserState(null);
     setCurrentRole("customer");
     setError(null);
     setPendingNavigation(null);
-    // ✅ نطلق event لمسح caches + إنهاء الـ session
+    setIsBootstrapping(false); // ✅ بنخلي أي guard يقدر يقرر فوراً
+    // نمسح الـ role-switching state أيضاً (احتياط)
+    setIsSwitchingRole(false);
+    setSwitchingToRole(null);
+    setIsBecomingSeller(false);
+    setIsBecomingCustomer(false);
+
+    // ✅ 5) إطلاق events — كل الـ contexts تسمع وتعمل reset
     clearRoleCaches(currentRole, null);
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+
+    // ✅ 6) log للتشخيص
+    console.info("[AuthContext] logout: تم تنظيف كل الـ session state");
   }, [clearRoleCaches, currentRole]);
 
   // ✅ نحدّث الـ ref بعد ما logout يصير معرّف

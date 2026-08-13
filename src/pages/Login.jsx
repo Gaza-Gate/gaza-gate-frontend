@@ -9,6 +9,7 @@ import { authAPI } from '../utils/api'
 import { resolveSellerGoogleLogin } from '../utils/googleAuth'
 import { extractToken, extractUser } from '../utils/authSession'
 import { useAuth } from '../context/AuthContext'
+import { smartBack } from '../utils/smartBack'
 import GoogleBtn from '../components/GoogleBtn'
 
 export default function Login() {
@@ -92,7 +93,7 @@ export default function Login() {
     <FormCard>
       <button
         type="button"
-        onClick={() => navigate(-1)}
+        onClick={() => smartBack(navigate, { fallback: '/' })}
         aria-label="رجوع"
         className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors mb-2"
       >

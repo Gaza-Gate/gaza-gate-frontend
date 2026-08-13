@@ -33,7 +33,7 @@ export const FEATURES = Object.freeze({
 
   // هل إرسال رسائل جديدة مفعّل. false = Send Disabled + Enter لا يرسل
   //   + لا API call + لا إنشاء رسالة جديدة في DB.
-  MESSAGING_SEND_ENABLED: false,
+  MESSAGING_SEND_ENABLED: true,
 
   // ── Floating Actions (Chatbot + Theme) ───────────────────────────────
   // هل أزرار الـ Floating (Chatbot + Theme) تظهر فقط في الـ Home

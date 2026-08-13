@@ -85,6 +85,16 @@ function HeroSlider() {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
+  // ── Preload السلايد التالي (يمنع أي flicker/flash أثناء الـ crossfade) ──
+  useEffect(() => {
+    const nextIdx = (current + 1) % SLIDES.length;
+    const prevIdx = (current - 1 + SLIDES.length) % SLIDES.length;
+    [nextIdx, prevIdx].forEach((idx) => {
+      const img = new Image();
+      img.src = SLIDES[idx].src;
+    });
+  }, [current]);
+
   // ── Keyboard navigation (Left/Right arrows) ──
   const onKeyDown = useCallback(
     (e) => {
@@ -164,8 +174,8 @@ function HeroSlider() {
         {/* تدرج خفيف على يسار الصورة — يضمن قراءة النص في المنطقة الفاضية */}
         <div className="hero-slide-gradient" aria-hidden="true" />
 
-        {/* المحتوى النصي — يطلع فوق كل الشرائح، يتغير بـ animation عند تغيير الشريحة */}
-        <div className="hero-content" key={current /* يعيد تشغيل animation */}>
+        {/* المحتوى النصي — ثابت تماماً فوق الشرائح (ما بيتحرك مع تغيير الصورة) */}
+        <div className="hero-content">
           {/* 1. Pill ترحيب */}
           <span className="hero-pill">مرحبا {userName}</span>
 

@@ -15,6 +15,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { logout as logoutApi } from "../services/authService";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import "./CustomerNavbar.css";
@@ -84,19 +85,37 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  // ✅ handler موحّد للـ logout — يستدعي API ثم ينظّف الـ state محلياً.
+  //    مستخدم في dropdown logout + drawer logout.
+  //    بنمرّر الـ API أولاً (حتى لو فشل، منكمل بمسح الـ session محلياً
+  //    عشان المستخدم ما يضل عالق بحالة نصف مسجل).
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
     setMobileMenuOpen(false);
+    setShowMore(false);
+    setLoggingOut(true);
     if (onLogout) {
       onLogout();
+      setLoggingOut(false);
       return;
     }
-    // ✅ بنستخدم AuthContext.logout() بدل clearAuthSession()
-    //    عشان:
-    //    1) React state (user) يصفّر
-    //    2) AUTH_CHANGED_EVENT ينطلق → باقي المكونات تنحدّث
-    //    3) RequireSeller/RequireCustomer يعملوا redirect تلقائي
-    authLogout();
-    navigate("/login/customer");
+    try {
+      // ✅ 1) نحاول نسجل خروج من السيرفر (يبطل الـ refreshToken)
+      //    لو فشل (network/server error) — منكمل بمسح محلي.
+      await logoutApi().catch((err) => {
+        console.warn("[CustomerNavbar] logout API call failed (continuing local cleanup):", err?.message);
+      });
+    } finally {
+      // ✅ 2) تنظيف شامل للـ state المحلي (localStorage + React state + caches)
+      //    بنستدعي authLogout() اللي بيمسح كل شي (شامل Cart/Wishlist caches)
+      authLogout();
+      setLoggingOut(false);
+      // ✅ 3) navigate بعد ما الـ state يصفّر
+      //    بنستخدم replace عشان ما يقدر يرجع بزر back لصفحة محمية
+      navigate("/login/customer", { replace: true });
+    }
   };
 
   // ✅ handler ذكي للتحول للبائع — يستخدم switch-role إذا عنده متجر

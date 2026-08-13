@@ -4,24 +4,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-glass-strong);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--border-glass);
+  /* ✅ Solid color matching the logo's background square (light logo = white) */
+  background: #ffffff;
+  border-bottom: 1px solid #E5E5E5;
   padding: 14px 32px;
   position: sticky;
   top: 0;
   z-index: 1000;              /* ✅ فوق أي محتوى صفحة */
   isolation: isolate;         /* ✅ stacking context مستقل */
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
   font-family: "Tajawal", sans-serif;
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .dark .cn-nav {
-  background: rgba(30, 41, 59, 0.75);
-  border-bottom-color: rgba(148, 163, 184, 0.2);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+  /* ✅ Solid #1e293b (slate-800) — exact match for the dark logo's background square */
+  background: #1e293b;
+  border-bottom-color: #334155;
 }
 
 /* ── Logo ── */
@@ -359,12 +357,14 @@
 
 /* ╔══════════════════════════════════════════════════════════════════╗
    ║  Sidebar Drawer (من اليسار — يفتح من زر الـ hamburger)          ║
+   ║  ✅ z-index عالي جداً (99998/99999) — فوق الـ Navbar (1000)     ║
+   ║     والـ PWA Banner (1001) والـ Chat Widget (9999) وكل العناصر   ║
    ╚══════════════════════════════════════════════════════════════════╝ */
 .cn-drawer-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 199;
+  z-index: 99998;            /* ✅ فوق Navbar و PWA Banner، تحت الـ Drawer */
   animation: cn-fade-in 0.2s ease;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
@@ -379,12 +379,14 @@
   background: var(--bg-glass-strong);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  z-index: 200;
+  z-index: 99999;            /* ✅ أعلى عنصر في الصفحة — يغطي كل شيء */
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 28px rgba(0, 0, 0, 0.18);
   animation: cn-drawer-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   overflow-y: auto;
+  /* ✅ stacking context مستقل عشان محتواه (close button, links) ما يتأثر بأي parent */
+  isolation: isolate;
 }
 
 .dark .cn-drawer {

@@ -15,8 +15,14 @@ export default function AdminTopbar() {
     } catch {
       // حتى لو فشل الطلب منسجل خروج محلياً
     } finally {
+      // ✅ تنظيف شامل + إطلاق event للـ contexts (Cart/Wishlist) يمسحوا caches
       localStorage.clear()
-      navigate('/login/seller')
+      sessionStorage.clear()
+      // ✅ إطلاق auth-changed event عشان باقي الـ React components تنحدّث
+      //    (RequireAdmin، CustomerNavbar، إلخ)
+      window.dispatchEvent(new Event('gaza-gate-auth-changed'))
+      // ✅ استخدم replace عشان ما يقدر يرجع بـ back لصفحة محمية
+      navigate('/login/seller', { replace: true })
     }
   }
 

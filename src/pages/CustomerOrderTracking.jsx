@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ChevronRight, CheckCircle, Store, Package, Star, XCircle, CheckCircle2,
+  ChevronRight, ChevronLeft, CheckCircle, Store, Package, Star, XCircle, CheckCircle2,
   CreditCard, Banknote, Wallet, Hash, Calendar,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
@@ -11,8 +11,8 @@ import { ORDER_STEPS, getStepIndex, isCancelledStatus, isCancellableStatus, getS
 import { checkReviewEligibility } from "../utils/reviewEligibility";
 import { getMyReviewedProductsMap } from "../services/reviewService";
 import { extractSellerId, storeProfilePath } from "../utils/sellerHelpers";
+import { getProductImageUrl } from "../utils/productImage";
 import { OrderDetailsSkeleton } from "../components/LoadingState";
-import logo from "../assets/logo.png";
 import "./CustomerOrderTracking.css";
 import ReviewModal from "../components/ReviewModal";
 import CancelOrderModal from "../components/CancelOrderModal";
@@ -223,11 +223,12 @@ export default function CustomerOrderTracking() {
               <Store size={16} />
               {(() => {
                 // ✅ اسم البائع = Link يودّي على صفحة المتجر
-                //    بنتحقق من وجود sellerId + storePath قبل ما نولّد Link
-                //    — لو ما في id صالح، نعرض اسم البائع كنص عادي بدون Link
-                const sellerId = extractSellerId(order.seller);
+                //    بنمرّر `order` للـ helpers (مو order.seller)
+                //    — الـ helpers متوقعة object فيه `seller` nested
+                //    — لو ما في id صالح، نعرض اسم البائع كنص عادي
+                const sellerId = extractSellerId(order);
                 const storeName = order.seller?.storeName || "متجر";
-                const targetPath = storeProfilePath(order.seller);
+                const targetPath = storeProfilePath(order);
 
                 if (targetPath && sellerId) {
                   return (
@@ -237,8 +238,16 @@ export default function CustomerOrderTracking() {
                       title={`زيارة متجر ${storeName}`}
                       aria-label={`زيارة متجر ${storeName}`}
                     >
-                      {storeName}
+                      <span className="ot-store-link-name">{storeName}</span>
+                      <ChevronLeft size={14} className="ot-store-link-arrow" />
                     </Link>
+                  );
+                }
+                if (process.env.NODE_ENV !== "production") {
+                  // ✅ تشخيص سريع — لو ما لقى id، نشوف شكل الـ order.seller
+                  console.warn(
+                    "[OrderTracking] لم يتم العثور على sellerId للطلب",
+                    { seller: order.seller, sellerId, targetPath }
                   );
                 }
                 return <span>{storeName}</span>;
@@ -257,7 +266,7 @@ export default function CustomerOrderTracking() {
               return (
                 <div className="ot-item-card" key={item.id}>
                   <img
-                    src={item.primaryImage || logo}
+                    src={getProductImageUrl(item)}
                     alt={item.productName}
                     className="ot-item-img"
                   />

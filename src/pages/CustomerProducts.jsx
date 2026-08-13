@@ -475,9 +475,9 @@ export default function CustomerProducts() {
 
                       <div className="cp-card-body">
                         <span className="cp-status">
-                          {product.stockType === "limited" && Number(product.quantity) > 0
-                            ? "متوفر"
-                            : product.stockType === "limited" && Number(product.quantity) === 0
+                          {/* ✅ Status badge: محدود + كمية 0 → "نفذ"
+                              أي حالة ثانية (limited + quantity > 0، أو unlimited) → "متوفر" */}
+                          {product.stockType === "limited" && Number(product.quantity) === 0
                             ? "نفذ"
                             : "متوفر"}
                         </span>
@@ -521,7 +521,14 @@ export default function CustomerProducts() {
                           <span className="cp-price">{Number(product.price ?? 0).toFixed(2)}₪</span>
                         </div>
 
-                        <p className="cp-qty">الكمية: {product.quantity ?? 0}</p>
+                        <p className="cp-qty">
+                          {/* ✅ عرض الكمية بشكل صحيح بناءً على نوع المخزون:
+                              - stockType === "unlimited" → "غير محدود"
+                              - غير هيك → نعرض الكمية الحقيقية (أو 0 إذا ما متوفرة) */}
+                          {product.stockType === "unlimited"
+                            ? "الكمية: غير محدود"
+                            : `الكمية: ${Number(product.quantity ?? 0)}`}
+                        </p>
 
                         <button
                           className="cp-add-btn"

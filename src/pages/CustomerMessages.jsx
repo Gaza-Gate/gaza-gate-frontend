@@ -164,9 +164,29 @@ export default function CustomerMessages() {
               }
             } catch (e) {
               console.error("فشل إنشاء محادثة:", e);
-              const info = formatApiError(e, "تعذّر بدء محادثة مع هذا البائع");
-              setErrorInfo(info);
-              setError(info.message);
+              // ✅ حالة خاصة: مراسلة ذاتية (نفس الـ user بيبيع وبيشتري بنفس الإيميل)
+              //    الباك بيرجّع 400 "Cannot start a conversation with yourself".
+              //    هذا سيناريو متوقع (testing/dual-session) → ما بنعرض بانر خطأ أحمر.
+              const status = e?.response?.status;
+              const apiMsg =
+                e?.response?.data?.data?.message ||
+                e?.response?.data?.message ||
+                "";
+              const isSelfConversation =
+                status === 400 &&
+                typeof apiMsg === "string" &&
+                /conversation with yourself/i.test(apiMsg);
+
+              if (isSelfConversation) {
+                console.info(
+                  "[CustomerMessages] تم تجاهل خطأ المراسلة الذاتية (نفس الإيميل → نفس البائع/المشتري)."
+                );
+                // نخلّي الـ list زي ما هي ونتجاهل الـ error UI
+              } else {
+                const info = formatApiError(e, "تعذّر بدء محادثة مع هذا البائع");
+                setErrorInfo(info);
+                setError(info.message);
+              }
             }
           }
         } else if (list.length > 0) {

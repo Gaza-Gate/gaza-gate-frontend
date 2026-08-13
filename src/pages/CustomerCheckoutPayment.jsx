@@ -69,10 +69,16 @@ export default function CustomerCheckoutPayment() {
    * body: { paymentMethod: "cash_on_delivery" }
    * الباك بيقرأ الـ items من السلة الموجودة على السيرفر.
    *
-   * ⚠️ ملاحظة هامة: قبل إنشاء الطلب، بنزامن مع السلة الموجودة فعلياً
-   * على السيرفر وبنحذف أي عنصر صار غير متاح (status !== 'active' أو المخزون ناقص).
-   * هذا يحل مشكلة الـ 400 "Product X is no longer available" لما يكون
-   * في عناصر قديمة بالسيرة من جلسات سابقة.
+   * ⚠️ ملاحظة هامة جداً:
+   *   قبل إنشاء الطلب، بنزامن مع السلة الموجودة فعلياً على السيرفر
+   *   وبنحذف أي عنصر:
+   *     (أ) صار غير متاح (status !== 'active' أو المخزون ناقص) — حماية من 400
+   *     (ب) غير موجود في السلة المحلية (اللي شافها المستخدم) — حماية من
+   *         إنشاء طلبات عناصر من جلسات/مستخدمين سابقين على نفس الحساب
+   *         (الباك بيحفظ cart السيرفر بشكل دائم، فممكن يحتوي عناصر
+   *         من جلسة logout قديمة أو من تبديل role)
+   *
+   *   هذا يحل مشكلة "طلبات ما طلبتها تظهر في طلباتي" لما يتم الدفع.
    */
   const handleConfirm = async () => {
     try {
@@ -89,7 +95,54 @@ export default function CustomerCheckoutPayment() {
       const serverCart = await getCart();
       const serverItems = Array.isArray(serverCart?.items) ? serverCart.items : [];
 
-      // 2) حدد العناصر اللي صارت غير متاحة
+      // 2) حدد العناصر اللي صارت غير متاحة (stale)
+      //    + العناصر اللي مو في السلة المحلية (غير مرغوبة)
+      //
+      //    السبب: الباك بيقرأ السلة من السيرفر مباشرة عند إنشاء الطلب.
+      //    فإذا في عناصر بالـ server cart ما طلبها المستخدم الحالي
+      //    (مثلاً من جلسة قديمة قبل logout، أو من تبديل role،
+      //    أو من أي cache سابق) → رح تننشأ كطلبات بدون علمه.
+      //
+      //    الحل: نقارن serverItems مع localItems.
+      //    أي عنصر بـ serverItems مو موجود بـ localItems (أو بكميات مختلفة)
+      //    → نحذفه من السيرفر قبل إنشاء الطلب.
+      const localProductIds = new Set(
+        (Array.isArray(items) ? items : [])
+          .map((it) => it?.id)
+          .filter(Boolean)
+      );
+      const localQuantities = new Map(
+        (Array.isArray(items) ? items : [])
+          .filter((it) => it?.id)
+          .map((it) => [it.id, Number(it.quantity ?? 0)])
+      );
+
+      const unwantedItems = serverItems.filter((it) => {
+        const p = it?.product;
+        const productId = p?.id;
+        if (!it?.id) return false;
+        // المنتج مو موجود بالسلة المحلية → غير مرغوب (احذفه)
+        if (!productId || !localProductIds.has(productId)) return true;
+        // المنتج موجود لكن الكمية مختلفة بالزيادة → نعدّلها لاحقاً
+        return false;
+      });
+
+      // العناصر اللي كميتها بالسيرفر أكبر من المطلوب محلياً
+      // (مثلاً: المستخدم كان عنده 2، ثم في جلسة سابقة صار 5، ما عدّلنا)
+      // → نحذفها ونخلي المستخدم يعيد الإضافة بالكمية الصحيحة.
+      //    أبسط من استدعاء update endpoint (اللي ما عندنا helper له).
+      const overQuantityItems = serverItems.filter((it) => {
+        const p = it?.product;
+        const productId = p?.id;
+        if (!it?.id || !productId) return false;
+        if (!localProductIds.has(productId)) return false;
+        const localQ = localQuantities.get(productId) ?? 0;
+        const serverQ = Number(it.quantity ?? 0);
+        return serverQ > localQ;
+      });
+
+      // العناصر اللي كميتها بالسيرفر أقل من المطلوب (stale بسبب مخزون)
+      // (المنطق القديم — kept intact)
       const staleItems = serverItems.filter((it) => {
         const p = it?.product;
         if (!p) return true;
@@ -106,10 +159,20 @@ export default function CustomerCheckoutPayment() {
         return false;
       });
 
-      // 3) احذف العناصر غير المتاحة من السيرفر (واحد واحد)
-      if (staleItems.length > 0) {
+      // 3) احذف العناصر غير المرغوبة + الـ stale + over-quantity من السيرفر
+      const itemsToDelete = [
+        ...unwantedItems.map((it) => ({ id: it.id, reason: "unwanted" })),
+        ...overQuantityItems.map((it) => ({ id: it.id, reason: "over-quantity" })),
+        ...staleItems.map((it) => ({ id: it.id, reason: "stale" })),
+      ];
+      // نزيل التكرارات (نفس الـ id ممكن يكون unwanted + stale)
+      const uniqueToDelete = Array.from(
+        new Map(itemsToDelete.map((x) => [x.id, x])).values()
+      );
+
+      if (uniqueToDelete.length > 0) {
         await Promise.allSettled(
-          staleItems
+          uniqueToDelete
             .filter((it) => it.id)
             .map((it) => removeCartItem(it.id).catch(() => null))
         );
@@ -125,7 +188,9 @@ export default function CustomerCheckoutPayment() {
         }
 
         // نبض السلة المحلية لتطابق السيرفر (إزالة العناصر المحلية الموافقة)
-        const cleanedProductIds = new Set(cleanedItems.map((it) => it.product?.id).filter(Boolean));
+        const cleanedProductIds = new Set(
+          cleanedItems.map((it) => it.product?.id).filter(Boolean)
+        );
         items
           .filter((local) => !cleanedProductIds.has(local.id))
           .forEach((local) => removeItem(local.id));

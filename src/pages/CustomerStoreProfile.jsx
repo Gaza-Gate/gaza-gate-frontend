@@ -20,7 +20,6 @@ import {
   MapPin,
   Calendar,
   ShieldCheck,
-  TrendingUp,
   Tag,
   Award,
   Clock,
@@ -402,13 +401,26 @@ export default function CustomerStoreProfile() {
     );
   }
 
-  // positive percent
+  // positive percent — يُحسب من مصادر البيانات الحقيقية للمتجر:
+  //   1) stats.positiveReviews  ← الباك يرجّعه مباشرة من /api/customer/store/{sellerId} (المصدر الرسمي)
+  //   2) sellerPositiveCount    ← مجموع تقييمات 4 و 5 نجوم من توزيع التقييمات (BuyerProductReviewsSection)
+  //   3) reviewStats.positiveReviews ← fallback محسوب من المنتجات (للحالات النادرة)
+  // القاسم هو العدد الإجمالي للتقييمات من نفس المصادر (مع التفضيل للقيمة الأكبر لضمان الاتساق).
+  const totalReviewsForPercent = Math.max(
+    sellerReviewsCount || 0,
+    reviewStats.totalReviews || 0,
+    store?.ratingCount || 0
+  );
+  const positiveCountForPercent = Math.max(
+    Number(stats?.positiveReviews || 0),
+    sellerPositiveCount || 0,
+    reviewStats.positiveReviews || 0
+  );
   const positivePercent =
-    reviewStats.totalReviews > 0
-      ? Math.round((reviewStats.positiveReviews / reviewStats.totalReviews) * 100)
+    totalReviewsForPercent > 0
+      ? Math.round((positiveCountForPercent / totalReviewsForPercent) * 100)
       : 0;
 
-  const responseRate = Number(store?.responseRate ?? 95); // fallback
   const shippingTime = store?.shippingTime || "1-3 أيام";
 
   return (
@@ -528,16 +540,6 @@ export default function CustomerStoreProfile() {
               <div className="csp-trust-divider" />
             </>
           )}
-          <div className="csp-trust-item">
-            <span className="csp-trust-icon csp-trust-icon--green">
-              <TrendingUp size={16} />
-            </span>
-            <div className="csp-trust-text">
-              <strong>{responseRate}%</strong>
-              <small>نسبة الاستجابة</small>
-            </div>
-          </div>
-          <div className="csp-trust-divider" />
           <div className="csp-trust-item">
             <span className="csp-trust-icon csp-trust-icon--blue">
               <Clock size={16} />

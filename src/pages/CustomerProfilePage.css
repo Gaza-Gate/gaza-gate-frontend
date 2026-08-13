@@ -94,8 +94,19 @@
 }
 
 @media (max-width: 900px) {
+  /* ✅ Mobile: حوّل الـ grid لـ flex column عشان نقدر نتحكم بالترتيب
+     عبر `order` بدون ما نغيّر الـ DOM. */
   .cpp-top-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ✅ Mobile: انقل بطاقة المشتري (الصورة + الاسم + تاريخ الانضمام)
+     لتكون أول عنصر في الـ container — تظهر مباشرة بعد زر الرجوع.
+     Desktop ما بيأثّر فيها لأنها أصلاً ما بتاخد `order` فوق 900px. */
+  .cpp-top-grid > .cpp-profile-card {
+    order: -1;
   }
 }
 

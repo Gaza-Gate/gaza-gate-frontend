@@ -28,8 +28,12 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
 
   // --- تحسين الصورة بالذكاء الاصطناعي ---
   // عند الإضافة: مجرد Checkbox بيترسل مع باقي البيانات بنفس طلب createProduct
+  // ⚠️ الميزة معطّلة مؤقتاً — منظهرها بس بدون إمكانية التفعيل.
+  //   عند التفعيل مستقبلاً: بدّل `AI_ENHANCEMENT_ENABLED` لـ true.
+  const AI_ENHANCEMENT_ENABLED = false;
   const [optimizeImage, setOptimizeImage] = useState(false);
   // عند التعديل: زر منفصل بيستدعي updateProduct فوراً مع optimize=true
+  // (نفس الفلاغ — الزر معطّل لحد ما يتفعّل المفتاح)
   const [aiEnhancing, setAiEnhancing] = useState(false);
   const [aiError, setAiError] = useState("");
   // بيمنع تحسين نفس الصورة أكثر من مرة واحدة
@@ -111,6 +115,11 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
 
   // تحسين صورة منتج موجود مسبقاً (يُستخدم فقط بوضع التعديل)
   const handleEnhanceExisting = async () => {
+    // ⚠️ الميزة معطّلة مؤقتاً
+    if (!AI_ENHANCEMENT_ENABLED) {
+      setAiError("ميزة التحسين بالذكاء الاصطناعي متاحة في المستقبل");
+      return;
+    }
     // بمنع الطلب لو الصورة الحالية تم تحسينها مسبقاً (حماية جهة العميل، بالإضافة لحماية الباك اند نفسه)
     if (alreadyEnhanced) {
       setAiError("لا يمكن تحسين الصورة أكثر من مرة واحدة");
@@ -192,7 +201,9 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
       if (imageFile) fd.append("image", imageFile);
 
       // فقط بوضع الإضافة: نبعت فلاغ التحسين جنب باقي البيانات بنفس الطلب
-      if (!isEditMode && optimizeImage) {
+      // ⚠️ الميزة معطّلة مؤقتاً (AI_ENHANCEMENT_ENABLED = false) — حتى لو
+      //   الـ checkbox كان checked، ما بنبعت isOptimized للباك.
+      if (!isEditMode && optimizeImage && AI_ENHANCEMENT_ENABLED) {
         fd.append("isOptimized", "true");
       }
 
@@ -246,30 +257,49 @@ export default function ProductFormModal({ open, product, onClose, onSaved }) {
             </div>
 
             {/* وضع الإضافة: مجرد فلاغ بينبعت مع الطلب الأساسي */}
+            {/* ⚠️ الميزة معطّلة مؤقتاً — بنعرضها disabled مع نص واضح تحتها */}
             {!isEditMode && imagePreview && (
-              <label className="pfm-ai-checkbox">
-                <input
-                  type="checkbox"
-                  checked={optimizeImage}
-                  onChange={(e) => setOptimizeImage(e.target.checked)}
-                />
-                <Sparkles size={14} />
-                تحسين الصورة تلقائياً بالذكاء الاصطناعي
-              </label>
+              <div className="pfm-ai-block">
+                <label
+                  className={`pfm-ai-checkbox pfm-ai-checkbox--disabled ${!AI_ENHANCEMENT_ENABLED ? "is-disabled" : ""}`}
+                  title={!AI_ENHANCEMENT_ENABLED ? "ميزة متاحة في المستقبل" : undefined}
+                >
+                  <input
+                    type="checkbox"
+                    checked={optimizeImage}
+                    onChange={(e) => {
+                      if (!AI_ENHANCEMENT_ENABLED) return;
+                      setOptimizeImage(e.target.checked);
+                    }}
+                    disabled={!AI_ENHANCEMENT_ENABLED}
+                    aria-disabled={!AI_ENHANCEMENT_ENABLED}
+                  />
+                  <Sparkles size={14} />
+                  تحسين الصورة تلقائياً بالذكاء الاصطناعي
+                </label>
+                {!AI_ENHANCEMENT_ENABLED && (
+                  <p className="pfm-ai-hint">ميزة متاحة في المستقبل</p>
+                )}
+              </div>
             )}
 
             {/* وضع التعديل: منتج موجود مسبقاً، إجراء فوري منفصل */}
+            {/* ⚠️ نفس الشي — الزر يظهر disabled مع نفس النص */}
             {isEditMode && imagePreview && (
               <div className="pfm-ai-row">
                 <button
                   type="button"
                   className="pfm-ai-btn"
                   onClick={handleEnhanceExisting}
-                  disabled={aiEnhancing}
+                  disabled={aiEnhancing || !AI_ENHANCEMENT_ENABLED}
+                  title={!AI_ENHANCEMENT_ENABLED ? "ميزة متاحة في المستقبل" : undefined}
                 >
                   <Sparkles size={15} />
                   {aiEnhancing ? "جاري التحسين..." : "تحسين الصورة بالذكاء الاصطناعي"}
                 </button>
+                {!AI_ENHANCEMENT_ENABLED && (
+                  <p className="pfm-ai-hint">ميزة متاحة في المستقبل</p>
+                )}
               </div>
             )}
 

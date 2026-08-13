@@ -551,7 +551,7 @@ if (trimmedComment.length < 3) {
               {/* Comment */}
               <div className="rm-section">
                 <label className="rm-label" htmlFor="rm-comment">
-                  <span>تعليقك (اختياري)</span>
+                  <span>تعليقك (اجباري)</span>
                   <span className="rm-char-count">
                     {comment.length}/500
                   </span>

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { addToCart, getAuthToken } from "../services/authService";
 import { getPublicProductDetails } from "../services/productService";
 import { getCurrentUserId, scopedKey } from "../utils/userScope";
+import { getProductImageUrl } from "../utils/productImage";
 
 const CART_BASE_KEY = "gaza-gate-cart";
 
@@ -83,17 +84,29 @@ export function CartProvider({ children }) {
     // التوكن بيُضاف تلقائياً عبر interceptor
     await addToCart(productId, quantity);
 
+    // ✅ استخراج رابط الصورة بشكل موحّد من الـ enriched product
+    //    (بنخزّنه كحقل image + نخلي primaryImage/imageUrl كما هم للاستخدامات الأخرى)
+    const imageUrl = getProductImageUrl(enrichedProduct, "");
+
     // حدّث السلة المحلية بعد نجاح الإضافة على السيرفر
     setItems((prev) => {
       const existing = prev.find((i) => i.id === productId);
       if (existing) {
         return prev.map((i) =>
-          i.id === productId ? { ...i, quantity: i.quantity + quantity } : i
+          i.id === productId
+            ? { ...i, quantity: i.quantity + quantity, image: imageUrl || i.image }
+            : i
         );
       }
       return [
         ...prev,
-        { ...enrichedProduct, id: productId, quantity, sellerId },
+        {
+          ...enrichedProduct,
+          id: productId,
+          quantity,
+          sellerId,
+          image: imageUrl, // ✅ حقل موحّد للـ UI (cart/checkout/etc)
+        },
       ];
     });
   };

@@ -3,10 +3,9 @@
 /* ✅ إنشاء stacking context مرتفع على الـ navbar نفسه
    (position: sticky + z-index عالي) حتى الـ dropdown يطلع فوق أي محتوى في الصفحة. */
 .snb-nav {
-  background: var(--bg-glass-strong);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--border-glass);
+  /* ✅ Solid color matching the logo's background square (light logo = white) */
+  background: #ffffff;
+  border-bottom: 1px solid #E5E5E5;
   padding: 0 32px;
   height: 80px;
   display: flex;
@@ -22,9 +21,9 @@
 }
 
 .dark .snb-nav {
-  background: rgba(30, 41, 59, 0.75);
-  border-bottom-color: rgba(148, 163, 184, 0.2);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+  /* ✅ Solid #1e293b (slate-800) — exact match for the dark logo's background square */
+  background: #1e293b;
+  border-bottom-color: #334155;
 }
 
 .snb-logo-link {

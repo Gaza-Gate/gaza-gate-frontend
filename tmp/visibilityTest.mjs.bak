@@ -1,0 +1,93 @@
+// Test script to verify the visibility logic and feature flags.
+// Run with: node tmp/visibilityTest.mjs
+//
+// visibility.js imports './featureFlags' without .js extension; that works
+// in Vite (the bundler) but not in raw Node ESM. To run a quick test here
+// without modifying production code, we just inline the same logic.
+
+const featureFlagsMod = await import('../src/utils/featureFlags.js');
+const { FEATURES, canSendChatbot, canSendMessage } = featureFlagsMod;
+
+console.log('=== Feature Flags ===');
+console.log('CHATBOT_SEND_ENABLED =', FEATURES.CHATBOT_SEND_ENABLED);
+console.log('MESSAGING_SEND_ENABLED =', FEATURES.MESSAGING_SEND_ENABLED);
+console.log('CHATBOT_ENABLED =', FEATURES.CHATBOT_ENABLED);
+console.log('MESSAGING_ENABLED =', FEATURES.MESSAGING_ENABLED);
+console.log('FLOATING_ACTIONS_ON_HOME_ONLY =', FEATURES.FLOATING_ACTIONS_ON_HOME_ONLY);
+console.log('canSendChatbot() =', canSendChatbot());
+console.log('canSendMessage() =', canSendMessage());
+console.log('');
+
+// Replicate the visibility helpers (without re-importing visibility.js,
+// because its relative import wouldn't resolve in raw Node ESM)
+const HOME_ROUTES = ['/home/customer', '/seller/dashboard'];
+
+function isHomeRoute(pathname) {
+  if (!pathname) return false;
+  return HOME_ROUTES.includes(pathname);
+}
+
+function shouldShowFloatingThemeToggle(pathname) {
+  if (!pathname || pathname === '/') return false;
+  if (FEATURES.FLOATING_ACTIONS_ON_HOME_ONLY) {
+    return isHomeRoute(pathname);
+  }
+  return true;
+}
+
+function shouldShowChatbotWidget(pathname) {
+  if (!FEATURES.CHATBOT_ENABLED) return false;
+  return isHomeRoute(pathname);
+}
+
+const tests = [
+  // Customer paths
+  ['/home/customer', true, 'Customer Home'],
+  ['/products', false, 'Product listing'],
+  ['/product/123', false, 'Product details'],
+  ['/cart', false, 'Cart'],
+  ['/checkout/review', false, 'Checkout review'],
+  ['/checkout/payment', false, 'Checkout payment'],
+  ['/my-orders', false, 'Orders'],
+  ['/my-orders/42', false, 'Order tracking'],
+  ['/messages', false, 'Customer Messages'],
+  ['/favorites', false, 'Favorites'],
+  ['/profile/customer', false, 'Profile'],
+  ['/notifications', false, 'Notifications'],
+  // Seller paths
+  ['/seller/dashboard', true, 'Seller Home'],
+  ['/seller/products', false, 'Seller Products (Add/Edit)'],
+  ['/seller/orders', false, 'Seller Orders'],
+  ['/seller/orders/42', false, 'Seller Order Details'],
+  ['/seller/messages', false, 'Seller Messages'],
+  ['/seller/ratings', false, 'Seller Ratings'],
+  ['/seller/profile/edit', false, 'Edit Store Profile'],
+  ['/seller/account/password', false, 'Change Password'],
+  // Auth pages
+  ['/', false, 'Splash'],
+  ['/login/customer', false, 'Login'],
+  ['/register/seller', false, 'Register'],
+];
+
+console.log('=== Visibility Tests ===');
+console.log('Path                           | Chatbot | Theme  | Home  | Expected | Notes');
+console.log('-------------------------------|---------|--------|-------|----------|------');
+let allPass = true;
+tests.forEach(([path, expectedHome, label]) => {
+  const chat = shouldShowChatbotWidget(path);
+  const theme = shouldShowFloatingThemeToggle(path);
+  const home = isHomeRoute(path);
+  const ok = (home === expectedHome) && (chat === expectedHome) && (theme === expectedHome);
+  if (!ok) allPass = false;
+  console.log(
+    path.padEnd(30) + ' | ' +
+    String(chat).padEnd(7) + ' | ' +
+    String(theme).padEnd(6) + ' | ' +
+    String(home).padEnd(5) + ' | ' +
+    String(expectedHome).padEnd(8) + ' | ' +
+    label + (ok ? ' ✓' : ' ✗ FAIL')
+  );
+});
+console.log('---');
+console.log(allPass ? '✅ ALL PASS' : '❌ SOME FAILED');
+process.exit(allPass ? 0 : 1);

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { X, ShoppingCart, Trash2, Plus, Minus } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { getProductImageUrl } from "../utils/productImage";
 import "./CustomerCart.css";
 
 export default function CustomerCart() {
@@ -82,7 +83,7 @@ export default function CustomerCart() {
                   </div>
 
                   <div className="cart-item-img">
-                    <img src={item.image} alt={item.name} />
+                    <img src={getProductImageUrl(item)} alt={item.name} />
                   </div>
                 </li>
               ))}

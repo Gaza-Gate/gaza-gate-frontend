@@ -272,14 +272,12 @@ img.theme-logo--auth {
   mix-blend-mode: normal;
 }
 
-/* ✅ ضمان أن خلفية الـ header في الـ dark slate ناعم
-   (الـ navbar كان يستخدم class "nav" مع background أبيض) */
+/* ✅ ضمان أن خلفية الـ header في الـ dark slate ناعم ومطابق لخلفية شعار GAZA GATE
+   (لون solid #1e293b بدون شفافية أو blur — الشعار يظهر كأنه جزء طبيعي من الشريط) */
 .dark .cn-nav,
 .dark .snb-nav {
-  background: rgba(30, 41, 59, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--border-glass);
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
 }
 
 /* ✅ إبراز عناصر التمييز — البرتقالي */

@@ -4,6 +4,7 @@ import { Store, ArrowRight } from "lucide-react";
 import CustomerNavbar from "../components/CustomerNavbar";
 import CheckoutSteps from "../components/CheckoutSteps";
 import { useCart } from "../context/CartContext";
+import { getProductImageUrl } from "../utils/productImage";
 import logo from "../assets/logo.png";
 import "./CustomerCheckout.css";
 
@@ -74,7 +75,7 @@ export default function CustomerCheckoutReview() {
                           </p>
                         </div>
                         <div className="ck-product-img">
-                          <img src={item.image} alt={item.name} />
+                          <img src={getProductImageUrl(item)} alt={item.name} />
                         </div>
                       </li>
                     ))}

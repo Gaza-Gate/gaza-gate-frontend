@@ -57,13 +57,17 @@ export default function SellerNavbar() {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logout();
-    } catch (err) {
-      console.error("Logout API failed:", err);
+      // ✅ 1) محاولة تسجيل الخروج من السيرفر
+      //    لو فشل (network/server) — منكمل بمسح محلي
+      await logout().catch((err) => {
+        console.warn("[SellerNavbar] logout API failed (continuing local cleanup):", err?.message);
+      });
     } finally {
+      // ✅ 2) تنظيف شامل محلي (state + caches + token)
       authLogout();
       setLoggingOut(false);
-      navigate("/login/seller");
+      // ✅ 3) navigate بـ replace عشان نمنع back لصفحة محمية
+      navigate("/login/seller", { replace: true });
     }
   }
 

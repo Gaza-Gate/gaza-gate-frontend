@@ -165,12 +165,28 @@ export default function CustomerProductDetails() {
           <section className="pd-info">
             <div className="pd-badges">
               <span className="pd-badge pd-badge--category">{product.category?.name || product.categoryId || "منتج"}</span>
-              {product.status === "active" && (
-                <span className="pd-badge pd-badge--available">
-                  <Check size={13} />
-                  متوفر
-                </span>
-              )}
+              {/* ✅ Status badge: محدود + كمية 0 → "نفذ"
+                  أي حالة ثانية (limited + كمية > 0، أو unlimited، أو status=active) → "متوفر" */}
+              {(() => {
+                const isOutOfStock =
+                  product.stockType === "limited" && Number(product.quantity ?? 0) === 0;
+                if (isOutOfStock) {
+                  return (
+                    <span className="pd-badge pd-badge--out">
+                      نفذ
+                    </span>
+                  );
+                }
+                if (product.status === "active") {
+                  return (
+                    <span className="pd-badge pd-badge--available">
+                      <Check size={13} />
+                      متوفر
+                    </span>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             <h1 className="pd-title">{product.name}</h1>
@@ -257,7 +273,16 @@ export default function CustomerProductDetails() {
                 <button
                   type="button"
                   className="pd-qty-btn pd-qty-btn--plus"
-                  onClick={() => setQuantity((q) => Math.min(product.quantity || 10, q + 1))}
+                  onClick={() =>
+                    setQuantity((q) => {
+                      // ✅ لو المخزون غير محدود → ما في حد أعلى
+                      if (product.stockType === "unlimited") return q + 1;
+                      // ✅ لو محدود → الحد الأعلى هو الكمية الفعلية
+                      const max = Number(product.quantity ?? 0);
+                      if (max <= 0) return q; // ما في مخزون
+                      return Math.min(max, q + 1);
+                    })
+                  }
                   aria-label="زيادة الكمية"
                 >
                   <Plus size={16} />

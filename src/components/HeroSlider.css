@@ -35,14 +35,16 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 1000ms ease-in-out;
+  /* ✅ Premium Crossfade: 700ms مع cubic-bezier smooth — الصورة الجديدة فوق */
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   will-change: opacity;
+  z-index: 0;
 }
 .hero-slide.is-active {
   opacity: 1;
   pointer-events: auto;
-  z-index: 1;
+  z-index: 1;       /* ✅ الصورة الجديدة فوق القديمة أثناء الـ crossfade */
 }
 
 /* ✅ الصورة تملأ الـ hero كامل بدون أي قص (نسبة العرض للارتفاع متطابقة) */
@@ -54,12 +56,13 @@
   object-position: center;
   user-select: none;
   -webkit-user-drag: none;
-  /* Ken Burns خفيف — zoom بطيء يعطي إحساس premium */
-  transform: scale(1);
-  transition: transform 7000ms ease-out;
+  /* ✅ Subtle zoom: الصورة الخاملة عند scale(1.03)، تنكمش لـ scale(1) لمّا تصير نشطة */
+  transform: scale(1.03);
+  transition: transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 .hero-slide.is-active .hero-slide-img {
-  transform: scale(1.04);
+  transform: scale(1);
 }
 
 /* تدرج يغطي كامل الـ hero — غامق على اليسار (فوق النص) وشفاف على اليمين
@@ -82,7 +85,7 @@
 /* ── المحتوى النصي ──
    • موضع مطلق على يسار الـ viewport
    • مكدّس عمودياً: pill → title → tagline → CTA
-   • key={current} في JSX يعيد تشغيل animation عند تغيير الشريحة */
+   • ✅ ثابت تماماً: ما بيتحرك مع تغيير الصورة (الصور بس هي اللي تنتقل بالخلفية) */
 .hero-content {
   position: absolute;
   top: 50%;
@@ -93,18 +96,12 @@
   z-index: 5;
   text-align: right;
   color: #fff;
-  animation: hero-content-in 800ms ease-out 250ms both;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   /* في RTL: flex-start = يمين بصرياً (نهاية الكونتينر = قرب مركز الصورة) */
   align-items: flex-start;
   gap: 14px;
-}
-
-@keyframes hero-content-in {
-  from { opacity: 0; transform: translateY(calc(-50% + 14px)); }
-  to   { opacity: 1; transform: translateY(-50%); }
 }
 
 /* 1) Pill ترحيب */
@@ -305,7 +302,6 @@
     text-align: right;
     color: #fff;
     background: none;
-    animation: hero-content-in 700ms ease-out 200ms both;
     align-items: flex-start;
     gap: 8px;
   }
