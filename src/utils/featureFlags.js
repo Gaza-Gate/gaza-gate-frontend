@@ -9,7 +9,6 @@
 //    if (FEATURES.CHATBOT_SEND_ENABLED) { ... }
 //
 //  ✅ كل flag موثّق ومُجمّع في مكان واحد
-//  ✅ الافتراضات: كل ما يخص الإرسال = false (إرسال معطّل افتراضياً)
 //  ✅ الواجهة والقراءة تظل تعمل حتى لو SEND = false
 //  ✅ لو بدنا نعيد التفعيل مستقبلاً: نغيّر false → true ونعمل rebuild فقط
 //
@@ -24,7 +23,7 @@ export const FEATURES = Object.freeze({
 
   // هل إرسال رسائل الـ Chatbot مفعّل. false = Send Disabled + Enter لا يرسل
   //   + لا API call + لا يُحدّث conversation state كرسالة مُرسلة.
-  CHATBOT_SEND_ENABLED: false,
+  CHATBOT_SEND_ENABLED: true,
 
   // ── User-to-User Messaging (المراسلات بين المستخدمين) ────────────────
   // هل نظام المراسلات نفسه مفعّل (محادثات + قراءة). حالياً true عشان

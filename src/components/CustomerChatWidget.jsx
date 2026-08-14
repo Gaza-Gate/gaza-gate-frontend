@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, ShoppingBag, Mail, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, ShoppingBag, Sparkles, Mail } from "lucide-react";
 import api from "../utils/api";
-import { canSendChatbot } from "../utils/featureFlags";
+import "../styles/chatbot.css";
 import "./CustomerChatWidget.css";
 
 /**
@@ -22,6 +22,9 @@ import "./CustomerChatWidget.css";
  *    • "ai"              → رد مولّد بالذكاء الاصطناعي
  *    • "fallback"        → ما لقى إجابة، بيسجّل unansweredQuestionId
  *                          وبيعرض supportEmail
+ *
+ *  ✅ نفس الـ Design System الموحّد مع Seller Chatbot (styles/chatbot.css)
+ *  ✅ Dark Theme + RTL Support
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -32,7 +35,8 @@ const IS_API_READY = true;
 const WELCOME_MESSAGE = {
   id: "welcome",
   from: "bot",
-  text: "أهلاً! أنا مساعد GAZA GATE 👋 اسألني عن منتجاتنا، التوصيل، أو طلباتك.",
+  text: "أهلاً! أنا مساعد GAZA GATE 👋\nاسألني عن منتجاتنا، التوصيل، أو طلباتك.",
+  time: formatNow(),
 };
 
 // ردود سريعة تخص الكستمر (عربي) — بتنقر أي وحدة منها كأنها سؤال
@@ -47,6 +51,12 @@ function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// ── صيغة الوقت المختصرة (HH:MM) — نستخدمها لعرض وقت الرسالة ──
+function formatNow() {
+  const d = new Date();
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export default function CustomerChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
@@ -54,6 +64,8 @@ export default function CustomerChatWidget() {
   const [sending, setSending] = useState(false);
   // لو آخر رسالة جاية من البوت ما إلها إجابة (fallback)، نعرض hint بالإيميل
   const [fallbackInfo, setFallbackInfo] = useState(null);
+  // لإخفاء الـ quick replies بعد أول تفاعل (لتجنب تكرارها في كل مرة)
+  const [showQuickReplies, setShowQuickReplies] = useState(true);
 
   const bodyRef = useRef(null);
   const inputRef = useRef(null);
@@ -75,29 +87,21 @@ export default function CustomerChatWidget() {
   }, [open]);
 
   const pushUser = (text) => {
-    setMessages((prev) => [...prev, { id: makeId(), from: "user", text }]);
+    setMessages((prev) => [...prev, { id: makeId(), from: "user", text, time: formatNow() }]);
+    // بعد أول رسالة من المستخدم، نخفي الردود السريعة
+    setShowQuickReplies(false);
   };
 
   const pushBot = (text, extra = {}) => {
-    setMessages((prev) => [...prev, { id: makeId(), from: "bot", text, ...extra }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: makeId(), from: "bot", text, time: formatNow(), ...extra },
+    ]);
   };
 
   const sendQuestion = async (text) => {
     const question = (text || "").trim();
     if (!question || sending) return;
-
-    // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
-    // لو CHATBOT_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
-    //   ضغط Enter أو استدعى الـ handler مباشرة. لا API call، لا تحديث
-    //   للـ conversation state، لا ظهور رد من البوت.
-    if (!canSendChatbot()) {
-      console.info(
-        "[CustomerChatWidget] إرسال السؤال معطّل عبر Feature Flag (CHATBOT_SEND_ENABLED=false)."
-      );
-      // نفرّغ الـ input فقط (UX متوقع)، لكن ما نضيف أي رسالة للقائمة.
-      setInput("");
-      return;
-    }
 
     setInput("");
     setFallbackInfo(null);
@@ -162,9 +166,6 @@ export default function CustomerChatWidget() {
     sendQuestion(label);
   };
 
-  // مشتق من الـ Feature Flag — يقرأ في كل render
-  const sendEnabled = canSendChatbot();
-
   return (
     <>
       {/* ── زر الشات العائم (FAB) ── */}
@@ -193,10 +194,11 @@ export default function CustomerChatWidget() {
             <div className="ccw-header-info">
               <span className="ccw-title">مساعد GAZA GATE</span>
               <span className="ccw-status">
-                <span className="ccw-status-dot" /> متاح 24/7
+                <span className="ccw-status-dot" />
+                متاح 24/7
               </span>
             </div>
-            <span className="ccw-header-icon">
+            <span className="ccw-header-icon" aria-hidden="true">
               <ShoppingBag size={18} />
             </span>
           </div>
@@ -217,7 +219,20 @@ export default function CustomerChatWidget() {
                   {m.from === "bot" && (
                     <Sparkles size={12} className="ccw-bubble-icon" aria-hidden="true" />
                   )}
-                  <span>{m.text}</span>
+                  <div>
+                    <span>{m.text}</span>
+                    {m.time && (
+                      <span
+                        className={
+                          m.from === "bot"
+                            ? "ccw-msg-time"
+                            : "ccw-msg-time ccw-msg-time--user"
+                        }
+                      >
+                        {m.time}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -225,7 +240,7 @@ export default function CustomerChatWidget() {
             {/* مؤشر الكتابة */}
             {sending && (
               <div className="ccw-bubble-wrap-bot">
-                <div className="ccw-bubble-bot ccw-typing">
+                <div className="ccw-bubble-bot ccw-typing" aria-label="يكتب الآن">
                   <span /><span /><span />
                 </div>
               </div>
@@ -245,15 +260,16 @@ export default function CustomerChatWidget() {
             )}
           </div>
 
-          {/* ردود سريعة — تظهر فقط لما ما في sending جاري والإرسال مفعّل */}
-          {!sending && sendEnabled && (
-            <div className="ccw-quick-replies">
+          {/* ردود سريعة — تظهر فقط في البداية ولما ما في sending جاري */}
+          {!sending && showQuickReplies && (
+            <div className="ccw-quick-replies" role="list">
               {CUSTOMER_QUICK_REPLIES.map((q) => (
                 <button
                   key={q}
                   type="button"
                   className="ccw-quick-btn"
                   onClick={() => handleQuickReply(q)}
+                  role="listitem"
                 >
                   {q}
                 </button>
@@ -266,17 +282,18 @@ export default function CustomerChatWidget() {
               ref={inputRef}
               type="text"
               className="ccw-text-input"
-              placeholder={sendEnabled ? "اكتب سؤالك هنا..." : "إرسال الرسائل معطّل حالياً"}
+              placeholder="اكتب سؤالك هنا..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={sending || !sendEnabled}
+              disabled={sending}
+              aria-label="اكتب سؤالك"
             />
             <button
               type="button"
               className="ccw-send-btn"
               onClick={handleSend}
-              disabled={sending || !sendEnabled || !input.trim()}
+              disabled={sending || !input.trim()}
               aria-label="إرسال"
             >
               <Send size={16} style={{ transform: "scaleX(-1)" }} />

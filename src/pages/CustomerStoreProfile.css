@@ -45,6 +45,13 @@
   padding: 24px 20px 60px;
 }
 
+/* ✅ Container for csp-container class — same as store-container */
+.csp-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
 /* ══════════════════════════════════════
    1. HERO
    ══════════════════════════════════════ */
@@ -1635,239 +1642,534 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ✅ Dark Mode — Gaza Gate Soft Dark (نفس tokens الموقع)
    ─────────────────────────────────────────────────────────
-   Approach: نبدّل الـ CSS variables في الـ .dark scope + overrides
-   محددة للعناصر اللي فيها #fff hardcoded.
+   القيم مأخوذة 1:1 من index.css + BuyerProductReviewsSection.css
+   عشان نضمن visual consistency مع باقي الصفحات.
+
+   Color hierarchy (subtle — فرق بسيط بين الطبقات):
+   - Page bg        : #1e293b (slate-800)  — var(--bg-page)
+   - Section/card   : #334155 (slate-700)  — var(--bg-surface)
+   - Input/inner    : #475569 (slate-600)  — طبقة أعمق للـ input
+   - Borders        : rgba(148,163,184,0.18)
+   - Text primary   : #FFFFFF
+   - Text secondary : #E2E8F0 / #cbd5e1
+   - Text muted     : #94a3b8
+   - Accent         : #fb923c (orange-400)
+   - Stars          : #fbbf24 (amber-400)
+   - Success        : #34d399
    ═══════════════════════════════════════════════════════════════ */
 .dark {
+  /* ── Theme variables override (نفس الـ tokens في باقي الصفحات) ── */
   --csp-text: #FFFFFF;
   --csp-text-mid: #cbd5e1;
   --csp-text-mute: #94a3b8;
-  --csp-border: rgba(90, 115, 168, 0.30);
-  --csp-border-strong: rgba(138, 158, 201, 0.45);
-  --csp-bg: #1e293b;
-  --csp-card: #334155;
-  --csp-primary-light: rgba(249, 115, 22, 0.15);
-  --csp-primary-soft: rgba(249, 115, 22, 0.25);
+  --csp-border: rgba(148, 163, 184, 0.18);
+  --csp-border-strong: rgba(148, 163, 184, 0.30);
+  --csp-bg: #1e293b;            /* = var(--bg-page) — slate-800 */
+  --csp-card: #334155;          /* = var(--bg-surface) — slate-700 SOLID */
+  --csp-input: #475569;         /* slate-600 — أعمق شوي من الكارد */
+  --csp-primary-light: rgba(249, 115, 22, 0.12);
+  --csp-primary-soft: rgba(249, 115, 22, 0.22);
   --csp-success-soft: rgba(16, 185, 129, 0.18);
   --csp-warn-soft: rgba(245, 158, 11, 0.18);
   --csp-danger-soft: rgba(239, 68, 68, 0.18);
-  --csp-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
-  --csp-shadow: 0 6px 20px rgba(0, 0, 0, 0.40);
-  --csp-shadow-lg: 0 16px 50px rgba(0, 0, 0, 0.50);
-  --csp-gradient-soft: linear-gradient(135deg, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0.05) 100%);
+  --csp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.30);
+  --csp-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --csp-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.50);
+  --csp-gradient-soft: linear-gradient(135deg, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0.04) 100%);
 }
 
-.dark .csp-page { background: var(--csp-bg); }
+/* ══════════════════════════════════════
+   0. Page background — solid dark navy
+   ══════════════════════════════════════ */
+.dark .csp-page {
+  background: #1e293b;  /* solid — مش transparent عشان ما يعتمد على body */
+  color: #FFFFFF;
+}
 
-/* ── Hero ── */
-.dark .csp-hero { background: var(--csp-card); border-color: var(--csp-border); }
+/* ══════════════════════════════════════
+   1. HERO — slate-700 solid
+   ══════════════════════════════════════ */
+.dark .csp-hero {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.dark .csp-hero-bg::after {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.10) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(0, 0, 0, 0.20) 0%, transparent 50%);
+}
+
+/* avatar + verified badge */
 .dark .csp-avatar,
 .dark .csp-avatar-img,
 .dark .csp-verified-badge {
-  background: rgba(51, 65, 85, 0.65);
-  border-color: var(--csp-card);
+  background: #475569;
+  border-color: #334155;
   color: #fb923c;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
-.dark .csp-store-name { color: var(--csp-text); }
-.dark .csp-store-desc { color: var(--csp-text-mid); }
-.dark .csp-rating-text { color: var(--csp-text-mid); }
+.dark .csp-store-name { color: #FFFFFF; }
+.dark .csp-store-desc { color: #cbd5e1; }
 
-.dark .csp-pill {
-  background: rgba(51, 65, 85, 0.55);
-  color: var(--csp-text-mid);
-  border-color: var(--csp-border);
-}
-
-/* ── Hero actions (message, share, follow) ── */
-.dark .csp-btn-msg,
-.dark .csp-btn-share,
-.dark .csp-btn-follow {
-  background: rgba(51, 65, 85, 0.55);
-  color: var(--csp-text-mid);
-  border-color: var(--csp-border);
-}
-.dark .csp-btn-msg:hover,
-.dark .csp-btn-share:hover,
-.dark .csp-btn-follow:hover {
-  background: rgba(249, 115, 22, 0.12);
-  color: #fb923c;
+/* rating pill */
+.dark .csp-rating-pill {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
   border-color: rgba(249, 115, 22, 0.30);
 }
+.dark .csp-rating-pill strong { color: #FFFFFF; }
+.dark .csp-rating-text { color: #cbd5e1; }
 
-/* ── Tabs ── */
+/* generic pills (package count, join date) */
+.dark .csp-pill {
+  background: #475569;
+  color: #E2E8F0;
+  border-color: rgba(148, 163, 184, 0.20);
+}
+.dark .csp-pill svg { color: #fb923c; }
+
+/* hero actions */
+.dark .csp-msg-btn--disabled,
+.dark .csp-msg-btn--disabled:hover {
+  background: #475569;
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+.dark .csp-msg-tooltip {
+  background: #0f172a;
+  color: #F1F5F9;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.dark .csp-msg-tooltip::before { border-bottom-color: #0f172a; }
+
+.dark .csp-icon-action {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #E2E8F0;
+}
+.dark .csp-icon-action:hover {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.45);
+}
+
+/* ══════════════════════════════════════
+   2. TRUST STRIP — slate-700 solid
+   ══════════════════════════════════════ */
+.dark .csp-trust-strip {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.dark .csp-trust-item strong { color: #FFFFFF; }
+.dark .csp-trust-item small  { color: #94a3b8; }
+.dark .csp-trust-divider { background: rgba(148, 163, 184, 0.18); }
+
+.dark .csp-trust-icon--orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+}
+.dark .csp-trust-icon--green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.dark .csp-trust-icon--blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+.dark .csp-trust-icon--purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+
+/* ══════════════════════════════════════
+   3. LEGACY STATS
+   ══════════════════════════════════════ */
+.dark .csp-stat-card {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+.dark .csp-stat-value { color: #FFFFFF; }
+.dark .csp-stat-label { color: #94a3b8; }
+
+/* ══════════════════════════════════════
+   4. TABS — slate-700 container
+   ══════════════════════════════════════ */
 .dark .csp-tabs {
-  background: var(--csp-card);
-  border-color: var(--csp-border);
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 .dark .csp-tab {
-  color: var(--csp-text-mid);
+  color: #cbd5e1;
+}
+.dark .csp-tab:hover {
+  background: rgba(249, 115, 22, 0.10);
+  color: #fdba74;
 }
 .dark .csp-tab.active {
-  color: #fb923c;
+  background: var(--csp-gradient);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
 }
-.dark .csp-tab:hover { color: #fb923c; }
 
-/* ── Search bar ── */
-.dark .csp-search-input {
-  background: rgba(51, 65, 85, 0.55);
-  border-color: var(--csp-border);
+.dark .csp-tab:not(.active) .csp-tab-badge {
+  background: #475569;
+  color: #E2E8F0;
+}
+.dark .csp-tab.active .csp-tab-badge {
+  background: rgba(255, 255, 255, 0.25);
   color: #FFFFFF;
 }
-.dark .csp-search-input::placeholder { color: var(--csp-text-mute); }
-.dark .csp-search-input:focus {
-  background: rgba(51, 65, 85, 0.75);
-  border-color: var(--csp-primary);
+
+/* ══════════════════════════════════════
+   5. SECTION (generic card) — slate-700
+   ══════════════════════════════════════ */
+.dark .csp-section {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-/* ── Category chips ── */
+/* ══════════════════════════════════════
+   6. CATEGORY CHIPS
+   ══════════════════════════════════════ */
 .dark .csp-cat-chip {
-  background: rgba(51, 65, 85, 0.55);
-  border-color: var(--csp-border);
-  color: var(--csp-text-mid);
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #E2E8F0;
 }
 .dark .csp-cat-chip:hover {
-  border-color: var(--csp-primary);
-  color: #fb923c;
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.40);
 }
 .dark .csp-cat-chip.active {
-  background: var(--csp-primary);
-  border-color: var(--csp-primary);
-  color: #fff;
+  background: var(--csp-gradient);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
 }
-
-/* ── Trust bar ── */
-.dark .csp-trust-bar { background: var(--csp-card); border-color: var(--csp-border); }
-.dark .csp-trust-item { color: var(--csp-text-mid); }
-.dark .csp-trust-item strong { color: #FFFFFF; }
-.dark .csp-trust-item small  { color: var(--csp-text-mute); }
-
-/* ── Info cards (about, contact, etc.) ── */
-.dark .csp-info-card { background: var(--csp-card); border-color: var(--csp-border); }
-.dark .csp-info-card-title { color: #FFFFFF; }
-.dark .csp-info-card-text  { color: var(--csp-text-mid); }
-.dark .csp-info-row { border-bottom-color: var(--csp-border); }
-.dark .csp-info-row-label { color: var(--csp-text-mute); }
-.dark .csp-info-row-value { color: #FFFFFF; }
-
-/* ── Section headers ── */
-.dark .csp-section-title { color: #FFFFFF; }
-.dark .csp-section-subtitle { color: var(--csp-text-mid); }
-.dark .csp-section-head { border-bottom-color: var(--csp-border); }
-
-/* ── Product cards ── */
-.dark .csp-product-card {
-  background: var(--csp-card);
-  border-color: var(--csp-border);
+.dark .csp-cat-count {
+  background: #1e293b;
+  color: #E2E8F0;
 }
-.dark .csp-product-card:hover {
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(249, 115, 22, 0.18);
-  border-color: rgba(249, 115, 22, 0.30);
-}
-.dark .csp-product-img-wrap { background: rgba(90, 115, 168, 0.15); }
-.dark .csp-product-name { color: #FFFFFF; }
-.dark .csp-product-price { color: #fb923c; }
-.dark .csp-product-status {
-  background: var(--csp-success-soft);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.30);
-}
-.dark .csp-product-badge {
-  background: var(--csp-warn-soft);
-  color: #fbbf24;
-}
-
-/* ── Add to cart button ── */
-.dark .csp-add-cart-btn {
-  background: var(--csp-primary);
-  color: #fff;
-}
-.dark .csp-add-cart-btn:hover { background: var(--csp-primary-dark); }
-
-/* ── Star ratings ── */
-.dark .csp-stars-empty { color: rgba(90, 115, 168, 0.40); }
-.dark .csp-rating-num  { color: #FFFFFF; }
-.dark .csp-rating-count { color: var(--csp-text-mute); }
-
-/* ── Sort dropdown + filter buttons ── */
-.dark .csp-sort-select,
-.dark .csp-filter-select {
-  background: rgba(51, 65, 85, 0.55);
-  border-color: var(--csp-border);
+.dark .csp-cat-chip.active .csp-cat-count {
+  background: rgba(255, 255, 255, 0.25);
   color: #FFFFFF;
 }
-.dark .csp-filter-btn,
-.dark .csp-sort-btn {
-  background: rgba(51, 65, 85, 0.55);
-  border-color: var(--csp-border);
-  color: var(--csp-text-mid);
+
+/* ══════════════════════════════════════
+   7. RESULTS META + CLEAR FILTERS
+   ══════════════════════════════════════ */
+.dark .csp-results-meta {
+  background: #334155;
+  border: 1px dashed rgba(148, 163, 184, 0.30);
+  color: #cbd5e1;
 }
-.dark .csp-filter-btn:hover,
-.dark .csp-sort-btn:hover {
-  background: rgba(249, 115, 22, 0.12);
-  border-color: rgba(249, 115, 22, 0.30);
-  color: #fb923c;
+.dark .csp-clear-filters {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #E2E8F0;
 }
-.dark .csp-filter-btn.active,
-.dark .csp-sort-btn.active {
-  background: var(--csp-primary);
-  border-color: var(--csp-primary);
-  color: #fff;
+.dark .csp-clear-filters:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.45);
 }
 
-/* ── Reviews section ── */
-.dark .csp-reviews-summary {
-  background: var(--csp-card);
-  border-color: var(--csp-border);
+/* ══════════════════════════════════════
+   8. PRODUCTS TOOLBAR (search + sort)
+   ══════════════════════════════════════ */
+.dark .csp-search-input {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #FFFFFF;
 }
-.dark .csp-dist-row { color: var(--csp-text-mid); }
-.dark .csp-dist-bar { background: rgba(90, 115, 168, 0.20); }
+.dark .csp-search-input input { color: #FFFFFF; }
+.dark .csp-search-input input::placeholder { color: #94a3b8; }
+.dark .csp-search-input svg { color: #94a3b8; }
+.dark .csp-search-input:focus-within {
+  background: #4b5b75;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+}
+.dark .csp-search-clear {
+  background: #334155;
+  color: #cbd5e1;
+}
+.dark .csp-search-clear:hover {
+  background: #f97316;
+  color: #FFFFFF;
+}
+
+.dark .csp-sort-wrap {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+.dark .csp-sort-wrap svg { color: #cbd5e1; }
+.dark .csp-sort-select {
+  color: #FFFFFF;
+}
+.dark .csp-sort-select option {
+  background: #334155;
+  color: #FFFFFF;
+}
+
+/* ══════════════════════════════════════
+   9. PRODUCT CARDS — slate-700 solid
+   ══════════════════════════════════════ */
+.dark .csp-product-card {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.dark .csp-product-card:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.40);
+  background: #3a4a63;
+}
+
+.dark .csp-product-img-wrap {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+}
+.dark .csp-product-img-fallback {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  color: #fb923c;
+}
+
+.dark .csp-stock-badge.out {
+  background: rgba(239, 68, 68, 0.95);
+  color: #FFFFFF;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+}
+.dark .csp-stock-badge.low {
+  background: rgba(245, 158, 11, 0.95);
+  color: #1a1a1a;
+  border: 1px solid rgba(245, 158, 11, 0.6);
+}
+
+.dark .csp-wishlist-btn {
+  background: #1e293b;
+  color: #E2E8F0;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.dark .csp-wishlist-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.dark .csp-wishlist-btn.active {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.dark .csp-product-category {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.30);
+}
+
+.dark .csp-product-name { color: #FFFFFF; }
+
+.dark .csp-product-rating { color: #94a3b8; }
+.dark .csp-product-rating-num { color: #F1F5F9; }
+.dark .csp-product-rating-count { color: #94a3b8; }
+
+.dark .csp-stars svg[stroke="#d8dade"] { stroke: #64748b; }
+
+.dark .csp-product-price { color: #F1F5F9; }
+.dark .csp-product-price strong { color: #fb923c; }
+.dark .csp-product-price small { color: #94a3b8; }
+
+.dark .csp-add-btn:disabled {
+  background: #475569;
+  color: #94a3b8;
+}
+
+/* ══════════════════════════════════════
+   10. PAGINATION
+   ══════════════════════════════════════ */
+.dark .csp-pagination { border-top-color: rgba(148, 163, 184, 0.18); }
+.dark .csp-page-btn {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #E2E8F0;
+}
+.dark .csp-page-btn:hover:not(:disabled) {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.45);
+}
+.dark .csp-page-btn:disabled {
+  opacity: 0.4;
+  color: #64748b;
+}
+.dark .csp-page-info { color: #cbd5e1; }
+
+/* ══════════════════════════════════════
+   11. REVIEWS SUMMARY + CARDS — slate-700
+   ══════════════════════════════════════ */
+.dark .csp-reviews-summary {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.dark .csp-reviews-big-rating { color: #FFFFFF; }
+.dark .csp-reviews-count { color: #cbd5e1; }
+.dark .csp-reviews-summary-item { color: #cbd5e1; }
+.dark .csp-reviews-summary-item strong { color: #FFFFFF; }
+
+.dark .csp-reviews-helper {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.30);
+  color: #fdba74;
+}
+
+.dark .csp-reviews-product-chip {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+.dark .csp-reviews-product-chip:hover {
+  background: #4b5b75;
+  border-color: rgba(249, 115, 22, 0.40);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.dark .csp-reviews-product-chip img { background: #334155; }
+.dark .csp-reviews-product-chip-name { color: #FFFFFF; }
+.dark .csp-reviews-product-chip-meta { color: #94a3b8; }
 
 .dark .csp-review-card {
-  background: var(--csp-card);
-  border-color: var(--csp-border);
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.18);
 }
-.dark .csp-review-card:hover { border-color: rgba(249, 115, 22, 0.30); }
+.dark .csp-review-card:hover {
+  background: #4b5b75;
+  border-color: rgba(249, 115, 22, 0.40);
+}
+.dark .csp-review-avatar {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+}
 .dark .csp-review-name { color: #FFFFFF; }
-.dark .csp-review-time { color: var(--csp-text-mute); }
-.dark .csp-review-comment { color: var(--csp-text-mid); }
-.dark .csp-review-reply {
-  background: rgba(51, 65, 85, 0.55);
-  border-color: rgba(90, 115, 168, 0.30);
-}
-.dark .csp-review-reply-text { color: var(--csp-text-mid); }
-
-/* ── Empty / Error / Loading states ── */
-.dark .csp-empty,
-.dark .csp-error,
-.dark .csp-skeleton {
-  background: rgba(51, 65, 85, 0.4);
-  border-color: var(--csp-border);
-  color: var(--csp-text-mid);
-}
-.dark .csp-empty h3,
-.dark .csp-error h3 { color: #FFFFFF; }
-.dark .csp-empty p,
-.dark .csp-error p   { color: var(--csp-text-mute); }
-
-/* ── Social links / share popover ── */
-.dark .csp-share-popover,
-.dark .csp-social-links {
-  background: var(--csp-card);
-  border-color: var(--csp-border);
-}
-.dark .csp-social-link {
-  background: rgba(51, 65, 85, 0.55);
-  color: var(--csp-text-mid);
-  border-color: var(--csp-border);
-}
-.dark .csp-social-link:hover {
+.dark .csp-review-time { color: #94a3b8; }
+.dark .csp-review-comment { color: #E2E8F0; }
+.dark .csp-review-product-tag {
   background: rgba(249, 115, 22, 0.12);
-  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+  color: #fdba74;
 }
 
-/* ── Status indicators (open/closed, verified) ── */
-.dark .csp-status-open { background: var(--csp-success-soft); color: #34d399; }
-.dark .csp-status-closed { background: var(--csp-danger-soft); color: #fca5a5; }
+/* ══════════════════════════════════════
+   12. ABOUT TAB
+   ══════════════════════════════════════ */
+.dark .csp-about-block h3 { color: #FFFFFF; }
+.dark .csp-about-block h3 svg { color: #fb923c; }
+.dark .csp-about-block p { color: #cbd5e1; }
+
+.dark .csp-about-info {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+.dark .csp-info-icon {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+}
+.dark .csp-info-label { color: #94a3b8; }
+.dark .csp-info-value { color: #FFFFFF; }
+.dark .csp-info-value--ok { color: #34d399; }
+
+.dark .csp-about-stat {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+.dark .csp-about-stat-label { color: #94a3b8; }
+.dark .csp-about-stat-value { color: #FFFFFF; }
+
+.dark .csp-about-msg-btn--disabled,
+.dark .csp-about-msg-btn--disabled:hover {
+  background: #475569;
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+/* ══════════════════════════════════════
+   13. EMPTY / ERROR / SKELETONS
+   ══════════════════════════════════════ */
+.dark .csp-empty { color: #cbd5e1; }
+.dark .csp-empty-art {
+  background: rgba(249, 115, 22, 0.10);
+  color: #fb923c;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+.dark .csp-empty h3 { color: #FFFFFF; }
+.dark .csp-empty p { color: #94a3b8; }
+
+.dark .csp-error-state {
+  background: #334155;
+  border-color: rgba(239, 68, 68, 0.30);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.dark .csp-error-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+.dark .csp-error-state h2 { color: #FFFFFF; }
+.dark .csp-error-state p { color: #cbd5e1; }
+
+.dark .csp-back-btn {
+  background: #475569;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #E2E8F0;
+}
+.dark .csp-back-btn:hover {
+  background: #4b5b75;
+  color: #FFFFFF;
+  border-color: rgba(148, 163, 184, 0.40);
+}
+
+.dark .csp-retry-btn { color: #FFFFFF; }
+.dark .csp-empty-reviews { color: #94a3b8; }
+
+/* ══════════════════════════════════════
+   14. SKELETONS
+   ══════════════════════════════════════ */
+.dark .csp-skel-hero {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+.dark .csp-skel-avatar,
+.dark .csp-skel-line,
+.dark .csp-skel-stat,
+.dark .csp-skel-img {
+  background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+  background-size: 200% 100%;
+}
+
+/* ══════════════════════════════════════
+   15. LEGACY CLASSES
+   ══════════════════════════════════════ */
+.dark .reviews-section {
+  background: #334155;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+.dark .show-all-btn {
+  background: rgba(249, 115, 22, 0.10);
+  border-color: rgba(249, 115, 22, 0.40);
+  color: #fdba74;
+}
+.dark .show-all-btn:hover {
+  background: rgba(249, 115, 22, 0.18);
+}

@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from "react";
+import "../styles/chatbot.css";
 import "./FloatingChatWidget.css";
 import api from "../utils/api";
-import { canSendChatbot } from "../utils/featureFlags";
 
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 //  ⚙️  متوافق مع الـ API الحقيقي (حسب Postman collection):
 //
 //  POST /api/seller/chatbot/chat
 //    - نص فقط:  body JSON  { message, sessionId? }
 //    - نص + صورة: body form-data { message, productImage (File), sessionId? }
 //    → { status: "success", data: { reply, sessionId, actions, productImageReady, productImageUrl } }
-// ══════════════════════════════════════════════════
+//
+//  ✅ نفس الـ Design System الموحّد مع Customer Chatbot (styles/chatbot.css)
+//  ✅ Dark Theme + RTL Support
+// ══════════════════════════════════════════════════════════
 
 const IS_API_READY = !!import.meta.env.VITE_API_URL;
 
@@ -44,7 +47,7 @@ const SendIcon = () => (
 );
 
 const StoreIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M3 9l1-5h16l1 5" />
     <path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" />
     <path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" />
@@ -72,10 +75,17 @@ const SELLER_QUICK_REPLIES = [
   "ليش طلب معين ناقص فيه بيانات؟",
 ];
 
+// ── صيغة الوقت المختصرة (HH:MM) ──
+function formatNow() {
+  const d = new Date();
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 const WELCOME_MESSAGE = {
   id: "welcome",
   sender: "bot",
-  text: "أهلاً! أنا مساعد Gaza Gate للبائعين 🛍️ كيف فيني أساعدك اليوم؟",
+  text: "أهلاً! أنا مساعد Gaza Gate للبائعين 🛍️\nكيف فيني أساعدك اليوم؟",
+  time: formatNow(),
 };
 
 const FloatingChatWidget = () => {
@@ -109,6 +119,14 @@ const FloatingChatWidget = () => {
     };
   }, [imagePreview]);
 
+  // ── لما تنفتح النافذة، ركّز على الـ input ──
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => fileInputRef.current?.parentElement?.querySelector(".fcw-input")?.focus(), 180);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
+
   const appendMessage = (msg) => {
     setMessages((prev) => [...prev, msg]);
   };
@@ -126,6 +144,7 @@ const FloatingChatWidget = () => {
         id: `err-${Date.now()}`,
         sender: "bot",
         text: "الملف المختار مش صورة، جربي ترفعي صورة (jpg/png).",
+        time: formatNow(),
       });
       e.target.value = "";
       return;
@@ -185,19 +204,6 @@ const FloatingChatWidget = () => {
     // لازم يكون في نص أو صورة على الأقل
     if ((!text && !file) || sending) return;
 
-    // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
-    // لو CHATBOT_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
-    //   ضغط Enter أو استدعى الـ handler مباشرة. لا API call، لا تحديث
-    //   للـ conversation state.
-    if (!canSendChatbot()) {
-      console.info(
-        "[FloatingChatWidget] الإرسال معطّل عبر Feature Flag (CHATBOT_SEND_ENABLED=false)."
-      );
-      // نفرّغ الـ input فقط (UX متوقع)، لكن ما نضيف الرسالة للقائمة.
-      setInput("");
-      return;
-    }
-
     setShowQuickReplies(false);
     setInput("");
 
@@ -206,6 +212,7 @@ const FloatingChatWidget = () => {
       sender: "seller",
       text,
       image: imagePreview, //   نعرض معاينة الصورة يلي بعتها البائع بنفس الفقاعة
+      time: formatNow(),
     };
     appendMessage(sellerMsg);
 
@@ -222,6 +229,7 @@ const FloatingChatWidget = () => {
           sender: "bot",
           text: data.reply ?? "تم استلام رسالتك، رح يتواصل معك فريق الدعم قريباً.",
           image: data.productImageReady ? data.productImageUrl : null,
+          time: formatNow(),
         });
       } else {
         // لسا ما في باك إند شغال — رد تجريبي بس عشان نجرب الشكل
@@ -230,6 +238,7 @@ const FloatingChatWidget = () => {
           id: `bot-${Date.now()}`,
           sender: "bot",
           text: "هاد رد تجريبي مؤقت، رح يتوصل بالباك إند الحقيقي قريباً.",
+          time: formatNow(),
         });
       }
     } catch (err) {
@@ -238,6 +247,7 @@ const FloatingChatWidget = () => {
         id: `err-${Date.now()}`,
         sender: "bot",
         text: "تعذّر إرسال رسالتك، حاول مرة أخرى.",
+        time: formatNow(),
       });
     } finally {
       setSending(false);
@@ -250,9 +260,6 @@ const FloatingChatWidget = () => {
       handleSend();
     }
   };
-
-  // مشتق من الـ Feature Flag — يقرأ في كل render حتى لو تغيّر الـ flag
-  const sendEnabled = canSendChatbot();
 
   return (
     <>
@@ -270,14 +277,17 @@ const FloatingChatWidget = () => {
       {isOpen && (
         <div className="fcw-window" dir="rtl">
           <div className="fcw-header">
-            <button type="button" className="fcw-close-btn" onClick={() => setIsOpen(false)}>
+            <button type="button" className="fcw-close-btn" onClick={() => setIsOpen(false)} aria-label="إغلاق">
               <CloseIcon />
             </button>
             <div className="fcw-header-info">
-              <span className="fcw-header-title">مساعد البائع <StoreIcon /></span>
-              <span className="fcw-header-sub">Gaza Gate - متاح 24/7</span>
+              <span className="fcw-header-title">مساعد البائع</span>
+              <span className="fcw-header-sub">
+                <span className="ccw-status-dot" aria-hidden="true" style={{ width: 8, height: 8 }} />
+                Gaza Gate - متاح 24/7
+              </span>
             </div>
-            <div className="fcw-header-avatar">
+            <div className="fcw-header-avatar" aria-hidden="true">
               <StoreIcon />
             </div>
           </div>
@@ -297,7 +307,20 @@ const FloatingChatWidget = () => {
                     <img src={msg.image} alt="مرفق" className="fcw-msg-image" />
                   )}
                   {msg.text && (
-                    <div style={{ whiteSpace: "pre-line" }}>{msg.text}</div>
+                    <div>
+                      <div style={{ whiteSpace: "pre-line" }}>{msg.text}</div>
+                      {msg.time && (
+                        <span
+                          className={
+                            msg.sender === "seller"
+                              ? "fcw-msg-time fcw-msg-time--me"
+                              : "fcw-msg-time"
+                          }
+                        >
+                          {msg.time}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -305,7 +328,7 @@ const FloatingChatWidget = () => {
 
             {sending && (
               <div className="fcw-msg-row">
-                <div className="fcw-msg-bubble fcw-msg-bot fcw-msg-typing">
+                <div className="fcw-msg-bubble fcw-msg-bot fcw-msg-typing" aria-label="يكتب الآن">
                   <span className="fcw-dot" />
                   <span className="fcw-dot" />
                   <span className="fcw-dot" />
@@ -314,13 +337,14 @@ const FloatingChatWidget = () => {
             )}
 
             {showQuickReplies && !sending && (
-              <div className="fcw-quick-replies">
+              <div className="fcw-quick-replies" role="list">
                 {SELLER_QUICK_REPLIES.map((q) => (
                   <button
                     key={q}
                     type="button"
                     className="fcw-quick-reply-btn"
                     onClick={() => handleSend(q)}
+                    role="listitem"
                   >
                     {q}
                   </button>
@@ -358,7 +382,7 @@ const FloatingChatWidget = () => {
               type="button"
               className="fcw-attach-btn"
               onClick={handlePickImage}
-              disabled={sending || !sendEnabled}
+              disabled={sending}
               aria-label="إرفاق صورة"
             >
               <PaperclipIcon />
@@ -366,17 +390,19 @@ const FloatingChatWidget = () => {
             <input
               type="text"
               className="fcw-input"
-              placeholder={sendEnabled ? "اكتب رسالتك..." : "إرسال الرسائل معطّل حالياً"}
+              placeholder="اكتب رسالتك..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={sending || !sendEnabled}
+              disabled={sending}
+              aria-label="اكتب رسالتك"
             />
             <button
               type="button"
               className="fcw-send-btn"
               onClick={() => handleSend()}
-              disabled={sending || !sendEnabled || (!input.trim() && !imageFile)}
+              disabled={sending || (!input.trim() && !imageFile)}
+              aria-label="إرسال"
             >
               <SendIcon />
             </button>

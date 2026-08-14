@@ -629,7 +629,7 @@ export default function CustomerStoreProfile() {
             {products.length > 0 && (
               <div className="csp-products-toolbar">
                 <div className="csp-search-input">
-                  <Search size={15} color="#9ca3af" />
+                  <Search size={15} />
                   <input
                     type="text"
                     value={productSearch}
@@ -647,7 +647,7 @@ export default function CustomerStoreProfile() {
                   )}
                 </div>
                 <div className="csp-sort-wrap">
-                  <SlidersHorizontal size={14} color="#6b7280" />
+                  <SlidersHorizontal size={14} />
                   <select
                     value={productSort}
                     onChange={(e) => setProductSort(e.target.value)}

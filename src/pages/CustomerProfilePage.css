@@ -416,16 +416,18 @@
   align-items: stretch;
   justify-content: space-between;
   gap: 14px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   background: #fcfcfd;
   border: 1px solid var(--cpp-border);
-  border-radius: 10px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  border-radius: 12px;
+  transition: background 0.2s ease, border-color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .cpp-review-item:hover {
   background: #ffffff;
   border-color: var(--cpp-orange);
+  box-shadow: var(--cpp-shadow-sm);
 }
 
 .cpp-review-left {
@@ -440,19 +442,25 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--cpp-text-soft);
+  font-weight: 500;
 }
 
 .cpp-review-date {
   color: var(--cpp-text-mute);
-  font-size: 12px;
+  font-size: 12.5px;
+  font-weight: 500;
 }
 
 .cpp-stars {
-  display: inline-flex;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center;
   gap: 1px;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .cpp-review-seller {
@@ -528,8 +536,14 @@
 .cpp-review-comment {
   margin: 0;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--cpp-text);
+  /* ✅ wrap safety net — يضمن إن النص ما يطلع برا البطاقة حتى لو فيه URLs أو علامات */
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ── Product chip on the right ── */
@@ -539,13 +553,15 @@
   gap: 8px;
   background: #ffffff;
   border: 1px solid var(--cpp-border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 6px 10px 6px 12px;
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
   max-width: 220px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.15s ease, background 0.15s ease,
+              box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .cpp-review-product:hover {
@@ -582,10 +598,22 @@
 @media (max-width: 600px) {
   .cpp-review-item {
     flex-direction: column;
+    padding: 14px 14px;
   }
   .cpp-review-product {
-    align-self: flex-start;
+    align-self: stretch;
     max-width: 100%;
+  }
+  .cpp-review-comment {
+    font-size: 13.5px;
+  }
+  .cpp-reviews-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .cpp-reviews-summary {
+    font-size: 14px;
   }
 }
 
@@ -768,6 +796,25 @@
 .dark .cpp-last-order     { color: var(--cpp-text-soft); }
 .dark .cpp-section-icon   { color: #fb923c; }
 
+/* ── Reviews header — رفع prominence للـ title + stars + summary ── */
+.dark .cpp-reviews-title .cpp-section-title {
+  color: #FFFFFF;
+  font-weight: 800;
+}
+.dark .cpp-reviews-title .cpp-section-icon {
+  color: #fbbf24;                                /* النجمة بلون ذهبي */
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.45));
+}
+.dark .cpp-reviews-summary {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+}
+.dark .cpp-reviews-count {
+  color: #cbd5e1;                                /* ثانوي واضح مش باهت */
+  font-weight: 500;
+}
+
 /* ── Pills (badges) ── */
 .dark .cpp-pill--green {
   background: var(--cpp-green-soft);
@@ -818,17 +865,102 @@
   border-color: var(--cpp-border);
 }
 
-/* ── Reviews ── */
-.dark .cpp-review-card {
-  background: rgba(51, 65, 85, 0.45);
-  border-color: var(--cpp-border);
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Reviews — Dark Mode (مراجعة كاملة — رفع contrast + hierarchy)
+   ─────────────────────────────────────────────────────────────
+   المشكلة السابقة: الـ CSS كان يستهدف .cpp-review-card
+   (كلاس مش موجود بالـ JSX — الاسم الفعلي .cpp-review-item)
+   → الكروت كانت تفضل بلون فاتح والنصوص تختفي.
+   الحل: نضيف قواعد dark mode لكل العناصر الفعلية + رفع
+   الـ contrast و الـ hierarchy بشكل احترافي.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── خلفية البطاقة منفصلة عن القسم + border أوضح + shadow خفيف ── */
+.dark .cpp-review-item {
+  background: rgba(30, 41, 59, 0.55);          /* slate-800 بشفافية */
+  border: 1px solid rgba(148, 163, 184, 0.22); /* border أوضح */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
+  transition: background 0.2s ease, border-color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.15s ease;
 }
-.dark .cpp-review-name   { color: #FFFFFF; }
-.dark .cpp-review-time   { color: var(--cpp-text-mute); }
-.dark .cpp-review-comment { color: var(--cpp-text-soft); }
-.dark .cpp-review-reply {
+
+.dark .cpp-review-item:hover {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: rgba(249, 115, 22, 0.45);       /* لمسة برتقالية على الـ hover */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
+  transform: translateY(-1px);
+}
+
+/* ── اسم البائع (Handmade Touch / زيون رابع) — أبيض واضح ── */
+.dark .cpp-review-store-name {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* ── تعليق التقييم — رمادي فاتح واضح، مقروء، line-height مريح ── */
+.dark .cpp-review-comment {
+  color: #E2E8F0;                                /* slate-200 */
+  line-height: 1.75;
+  font-size: 14px;
+}
+
+/* ── تاريخ التقييم — رمادي متوسط واضح، أقل prominence من الاسم ── */
+.dark .cpp-review-date {
+  color: #cbd5e1;                                /* slate-300 */
+  font-weight: 500;
+}
+
+/* ── meta row (الـ wrapper للـ date + stars) ── */
+.dark .cpp-review-meta {
+  color: var(--cpp-text-soft);
+}
+
+/* ── رابط البائع (avatar + name) — affordance عند الـ hover ── */
+.dark .cpp-review-seller-link:hover {
+  background: rgba(249, 115, 22, 0.14);
+}
+.dark .cpp-review-seller-link:hover .cpp-review-store-name {
+  color: #fb923c;
+}
+
+/* ── product chip (الـ thumbnail + name) — خلفية مرئية، border واضح ── */
+.dark .cpp-review-product {
   background: rgba(51, 65, 85, 0.55);
-  border-color: rgba(90, 115, 168, 0.30);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.dark .cpp-review-product:hover {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.45);
+}
+.dark .cpp-review-product-name {
+  color: #FFFFFF;                                /* اسم المنتج واضح */
+  font-weight: 600;
+}
+.dark .cpp-review-product-img {
+  background: rgba(249, 115, 22, 0.15);          /* خلفية بديلة أوضح */
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+.dark .cpp-review-product-img--placeholder {
+  color: #fb923c;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+/* ── empty state ── */
+.dark .cpp-empty-reviews {
+  color: var(--cpp-text-soft);
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 32px 16px;
+}
+.dark .cpp-empty-reviews p {
+  color: #E2E8F0;
+  font-weight: 600;
+}
+.dark .cpp-empty-icon {
+  color: #fb923c;
+  opacity: 0.7;
 }
 
 /* ── Skeletons / Empty / Error ── */
