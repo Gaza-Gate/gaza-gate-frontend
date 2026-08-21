@@ -12,6 +12,8 @@ import { useAuth } from '../context/AuthContext'
  *    + نصوص داكنة. في الوضع الليلي خلفية كحلية + بطاقات كحلية أفتح + نصوص بيضاء.
  * ✅ البرتقالي يظل ثابتاً كهوية بصرية.
  * ✅ الموجة في الخلفية تأتي من body::before / body::after في index.css.
+ * ✅ زر "العودة" بأعلى الشاشة يرجّع المستخدم للاندينغ بيج (/welcome) —
+ *    بنفس أسلوب زر العودة المستخدم بشاشات الأسئلة الشائعة/الشروط/الخصوصية.
  */
 function PortalCard({ title, description, illustration, fillLabel, outlineLabel, onFill, onOutline, tag }) {
   return (
@@ -94,6 +96,44 @@ export default function Onboarding() {
           height: 360px;
           background: radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 70%);
           pointer-events: none;
+        }
+
+        /* زر العودة للاندينغ بيج */
+        .onboarding-back {
+          position: absolute;
+          top: 22px;
+          right: 28px;
+          z-index: 2;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: none;
+          color: #f97316;
+          font-family: 'Tajawal', sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 6px 4px;
+          transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .onboarding-back:hover {
+          color: #ea580c;
+          transform: translateX(3px);
+        }
+        .onboarding-back-arrow {
+          font-size: 15px;
+          line-height: 1;
+        }
+        .dark .onboarding-back { color: #fb923c; }
+        .dark .onboarding-back:hover { color: #fdba74; }
+
+        @media (max-width: 640px) {
+          .onboarding-back {
+            top: 16px;
+            right: 16px;
+            font-size: 12.5px;
+          }
         }
 
         /* Header */
@@ -315,12 +355,24 @@ export default function Onboarding() {
           to   { opacity: 1; transform: translateY(0); }
         }
 
+        .onboarding-back { animation: fadeUp 0.4s 0.05s ease both; }
         .onboarding-header { animation: fadeUp 0.45s 0.1s ease both; }
         .portal-card:nth-child(1) { animation: fadeUp 0.45s 0.2s ease both; }
         .portal-card:nth-child(2) { animation: fadeUp 0.45s 0.3s ease both; }
       `}</style>
 
       <div className="onboarding-root">
+        {/* زر العودة للاندينغ بيج */}
+        <button
+          type="button"
+          className="onboarding-back"
+          onClick={() => navigate('/welcome')}
+          aria-label="العودة للصفحة الرئيسية"
+        >
+          <span className="onboarding-back-arrow" aria-hidden="true">→</span>
+          العودة
+        </button>
+
         {/* Header */}
         <div className="onboarding-header">
           <div className="onboarding-eyebrow">مرحباً بك</div>

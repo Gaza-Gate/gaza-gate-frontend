@@ -14,6 +14,7 @@ import {
 //    تتكفّل بتغيير الخلفية بين الفاتح والكحلي بحسب الثيم.
 const AUTH_SHELL_PATHS = [
   '/',
+  '/welcome',
   '/onboarding',
   '/onboarding/customer',
   '/seller/onboarding',
@@ -68,6 +69,7 @@ import CustomerMessages from "./pages/CustomerMessages";
 import CustomerNotifications from "./pages/CustomerNotifications";
 import CustomerStoreProfile from "./pages/CustomerStoreProfile";
 import CustomerProfilePage from "./pages/CustomerProfilePage";
+import LandingPage from './pages/LandingPage';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
@@ -195,6 +197,10 @@ export default function App() {
 
         {/* الشاشة الترحيبية تظهر أولاً عند فتح التطبيق */}
         <Route path="/" element={<SplashScreen />} />
+
+        {/* ✅ صفحة اللاندينغ — صفحة مستقلة لحالها، بروابط لها من أي مكان
+            (فيها أزرار توديك للأونبوردينغ أو لتسجيل الدخول) */}
+        <Route path="/welcome" element={<LandingPage />} />
 
         {/* بعد انتهاء الـ SplashScreen يتم التوجيه لهذا المسار */}
         <Route path="/onboarding" element={<Onboarding />} />
