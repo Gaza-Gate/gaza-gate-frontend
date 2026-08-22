@@ -38,7 +38,16 @@ import {
   FileText,
 } from "lucide-react";
 import ThemeLogo from "../components/ThemeLogo";
+import api from "../utils/api";
 import "./LandingPage.css";
+
+/* أرقام احتياطية — بتنعرض بس لو الـ API ما ردّ لأي سبب (تعطل مؤقت، شبكة...)
+   حتى ما تضل الصفحة عالقة بسكيلتون فاضي للأبد */
+const FALLBACK_LANDING_STATS = {
+  productsCount: 2000,
+  sellersCount: 500,
+  ordersCount: 2000,
+};
 
 /* مسارات موحّدة — مطابقة تمامًا لملف الراوت (App.jsx)
    ملاحظة: قبل أي توجيه لتسجيل الدخول/التسجيل، لازم المستخدم يمرّ
@@ -91,6 +100,18 @@ function Stat({ value, decimals = 0, suffix = "", label }) {
         {display}
         {suffix}
       </div>
+      <div className="lp-stat-label">{label}</div>
+    </div>
+  );
+}
+
+/* سكيلتون بنفس مقاس Stat — بيبين لحد ما يوصل رقم حقيقي من /api/landing،
+   وهيك منتجنب تمرير قيمة placeholder لـ Stat (يلي بيعدّ لفوق مرة وحدة بس
+   عند أول ظهور، فلو غيّرنا القيمة بعدين ما رح تعيد الحركة). */
+function StatSkeleton({ label }) {
+  return (
+    <div className="lp-stat">
+      <div className="lp-stat-value lp-stat-skeleton" aria-hidden="true" />
       <div className="lp-stat-label">{label}</div>
     </div>
   );
@@ -321,6 +342,47 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
 
+  // ── إحصائيات حقيقية من الباك: /api/landing ──
+  //    landingStats يضل null لحد ما يوصل الرد (بيبين سكيلتون بمكان الأرقام)،
+  //    وإذا الطلب فشل بنستخدم أرقام احتياطية بدل ما تضل الصفحة عالقة.
+  const [landingStats, setLandingStats] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get("/api/landing")
+      .then((res) => {
+        if (cancelled) return;
+        const data = res.data?.data;
+        if (data) {
+          setLandingStats(data);
+        } else {
+          // الرد وصل لكن بشكل غير متوقع (بدون res.data.data) — بنسجّله
+          // بالكونسول حتى نعرف شكل الرد الفعلي ونصلّح المسار إذا لزم.
+          console.warn(
+            "[/api/landing] الرد وصل لكن بدون res.data.data — الشكل الفعلي:",
+            res.data
+          );
+          setLandingStats(FALLBACK_LANDING_STATS);
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // ✅ نطبع سبب الفشل الحقيقي بالكونسول (404 / CORS / Network Error...)
+        //    حتى نقدر نشخّص ليش رجعنا للأرقام الاحتياطية.
+        console.error(
+          "[/api/landing] فشل تحميل الإحصائيات — رح تظهر أرقام احتياطية:",
+          err?.response?.status ? `HTTP ${err.response.status}` : err?.message || err
+        );
+        setLandingStats(FALLBACK_LANDING_STATS);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function openModal(key) {
     return (e) => {
       e.preventDefault();
@@ -452,12 +514,24 @@ export default function LandingPage() {
 
         <div className="lp-hero-stats">
           <div className="lp-hero-stat">
-            <strong>500+</strong>
+            <strong>
+              {landingStats ? (
+                `${landingStats.sellersCount}+`
+              ) : (
+                <span className="lp-num-skeleton" aria-hidden="true" />
+              )}
+            </strong>
             <span>بائع</span>
           </div>
           <div className="lp-hero-divider" />
           <div className="lp-hero-stat">
-            <strong>2,000+</strong>
+            <strong>
+              {landingStats ? (
+                `${landingStats.productsCount}+`
+              ) : (
+                <span className="lp-num-skeleton" aria-hidden="true" />
+              )}
+            </strong>
             <span>منتج</span>
           </div>
           <div className="lp-hero-divider" />
@@ -685,8 +759,16 @@ export default function LandingPage() {
       <section className="lp-stats-row">
         <Stat value={24} suffix=" ساعة" label="متوسط وقت التوصيل" />
         <Stat value={98} suffix="%" label="نسبة رضا العملاء" />
-        <Stat value={500} suffix="+" label="بائع نشط" />
-        <Stat value={2000} suffix="+" label="طلب مكتمل" />
+        {landingStats ? (
+          <Stat value={landingStats.sellersCount} suffix="+" label="بائع نشط" />
+        ) : (
+          <StatSkeleton label="بائع نشط" />
+        )}
+        {landingStats ? (
+          <Stat value={landingStats.ordersCount} suffix="+" label="طلب مكتمل" />
+        ) : (
+          <StatSkeleton label="طلب مكتمل" />
+        )}
       </section>
 
       {/* ───────────── 3 خطوات ───────────── */}
