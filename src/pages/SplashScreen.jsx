@@ -36,8 +36,8 @@ export default function SplashScreen() {
 
     // ✅ ما في session — splash عادي ثانيتين وبعدين onboarding
     const timer = setTimeout(() => {
-      navigate('/onboarding')
-    }, 2000)
+  navigate('/welcome')
+}, 2000)
 
     return () => clearTimeout(timer)
   }, [navigate, isAuthenticated, isBootstrapping, currentRole])
