@@ -1,0 +1,64 @@
+ .dr-root {
+  min-height: 100vh;
+  background: #f8f9fb;
+  font-family: 'Tajawal', sans-serif;
+}
+
+.dr-main {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.dr-icon-outer {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(22, 163, 74, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.dr-icon-inner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dr-title {
+  margin: 0 0 8px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+.dr-subtitle {
+  margin: 0 0 1.75rem;
+  font-size: 13.5px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.dr-view-wallet-btn {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}

@@ -12,7 +12,7 @@
 //    - Fallback بدون productId: → /seller/ratings (قسم التقييمات الرئيسي)
 // ✅ عند النقر:
 //    1) تعليم الإشعار كمقروء (PATCH .../read)
-//    2) استخراج productId/reviewId من الإشعار
+//    2) استخراج productId/reviewId من الإشعار للتشخيص
 //    3) حلّ المسار عبر resolveNotificationRoute
 //    4) إغلاق الـ dropdown + التنقل
 // ✅ تعتمد على:
@@ -93,12 +93,33 @@ const TYPE_META = {
   CONVERSATION:{ label: "محادثة",     Icon: Bell,        color: "#2563eb", bg: "#dbeafe" },
   // تنبيهات → برتقالي
   ALERT:       { label: "تنبيه",      Icon: AlertCircle, color: "#f97316", bg: "#fff7ed" },
+  // 🆕 [مؤقت للمعاينة] نوع خاص بإشعار الحساب الوسيط التجريبي — احذفي هذا السطر
+  //    لما الباك إند يرسل نوع إشعار حقيقي لطلبات الحساب الوسيط.
+  ESCROW_DEMO: { label: "معاينة",     Icon: ShoppingBag, color: "#f97316", bg: "#fff7ed" },
 };
 
 const normType = (t) => (t ? String(t).toUpperCase() : "GENERAL");
 const getMeta = (type) => TYPE_META[normType(type)] || TYPE_META.GENERAL;
 
 const NEW_NOTIFICATION_EVENT = "notification:new";
+
+// 🆕 ═══════════════════════════════════════════════════════════════
+// [مؤقت للمعاينة] إشعار تجريبي لميزة الحساب الوسيط (Escrow)
+// ─────────────────────────────────────────────────────────────────
+// احذفي هذا الكائن بالكامل + كل الأسطر المعلّمة بـ 🆕 [مؤقت للمعاينة]
+// لما الباك إند يصير جاهز ويرسل نوع إشعار حقيقي لطلبات الحساب الوسيط.
+// بيظهر فوق قائمة إشعارات البائع دائماً، وبالضغط عليه بيوديك مباشرة
+// لشاشة "طلب جديد" (OrderAcceptReject) للمعاينة، بدون أي طلب API حقيقي.
+// ═══════════════════════════════════════════════════════════════
+const DEMO_ESCROW_NOTIFICATION = {
+  id: "demo-escrow-order",
+  type: "ESCROW_DEMO",
+  title: "طلب جديد",
+  content: "لديك طلب جديد بانتظار الموافقة — معاينة الحساب الوسيط",
+  isRead: false,
+  createdAt: new Date().toISOString(),
+  __isDemo: true, // 🆕 [مؤقت للمعاينة] علامة نميّز فيها الإشعار التجريبي
+};
 
 /* ── Helpers ──────────────────────────────────────────────── */
 function getId(n) {
@@ -196,7 +217,12 @@ export default function NotificationDropdown({
       const list = isCustomer
         ? rawList.filter(isCustomerNotification)
         : rawList.filter(isSellerNotification);
-      setNotifs(list);
+
+      // 🆕 [مؤقت للمعاينة] نضيف الإشعار التجريبي فوق القائمة — للبائع فقط.
+      //    احذفي هذا الشرط بالكامل لما الباك إند يصير جاهز.
+      const finalList = !isCustomer ? [DEMO_ESCROW_NOTIFICATION, ...list] : list;
+
+      setNotifs(finalList);
     } catch (err) {
       const info = formatApiError(err, "تعذر جلب الإشعارات");
       setError(info.message);
@@ -315,6 +341,8 @@ export default function NotificationDropdown({
   const markOneRead = useCallback(
     async (n) => {
       if (!n) return;
+      // 🆕 [مؤقت للمعاينة] الإشعار التجريبي مش موجود بالباك إند — نتجاهل نداء الـ API له
+      if (n.__isDemo) return;
       const id = getId(n);
       if (!id || isRead(n)) return;
       setNotifs((prev) =>
@@ -336,6 +364,11 @@ export default function NotificationDropdown({
   const deleteOne = useCallback(
     async (id) => {
       if (!id || deletingId) return;
+      // 🆕 [مؤقت للمعاينة] حذف محلي بس للإشعار التجريبي، بدون نداء API
+      if (id === DEMO_ESCROW_NOTIFICATION.id) {
+        setNotifs((prev) => prev.filter((n) => getId(n) !== id));
+        return;
+      }
       setDeletingId(id);
       // حفظ snapshot
       const snapshot = notifs;
@@ -369,6 +402,15 @@ export default function NotificationDropdown({
   const handleItemClick = useCallback(
     (n) => {
       if (!n) return;
+
+      // 🆕 [مؤقت للمعاينة] الإشعار التجريبي — توديه مباشرة لشاشة المعاينة
+      //    بدون تعليم كمقروء عبر API ولا حل مسار عادي (مالوش وجود بالباك إند).
+      //    احذفي هذا الشرط بالكامل لما الباك إند يصير جاهز.
+      if (n.__isDemo) {
+        onClose?.();
+        navigate("/seller/orders/demo/request");
+        return;
+      }
 
       // 1) ✅ تعليم كمقروء (optimistic — حتى لو فشل التنقل، يبقى مقروء)
       markOneRead(n);

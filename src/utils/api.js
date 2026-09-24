@@ -54,7 +54,12 @@ export const authAPI = {
   refreshToken:    ()     => api.post('/api/auth/refresh-token'),
 }
 
-// ── 3. Request interceptor — يحط التوكن في كل request ──
+// ── 3. عرّفي customerAPI ──
+export const customerAPI = {
+  getContactDirectory: () => api.get('/api/customer/contact-directory'),
+}
+
+// ── 4. Request interceptor — يحط التوكن في كل request ──
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -87,7 +92,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// ── 4. Response interceptor — الريفريش ──
+// ── 5. Response interceptor — الريفريش ──
 let refreshPromise = null
 
 // الطلبات يلي لازم ما نعمل الها أي refresh أو redirect تلقائي
@@ -187,5 +192,5 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-// ── 5. export ──
+// ── 6. export ──
 export default api

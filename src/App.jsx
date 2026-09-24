@@ -82,6 +82,14 @@ import AdminCategories from './pages/AdminCategories';
 import AdminUsers from './pages/AdminUsers';
 import AdminDashboard from './pages/AdminDashboard';
 
+// 🆕 صفحات الحساب الوسيط (Escrow) — قبول/رفض الطلب، المحفظة، تحرير مبكر، نتيجة نزاع
+import OrderAcceptReject from "./pages/OrderAcceptReject";
+import SellerWallet from "./pages/SellerWallet";
+import EarlyReleaseRequest from "./pages/EarlyReleaseRequest";
+import DisputeResolved from "./pages/DisputeResolved";
+import SellerMap from "./pages/SellerMap"; // 🆕 خريطة البائع
+import DeliverySettings from "./pages/DeliverySettings"; // 🆕 إعدادات شركة التوصيل المفضلة
+
 
 import FloatingChatWidget from "./components/FloatingChatWidget";
 import CustomerChatWidget from "./components/CustomerChatWidget";
@@ -114,14 +122,16 @@ const CUSTOMER_AREA_PREFIXES = [
   "/product-missing",
 ];
 
-// صفحات public view-only (بروفايل مشتري / بروفايل متجر) —
-// ما بدها widget، وما بدها role switch، وبدها تتشاف بنفس الشكل للجميع.
+// صفحات public view-only (بروفايل مشتري / بروفايل متجر / تفاصيل منتج) —
+// ما بدها widget، وما بدها role switch، وبدها تتشاف بنفس الشكل للجميع
+// (زائر غير مسجّل / بائع / مشتري) — لأنها مصممة تُفتح من روابط خارجية.
 const PUBLIC_VIEW_ONLY_PATTERNS = [
   /^\/profile\/customer\/[^/]+$/i, // /profile/customer/:id
   /^\/customer\/profile\/[^/]+$/i, // /customer/profile/:id
   /^\/store\/[^/]+$/i,            // /store/:sellerId
   /^\/customer\/store\/[^/]+$/i,  // /customer/store/:sellerId
   /^\/customer\/store$/i,         // /customer/store (بدون id)
+  /^\/product\/[^/]+$/i,          // 🆕 /product/:id — رابط الترويج، لازم يتفتح لأي حد
 ];
 
 function isPublicViewOnly(pathname) {
@@ -171,7 +181,7 @@ export default function App() {
   // ✅ الـ CustomerChatWidget يظهر فقط للزائر اللي دوره customer
   //    * مش للضيوف، ومش للبائعين، ومش للأدمن
   //    * فقط على الـ Customer Home (route-based central)
-  //    * ومش على الصفحات public view-only (بروفايل/متجر)
+  //    * ومش على الصفحات public view-only (بروفايل/متجر/تفاصيل منتج)
   const isCustomerArea =
     currentRole === 'customer' &&
     shouldShowCustomerChatWidget(location.pathname) &&
@@ -215,7 +225,10 @@ export default function App() {
 
         {/* مسارات الكاستمر — كلها محمية بـ RequireCustomer
             الـ guard بيعرض FullPageLoading + الـ RoleSwitchOverlay
-            بيغطي الشاشة أثناء أي تبديل دور. */}
+            بيغطي الشاشة أثناء أي تبديل دور.
+            ⚠️ /product/:id اتشالت من هون (كانت هون سابقاً) لأنها لازم
+            تكون متاحة لأي حد — زائر / بائع / مشتري — بدون تسجيل دخول
+            كمشتري تحديداً. شوفوها تحت كـ public view-only route. */}
         <Route element={<RequireCustomer />}>
           <Route element={<CustomerLayout />}>
             <Route path="/customer/become-seller" element={<ConvertToSeller />} />
@@ -223,7 +236,6 @@ export default function App() {
             <Route path="/notifications" element={<CustomerNotifications />} />
             <Route path="/home/customer" element={<CustomerHome />} />
             <Route path="/products" element={<CustomerProducts />} />
-            <Route path="/product/:id" element={<CustomerProductDetails />} />
             <Route path="/cart" element={<CustomerCart />} />
             <Route path="/profile/customer" element={<CustomerProfile />} />
             <Route path="/favorites" element={<CustomerFavorites />} />
@@ -233,20 +245,28 @@ export default function App() {
         </Route>
 
         {/* ──────────────────────────────────────────────────────────
-            صفحات Public View-Only (بدون role switch، بدون layout)
+            صفحات Public View-Only (بدون role switch، بدون حماية RequireCustomer)
             ──────────────────────────────────────────────────────────
             الهدف: أي زائر (بائع / مشتري آخر / زائر غير مسجّل) يقدر يفتح
-            بروفايل المتجر أو بروفايل المشتري بنفس الشكل تماماً.
+            بروفايل المتجر أو بروفايل المشتري أو صفحة منتج بنفس الشكل تماماً.
 
             - CustomerStoreProfile (صفحة المتجر): standalone page، تتعامل
               مع دور الزائر داخلياً عبر useAuth() — تخفي/تعطّل زر المراسلة
               للبائع، وتبقيه فعّالاً للمشتري والزائر.
             - CustomerProfilePage (بروفايل المشتري): نفس الفكرة.
-        */}
+            - 🆕 CustomerProductDetails (تفاصيل المنتج): نفس المبدأ — هاي
+              الصفحة يوصلها زر "الترويج" من خارج الموقع (سوشيال ميديا)،
+              فلازم تشتغل لأي زائر بدون ما يكون مسجّل دخول كمشتري.
+              حاطينها جوا CustomerLayout بس (بدون RequireCustomer) عشان
+              يضل شكلها متناسق (نفس الـ navbar) لكل الأدوار. */}
         <Route path="/customer/store" element={<CustomerStoreProfile />} />
         <Route path="/customer/store/:sellerId" element={<CustomerStoreProfile />} />
         <Route path="/customer/profile/:customerId" element={<CustomerProfilePage />} />
         <Route path="/profile/customer/:customerId" element={<CustomerProfilePage />} />
+
+        <Route element={<CustomerLayout />}>
+          <Route path="/product/:id" element={<CustomerProductDetails />} />
+        </Route>
 
         {/* مسارات الكاستمر بدون Navbar — عملية الدفع بتظهر لحالها بدون تشتيت */}
         <Route path="/checkout/review" element={<CustomerCheckoutReview />} />
@@ -268,6 +288,16 @@ export default function App() {
           <Route path="/seller/orders/:id" element={<OrderDetails />} />
           <Route path="/seller/ratings" element={<RatingsManagement />} />
           <Route path="/seller/notifications" element={<SellerNotifications />} />
+
+          {/* 🆕 مسارات الحساب الوسيط (Escrow) للبائع */}
+          <Route path="/seller/orders/:id/request" element={<OrderAcceptReject />} />
+          <Route path="/seller/wallet" element={<SellerWallet />} />
+          <Route path="/seller/wallet/early-release/:orderId" element={<EarlyReleaseRequest />} />
+          <Route path="/seller/disputes/:id/resolved" element={<DisputeResolved />} />
+          <Route path="/seller/map" element={<SellerMap />} /> {/* 🆕 */}
+
+          {/* 🆕 إعدادات شركة التوصيل المفضلة */}
+          <Route path="/seller/delivery-settings" element={<DeliverySettings />} />
         </Route>
         {/* مسارات البائع يلي ما بدها حماية (onboarding + public store view) */}
         <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
@@ -293,7 +323,7 @@ export default function App() {
       {isSellerArea && <FloatingChatWidget />}
 
       {/* ✅ ويدجت الزبون — بيظهر بس للزائر اللي دوره customer، وعلى صفحات الزبون فقط
-          (مش على صفحات public view-only زي بروفايل/متجر) */}
+          (مش على صفحات public view-only زي بروفايل/متجر/تفاصيل منتج) */}
       {isCustomerArea && <CustomerChatWidget />}
 
       {/* ✅ زر تبديل الثيم العائم (FAB) — bottom-right

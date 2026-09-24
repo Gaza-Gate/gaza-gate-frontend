@@ -6,6 +6,7 @@ import logo from "../assets/logo.png";
 import ChangePasswordModal from "./ChangePasswordModal";
 import SellerNavbar from "../components/SellerNavbar";
 import { getSellerProfile } from "../services/profileService";
+import StoreQRCode from "../components/StoreQRCode"; // 🆕 كارد الـ QR الكامل
 
 const STATUS_LABELS = {
   active: "عضو نشط",
@@ -46,6 +47,9 @@ const normalizeProfile = (apiResponseData) => {
   const months = Number(profile.membershipMonths ?? 0);
 
   return {
+    // 🆕 لازم لبناء رابط الـ QR — جرّبي الاحتمالات الشائعة لاسم الحقل
+    //    لو ما ظبطت، افحصي شكل الـ response الفعلي (راجع الشرح تحت الكود)
+    storeId: profile.sellerId ?? profile._id ?? profile.storeId ?? profile.id ?? null,
     // ⚠️ المهم: ما بنحط fallback مضلّل زي "متجر فلسطين" — لو ما في اسم، نرجع null
     //    والـ UI بيعرض "—" بدالها
     storeName: profile.storeName?.trim() || null,
@@ -238,31 +242,46 @@ const StoreProfile = () => {
 
       <main className="sp-main">
 
-        <div className="sp-header">
-          <div className="sp-header-info">
-            <h1 className="sp-page-title">ملف المتجر</h1>
-            <p className="sp-page-subtitle">عرض معلومات المتجر والحساب الشخصي</p>
+        {/* 🆕 صف بعمودين مستقلين: يمين (العنوان + هوية المتجر) بدون فجوة بينهم،
+            وشمال (زر التعديل + الـ QR) بشكل مستقل ما بيأثر على ارتفاع العمود التاني
+            ✏️ أضفنا paddingLeft هون عشان يصير فيه مسافة بين كارد الـ QR وحافة الشاشة الشمال */}
+        <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap", paddingLeft: "1.25rem" }}>
+          <div style={{ flex: "1 1 320px" }}>
+            <div className="sp-header" style={{ marginBottom: 0 }}>
+              <div className="sp-header-info">
+                <h1 className="sp-page-title">ملف المتجر</h1>
+                <p className="sp-page-subtitle">عرض معلومات المتجر والحساب الشخصي</p>
+              </div>
+            </div>
+
+            <div className="sp-identity" style={{ marginTop: 8 }}>
+              <h2 className="sp-store-name">{display(storeData.storeName)}</h2>
+              <p className="sp-store-desc">
+                {display(storeData.storeDesc, "لا يوجد وصف للمتجر بعد.")}
+              </p>
+              {storeData.memberSince && (
+                <span className="sp-member-badge">عضو منذ {storeData.memberSince}</span>
+              )}
+            </div>
           </div>
-          <button className="sp-btn-edit-profile" onClick={() => navigate("/seller/profile/edit")}>
-            <span>تعديل الملف</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: "0 0 auto" }}>
+            <button className="sp-btn-edit-profile" onClick={() => navigate("/seller/profile/edit")}>
+              <span>تعديل الملف</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            {/* 🆕 كارد الـ QR الكامل — تحت زر تعديل الملف مباشرة، بعمود مستقل */}
+            {storeData.storeId && (
+              <StoreQRCode storeId={storeData.storeId} storeName={storeData.storeName} />
+            )}
+          </div>
         </div>
 
-        <div className="sp-identity">
-          <h2 className="sp-store-name">{display(storeData.storeName)}</h2>
-          <p className="sp-store-desc">
-            {display(storeData.storeDesc, "لا يوجد وصف للمتجر بعد.")}
-          </p>
-          {storeData.memberSince && (
-            <span className="sp-member-badge">عضو منذ {storeData.memberSince}</span>
-          )}
-        </div>
-
-        <div className="sp-stats-wrapper">
+        {/* 🆕 marginTop مخفّض يدوياً — المسافة الافتراضية كانت كبيرة تحت كارد الـ QR */}
+        <div className="sp-stats-wrapper" style={{ marginTop: 12 }}>
           <div className="sp-stats">
             <div className="sp-stat-card">
               <p className="sp-stat-label">إجمالي الطلبات</p>

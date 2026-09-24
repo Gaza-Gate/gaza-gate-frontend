@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import "./ProductsList.css";
 import { getProducts, deleteProduct, updateProductStatus } from "../services/productService";
 import { getAuthToken } from "../services/authService";
+import { API_BASE_URL } from "../utils/api"; // 🆕 عشان نبني رابط الباك إند مباشرة (لموضوع الميتا تاغز بواتساب/فيسبوك)
 import ProductFormModal from "../components/ProductFormModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ProductDetailsModal from "../components/ProductDetailsModal";
@@ -23,6 +24,16 @@ const TrashIcon = () => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="3 6 5 6 21 6" />
     <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+  </svg>
+);
+// 🆕 أيقونة المشاركة/الترويج
+const ShareIcon = () => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
   </svg>
 );
 const PackageEmptyIcon = () => (
@@ -59,6 +70,9 @@ export default function ProductsList() {
   // حالة مودال تفاصيل المنتج (يفتح عند الضغط على الكارد)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // 🆕 تخزين id المنتج اللي انتسخ رابطه مؤخراً، عشان نعرض "تم النسخ" تحت زر الترويج تبعه فقط
+  const [copiedId, setCopiedId] = useState(null);
 
   //   لدعم فتح منتج محدد مباشرة عبر الرابط (?productId=xxx) — جاي مثلاً من صفحة الإشعارات
   const [searchParams, setSearchParams] = useSearchParams();
@@ -146,6 +160,44 @@ const handleDeleteClick = (product) => {
     setIsDetailsOpen(true);
   };
 
+  // 🆕 نسخ رابط المنتج للكليبورد (رابط الترويج/المشاركة)
+  //    ⚠️ مهم: هذا الرابط لازم يشاور مباشرة على الباك إند (API_BASE_URL) مش على
+  //    صفحة الريأكت (window.location.origin). السبب: نفس الـ endpoint
+  //    `/api/product/:id` عند الباك إند بيفرّق حسب الـ Accept header:
+  //      - لو الطلب من كروولر واتساب/فيسبوك (بدون Accept: application/json)
+  //        → بيرجع صفحة HTML فيها meta tags (og:image, og:title) عشان تطلع
+  //        معاينة (صورة + اسم المنتج) لما ينلصق الرابط بمحادثة.
+  //      - لو الطلب من التطبيق نفسه (مع Accept: application/json)
+  //        → بيرجع JSON عادي.
+  //    فلو نسخنا رابط صفحة الريأكت (SPA) بدل رابط الـ API، الكروولر ما رح
+  //    يلاقي أي meta tags حقيقية (لأنه React بيبني المحتوى بالـ JS بعد التحميل،
+  //    والكروولر ما بينفذ JS)، وبالتالي ما رح تطلع أي معاينة أبداً.
+  const handleCopyLink = async (product) => {
+    const id = product._id ?? product.id;
+    const link = `${API_BASE_URL}/api/product/${id}`;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        // fallback للمتصفحات القديمة أو لو الصفحة مش على https
+        const textarea = document.createElement("textarea");
+        textarea.value = link;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 5000);
+    } catch (err) {
+      setError("تعذّر نسخ الرابط، حاول مرة أخرى.");
+    }
+  };
+
   return (
         <div className="pl-wrapper" dir="rtl">
       <SellerNavbar />
@@ -215,6 +267,47 @@ const handleDeleteClick = (product) => {
                       : `الكمية: ${product.quantity ?? 0}`}
                   </p>
                 </div>
+
+                {/* 🆕 زر الترويج — بينسخ رابط المنتج، وبيظهر تأكيد "تم النسخ" مؤقتاً
+                    ⚠️ style مكتوب inline قصداً هون (مش معتمد على .pl-action-btn) عشان
+                    نتجنب مشكلة الهوفر (نص أبيض ع خلفية بيضاء) والحجم الصغير اللي كانوا
+                    جايين من الكلاس المشترك مع باقي الأزرار */}
+                <div style={{ padding: "0 12px 10px" }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCopyLink(product); }}
+                    disabled={isBusy}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "9px 12px",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      borderRadius: 8,
+                      cursor: isBusy ? "not-allowed" : "pointer",
+                      border: copiedId === id ? "1px solid #16a34a" : "1px solid #f97316",
+                      backgroundColor: copiedId === id ? "#f0fdf4" : "#fff7ed",
+                      color: copiedId === id ? "#16a34a" : "#f97316",
+                      transition: "background-color .15s, color .15s, border-color .15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (copiedId === id) return;
+                      e.currentTarget.style.backgroundColor = "#f97316";
+                      e.currentTarget.style.color = "#ffffff";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (copiedId === id) return;
+                      e.currentTarget.style.backgroundColor = "#fff7ed";
+                      e.currentTarget.style.color = "#f97316";
+                    }}
+                  >
+                    <ShareIcon />
+                    {copiedId === id ? "تم نسخ الرابط" : "تسويق "}
+                  </button>
+                </div>
+
                 <div className="pl-card-actions">
                   <button
                     className="pl-action-btn"

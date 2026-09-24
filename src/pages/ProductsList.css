@@ -233,3 +233,9 @@
 }
 .dark .pl-search-wrap input::placeholder { color: #94a3b8; }
 .dark .pl-search-wrap input:focus { border-color: #fb923c; }
+
+.pl-action-promote {
+  background-color: #f97316;
+  color: white;
+  border-color: #f97316;
+}

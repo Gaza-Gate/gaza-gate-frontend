@@ -7,18 +7,23 @@ import { logout } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
+import SimpleToast from "./SimpleToast"; // 🆕 لعرض رسالة "تحت التطوير"
 import "./SellerNavbar.css";
 
 const NAV_LINKS = [
   { to: "/seller/dashboard", label: "لوحة التحكم" },
   { to: "/seller/products", label: "المنتجات" },
   { to: "/store-profile", label: "ملف المتجر" },
+  { to: "/seller/map", label: "الخريطة" }, // 🆕
 ];
 
+// 🆕 comingSoon: true → بدل ما يفتح رابط حقيقي، بيعرض توست "تحت التطوير"
 const MORE_LINKS = [
   { to: "/seller/orders", label: "الطلبات" },
   { to: "/seller/ratings", label: "التقييمات" },
   { to: "/seller/messages", label: "المراسلات" },
+  { to: "/seller/wallet", label: "المحفظة" }, // 🆕 صفحة حقيقية الآن — تعرض بانر "تحت التطوير" بنفسها
+  { to: "/seller/delivery-settings", label: "إعدادات التوصيل" }, // 🆕 اختيار شركة التوصيل المفضلة
 ];
 
 export default function SellerNavbar() {
@@ -38,6 +43,7 @@ export default function SellerNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [toastMsg, setToastMsg] = useState(""); // 🆕 رسالة "تحت التطوير"
   // ✅ تم إزالة unreadCount و useEffect و socket listeners من هنا —
   //    كله صار بيدار في NotificationBell + useNotificationCount(role="seller")
 
@@ -75,6 +81,17 @@ export default function SellerNavbar() {
     setShowMore(false);
     setMobileMenuOpen(false);
     setShowConvertModal(true);
+  }
+
+  // 🆕 معالج موحّد لأي رابط بقائمة "المزيد" — لو comingSoon، نعرض توست
+  //    بدل ما ننقل المستخدم لصفحة غير جاهزة بعد.
+  function handleMoreLinkClick(e, item) {
+    if (item.comingSoon) {
+      e.preventDefault();
+      setShowMore(false);
+      setMobileMenuOpen(false);
+      setToastMsg("هذه الخدمة تحت التطوير");
+    }
   }
 
   // ✅ منستخدم فقط دوال AuthContext — ممنوع نعمل api.post يدوياً
@@ -150,7 +167,12 @@ export default function SellerNavbar() {
           {showMore && (
             <div className="snb-dropdown-menu">
               {MORE_LINKS.map((item) => (
-                <Link key={item.to} to={item.to} className="snb-dropdown-item">
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="snb-dropdown-item"
+                  onClick={(e) => handleMoreLinkClick(e, item)}
+                >
                   {item.label}
                 </Link>
               ))}
@@ -204,6 +226,7 @@ export default function SellerNavbar() {
               key={item.to}
               to={item.to}
               className={`snb-mobile-link ${location.pathname.startsWith(item.to) ? "snb-link-active" : ""}`}
+              onClick={(e) => handleMoreLinkClick(e, item)}
             >
               {item.label}
             </Link>
@@ -241,6 +264,9 @@ export default function SellerNavbar() {
           isLoading={isConverting}
         />
       )}
+
+      {/* 🆕 توست "تحت التطوير" لأي ميزة لسا غير جاهزة */}
+      <SimpleToast message={toastMsg} onDone={() => setToastMsg("")} />
     </nav>
   );
 }

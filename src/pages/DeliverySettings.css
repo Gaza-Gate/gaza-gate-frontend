@@ -1,0 +1,299 @@
+.ds-root {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  font-family: inherit;
+}
+
+.ds-main {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── ترويسة الصفحة ── */
+.ds-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 2px 2px;
+}
+
+.ds-page-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #ffedd5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-page-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.ds-page-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.ds-page-subtitle {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.6;
+}
+
+.ds-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── قسم شركة التوصيل ── */
+.ds-delivery-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  padding: 22px 20px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.ds-delivery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ds-delivery-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.ds-delivery-subtitle {
+  margin: 6px 0 18px;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.6;
+}
+
+/* ── حالات التحميل / الخطأ / الفراغ ── */
+.ds-state-msg {
+  margin: 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.ds-state-msg--error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.ds-companies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.ds-company-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.ds-company-card:hover {
+  border-color: #fdba74;
+}
+
+.ds-company-card--selected {
+  border-color: #f97316;
+  background-color: #fff7ed;
+}
+
+.ds-company-radio {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  accent-color: #f97316;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ds-company-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ds-company-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ds-company-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ds-default-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f97316;
+  background: #ffedd5;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.ds-default-badge--outline {
+  background: #fff;
+  border: 1px solid #fdba74;
+}
+
+.ds-company-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: #6b7280;
+  direction: ltr;
+  justify-content: flex-end;
+}
+
+.ds-copy-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ds-copy-btn:hover {
+  background: #f3f4f6;
+  color: #f97316;
+}
+
+/* ── ملخص الشركة المختارة ── */
+.ds-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.ds-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ds-summary-label {
+  margin: 0;
+  font-size: 12px;
+  color: #9a3412;
+}
+
+.ds-summary-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ds-summary-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.ds-copy-btn--summary {
+  width: 34px;
+  height: 34px;
+  background: #fff;
+  border: 1px solid #fed7aa;
+}
+
+/* ── زر الحفظ ── */
+.ds-save-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ds-save-btn:hover {
+  opacity: 0.92;
+}
+
+.ds-save-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* ── شاشات صغيرة ── */
+@media (max-width: 600px) {
+  .ds-main {
+    padding: 22px 16px 40px;
+  }
+
+  .ds-page-header {
+    flex-wrap: wrap;
+  }
+
+  .ds-done-badge {
+    order: -1;
+    margin-inline-start: auto;
+  }
+}
