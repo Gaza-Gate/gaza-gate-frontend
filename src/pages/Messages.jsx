@@ -25,9 +25,11 @@ import {
 import {
   getAuthToken,
   getCurrentUser,
+} from "../services/authService";
+import {
   getConversations,
   getMessages,
-} from "../services/authService";
+} from "../services/conversationService";
 
 import { getSocket, connectSocket } from "../utils/socket";
 import api from "../utils/api";
@@ -41,6 +43,7 @@ import {
   formatConvTime,
 } from "../utils/chatHelpers";
 import { customerProfilePath } from "../utils/sellerHelpers";
+import { canSendMessage } from "../utils/featureFlags";
 
 import "./Messages.css";
 import SellerNavbar from "../components/SellerNavbar";
@@ -178,6 +181,35 @@ export default function Messages() {
     return () => s.off("connect", joinCurrent);
   }, [token, selectedId]);
 
+  // 🆕 دمج رسالة جاية من الـ socket (new_message / message_sent) مع القائمة
+  // الحالية بدل ما نضيفها دايماً كعنصر جديد. المشكلة الأصلية: لما ترسلي
+  // رسالة، منضيف نسخة "optimistic" فوراً (id مؤقت tmp-...)، وبنفس الوقت
+  // بيوصل REST response وكمان event عبر الـ socket لنفس الرسالة (خصوصاً
+  // إشعار الإرسال يوصل أحياناً قبل رد الـ REST نفسه). فإذا الـ socket وصل
+  // أول، كان عم يضيف نسخة جديدة، وبعدين لما يرجع رد الـ REST كان عم يستبدل
+  // الـ optimistic بنسخة ثانية — فيصير عندك نفس الرسالة مرتين.
+  // الحل: قبل ما نضيف رسالة جاية من السيرفر، ندوّر أول عن رسالة optimistic
+  // بنفس المرسل ونفس المحتوى وما زالت موجودة، ونستبدلها بدل ما نضيف نسخة
+  // جديدة جنبها. أي مصدر (REST أو socket) يوصل أول بياخد مكان الـ optimistic،
+  // والتاني ما بيضيف تكرار (addMessageUnique أصلاً بتدي ديدوب حسب id الحقيقي).
+  const reconcileIncomingMessage = useCallback((msg) => {
+    if (!msg || !sameId(msg.conversationId, selectedIdRef.current)) return;
+    setMessages((prev) => {
+      const optimisticIdx = prev.findIndex(
+        (m) =>
+          m._optimistic &&
+          sameId(m.senderId, msg.senderId) &&
+          m.content === msg.content
+      );
+      if (optimisticIdx !== -1) {
+        const next = [...prev];
+        next[optimisticIdx] = msg;
+        return next;
+      }
+      return addMessageUnique(prev, msg);
+    });
+  }, []);
+
   // ── socket: listeners ──
   useEffect(() => {
     if (!token) return;
@@ -191,7 +223,7 @@ export default function Messages() {
       const msg = unwrap(payload);
       if (!msg) return;
       if (sameId(msg.conversationId, selectedIdRef.current)) {
-        setMessages((prev) => addMessageUnique(prev, msg));
+        reconcileIncomingMessage(msg);
         s.emit("mark_read", { conversationId: msg.conversationId });
       }
     }
@@ -199,9 +231,7 @@ export default function Messages() {
     function handleMessageSent(payload) {
       const msg = unwrap(payload);
       if (!msg) return;
-      if (sameId(msg.conversationId, selectedIdRef.current)) {
-        setMessages((prev) => addMessageUnique(prev, msg));
-      }
+      reconcileIncomingMessage(msg);
     }
 
     function handleConversationUpdated(payload) {
@@ -215,7 +245,7 @@ export default function Messages() {
           );
         });
         if (conv.lastMessage && sameId(conv.id, selectedIdRef.current)) {
-          setMessages((prev) => addMessageUnique(prev, conv.lastMessage));
+          reconcileIncomingMessage(conv.lastMessage);
         }
         return;
       }
@@ -229,7 +259,7 @@ export default function Messages() {
         )
       );
       if (lastMessage && sameId(conversationId, selectedIdRef.current)) {
-        setMessages((prev) => addMessageUnique(prev, lastMessage));
+        reconcileIncomingMessage(lastMessage);
       }
     }
 
@@ -278,7 +308,7 @@ export default function Messages() {
       s.off("message_updated_ack", handleMessageEdited);
       s.off("error", handleSocketError);
     };
-  }, [token]);
+  }, [token, reconcileIncomingMessage]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -303,11 +333,28 @@ export default function Messages() {
 
   const totalUnread = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
+  // مشتق من الـ Feature Flag — يقرأ في كل render
+  const sendEnabled = canSendMessage();
+
   // ── إرسال رسالة عبر REST (مع optimistic) ──
   const handleSend = useCallback(
     async (override) => {
       const text = (override ?? messageText).trim();
       if (!text || !selectedId || sending) return;
+
+      // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
+      // لو MESSAGING_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
+      //   ضغط Enter أو استدعى الـ handler أو استدعى الـ API مباشرة.
+      //   لا REST call، لا إنشاء رسالة في الـ DB، لا تحديث conversation state.
+      if (!canSendMessage()) {
+        console.info(
+          "[Messages] إرسال الرسالة معطّل عبر Feature Flag (MESSAGING_SEND_ENABLED=false)."
+        );
+        // نفرّغ الـ input (UX متوقع)، لكن ما نضيف أي رسالة.
+        setMessageText("");
+        return;
+      }
+
       setMessageText("");
       setSending(true);
 
@@ -331,9 +378,16 @@ export default function Messages() {
         });
         const officialMsg = sent?.data?.data?.message;
         if (officialMsg) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === tempId ? { ...officialMsg } : m))
-          );
+          // ✅ منع تكرار الرسالة: شيل الـ optimistic (tempId) أولاً،
+          //    ثم ضيف الرسمي عبر addMessageUnique — لو الـ socket
+          //    سبَق وحطّ الرسمي، ما رح ينضاف مرة ثانية
+          setMessages((prev) => {
+            const withoutOptimistic = prev.filter((m) => m.id !== tempId);
+            return addMessageUnique(withoutOptimistic, officialMsg);
+          });
+        } else {
+          // لو الباك ما رجّع message، على الأقل شيل الـ optimistic
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
         }
       } catch (err) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -952,7 +1006,7 @@ export default function Messages() {
                 )}
 
                 <div className="messages-input-area">
-                  {messages.length > 0 && (
+                  {messages.length > 0 && sendEnabled && (
                     <div className="messages-quick-replies">
                       {SELLER_QUICK_REPLIES.map((q) => (
                         <button
@@ -971,7 +1025,7 @@ export default function Messages() {
                     <button
                       className="messages-send-btn"
                       onClick={() => handleSend()}
-                      disabled={sending || !messageText.trim()}
+                      disabled={sending || !sendEnabled || !messageText.trim()}
                       aria-label="إرسال"
                     >
                       {sending ? (
@@ -990,15 +1044,17 @@ export default function Messages() {
                           handleSend();
                         }
                       }}
-                      placeholder="اكتب ردك للعميل..."
+                      placeholder={sendEnabled ? "اكتب ردك للعميل..." : "إرسال الرسائل معطّل حالياً"}
                       className="messages-text-input"
                       rows={1}
+                      disabled={!sendEnabled}
                     />
                     <button
                       className="messages-emoji-btn"
                       type="button"
                       aria-label="إيموجي"
                       onClick={() => setMessageText((t) => `${t} 😊`)}
+                      disabled={!sendEnabled}
                     >
                       <Smile size={18} />
                     </button>
@@ -1009,6 +1065,7 @@ export default function Messages() {
                       onClick={() =>
                         setError("ميزة إرفاق الصور ستتوفر قريباً 📎")
                       }
+                      disabled={!sendEnabled}
                     >
                       <Paperclip size={18} />
                     </button>

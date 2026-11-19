@@ -4,17 +4,23 @@ import { Store, ArrowRight } from "lucide-react";
 import CustomerNavbar from "../components/CustomerNavbar";
 import CheckoutSteps from "../components/CheckoutSteps";
 import { useCart } from "../context/CartContext";
+import { getProductImageUrl } from "../utils/productImage";
 import logo from "../assets/logo.png";
 import "./CustomerCheckout.css";
 
 function groupByStore(items) {
   return items.reduce((acc, item) => {
-    const store = item.store || "متجر";
+    const store = item.store || item.seller?.storeName || "متجر";
     if (!acc[store]) acc[store] = [];
     acc[store].push(item);
     return acc;
   }, {});
 }
+
+const fmt = (n) => {
+  const num = Number(n) || 0;
+  return `${num.toFixed(2)}₪`;
+};
 
 export default function CustomerCheckoutReview() {
   const navigate = useNavigate();
@@ -45,7 +51,7 @@ export default function CustomerCheckoutReview() {
           <div className="ck-content">
             {Object.entries(grouped).map(([storeName, storeItems]) => {
               const storeTotal = storeItems.reduce(
-                (sum, i) => sum + i.price * i.quantity,
+                (sum, i) => sum + Number(i.price ?? 0) * Number(i.quantity ?? 1),
                 0
               );
 
@@ -58,16 +64,18 @@ export default function CustomerCheckoutReview() {
 
                   <ul className="ck-product-list">
                     {storeItems.map((item) => (
-                      <li className="ck-product-row" key={item.id}>
-                        <span className="ck-product-price">{item.price * item.quantity}₪</span>
+                      <li className="ck-product-row" key={item.id || item.productId}>
+                        <span className="ck-product-price">
+                          {fmt(Number(item.price ?? 0) * Number(item.quantity ?? 1))}
+                        </span>
                         <div className="ck-product-info">
                           <h3>{item.name}</h3>
                           <p>
-                            الكمية: {item.quantity} × {item.price} ₪
+                            الكمية: {item.quantity} × {fmt(item.price)}
                           </p>
                         </div>
                         <div className="ck-product-img">
-                          <img src={item.image} alt={item.name} />
+                          <img src={getProductImageUrl(item)} alt={item.name} />
                         </div>
                       </li>
                     ))}
@@ -75,7 +83,7 @@ export default function CustomerCheckoutReview() {
 
                   <div className="ck-store-total">
                     <span>مجموع {storeName}</span>
-                    <span className="ck-orange">{storeTotal}₪</span>
+                    <span className="ck-orange">{fmt(storeTotal)}</span>
                   </div>
                 </div>
               );
@@ -88,13 +96,13 @@ export default function CustomerCheckoutReview() {
 
               {Object.entries(grouped).map(([storeName, storeItems]) => {
                 const storeTotal = storeItems.reduce(
-                  (sum, i) => sum + i.price * i.quantity,
+                  (sum, i) => sum + Number(i.price ?? 0) * Number(i.quantity ?? 1),
                   0
                 );
                 return (
                   <div className="ck-summary-row" key={storeName}>
                     <span>{storeName}</span>
-                    <span>{storeTotal}₪</span>
+                    <span>{fmt(storeTotal)}</span>
                   </div>
                 );
               })}
@@ -106,7 +114,7 @@ export default function CustomerCheckoutReview() {
 
               <div className="ck-summary-total">
                 <span>الإجمالي</span>
-                <span className="ck-orange">{total}₪</span>
+                <span className="ck-orange">{fmt(total)}</span>
               </div>
 
               <button

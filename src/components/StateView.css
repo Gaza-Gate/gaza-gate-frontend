@@ -145,3 +145,28 @@
   .sv-title { font-size: 15.5px; }
   .sv-desc { font-size: 13px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark {
+  --sv-primary-soft: rgba(249, 115, 22, 0.15);
+  --sv-text: #FFFFFF;
+  --sv-text-mid: #cbd5e1;
+  --sv-text-mute: #94a3b8;
+  --sv-border: rgba(138, 158, 201, 0.20);
+  --sv-card: rgba(51, 65, 85, 0.55);
+  --sv-danger-soft: rgba(239, 68, 68, 0.18);
+  --sv-shadow: 0 8px 24px rgba(0, 0, 0, 0.40);
+}
+
+.dark .sv-art {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18) 0%, rgba(249, 115, 22, 0.08) 100%);
+  color: #fb923c;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.18);
+}
+.dark .sv-art-error {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.18);
+}

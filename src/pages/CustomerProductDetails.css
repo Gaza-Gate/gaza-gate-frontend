@@ -446,3 +446,119 @@
   flex-direction: row;
   height: 100%;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ═══════════════════════════════════════════════════════════════ */
+.dark .pd-wrapper { background: var(--bg-page); }
+
+.dark .pd-breadcrumb { color: #94a3b8; }
+.dark .pd-breadcrumb a { color: #94a3b8; }
+.dark .pd-breadcrumb a:hover { color: #fb923c; }
+.dark .pd-breadcrumb-current { color: #FFFFFF; }
+
+.dark .pd-info {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .pd-badge--category {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+.dark .pd-badge--available {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.30);
+}
+
+.dark .pd-title   { color: #FFFFFF; }
+.dark .pd-rating-value { color: #FFFFFF; }
+.dark .pd-review-count { color: #94a3b8; }
+
+.dark .pd-seller        { color: #cbd5e1; }
+.dark .pd-seller-link,
+.dark .pd-seller-link:hover { color: #fb923c; }
+
+.dark .pd-msg-store-btn {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+.dark .pd-msg-store-btn:hover:not(:disabled) {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+
+.dark .pd-price-block {
+  border-top-color: var(--border);
+  border-bottom-color: var(--border);
+}
+.dark .pd-price-label { color: #94a3b8; }
+.dark .pd-price      { color: #fb923c; }
+.dark .pd-shipping   { color: #34d399; }
+
+.dark .pd-description { border-top-color: var(--border); }
+.dark .pd-description h2 { color: #FFFFFF; }
+.dark .pd-description p  { color: #cbd5e1; }
+
+.dark .pd-qty { border-color: var(--border); background: rgba(51, 65, 85, 0.45); }
+.dark .pd-qty-btn {
+  background: rgba(51, 65, 85, 0.55);
+  color: #cbd5e1;
+}
+.dark .pd-qty-btn:hover { background: rgba(249, 115, 22, 0.12); color: #fb923c; }
+.dark .pd-qty-value { color: #FFFFFF; }
+
+.dark .pd-cart-btn { background: var(--orange); color: #fff; }
+.dark .pd-cart-btn:hover { background: var(--orange-dark); }
+
+.dark .pd-wishlist-btn {
+  background: rgba(51, 65, 85, 0.55);
+  color: #cbd5e1;
+  border-color: var(--border);
+}
+.dark .pd-wishlist-btn:hover,
+.dark .pd-wishlist-btn.active {
+  border-color: #f87171;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.10);
+}
+
+.dark .pd-image-wrap {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+}
+
+.dark .pd-reviews-flow { border-top-color: var(--border); }
+
+/* ✅ Reviews section container — يحتوي على BuyerProductReviewsSection
+   بالـ inline mode. نضمن إنو نص التعليق فاتح حتى لو nested rules
+   ما طُبّقت بشكل كافٍ من الـ component. */
+.dark .pd-reviews-flow .bprs-review-comment,
+.dark .pd-reviews-flow .bprs-review-name,
+.dark .pd-reviews-flow .bprs-review-reply-text,
+.dark .pd-reviews-flow .bprs-review-reply-name {
+  color: #E2E8F0;
+}
+
+.dark .pd-reviews-flow .bprs-review-name,
+.dark .pd-reviews-flow .bprs-review-reply-name,
+.dark .pd-reviews-flow .bprs-title {
+  color: #FFFFFF;
+}
+
+.dark .pd-reviews-flow .bprs-review-time,
+.dark .pd-reviews-flow .bprs-review-reply-time,
+.dark .pd-reviews-flow .bprs-page-total {
+  color: #94a3b8;
+}
+
+.dark .pdm-card {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid var(--border);
+}

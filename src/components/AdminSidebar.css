@@ -146,3 +146,37 @@
     display: inline-flex;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-sidebar {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.40);
+}
+
+.dark .admin-sidebar__heading { color: #94a3b8; }
+
+.dark .admin-sidebar__link {
+  color: #cbd5e1;
+}
+.dark .admin-sidebar__link:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+}
+.dark .admin-sidebar__link--active {
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.dark .admin-sidebar__logout {
+  color: #cbd5e1;
+  border-top-color: rgba(148, 163, 184, 0.18);
+}
+.dark .admin-sidebar__logout:hover { color: #fb923c; }
+
+.dark .admin-sidebar__toggle-btn { color: #cbd5e1; }
+.dark .admin-sidebar__close-btn { color: #cbd5e1; }

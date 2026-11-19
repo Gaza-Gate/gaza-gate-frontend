@@ -1,5 +1,36 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useAuth } from './context/AuthContext'
+import {
+  shouldShowFloatingThemeToggle,
+  shouldShowSellerChatWidget,
+  shouldShowCustomerChatWidget,
+  isHomeRoute,
+} from './utils/visibility'
+
+// ✅ مسارات الـ Auth & Initial — سابقاً كانت تُغلَّف بـ AuthShell بخلفية كحلية.
+//    الآن كل الشاشات ديناميكية مع الثيم (ThemeProvider + CSS variables).
+//    لم نعد نضيف class "auth-shell" على الـ body — المتغيرات العامة (--bg-page)
+//    تتكفّل بتغيير الخلفية بين الفاتح والكحلي بحسب الثيم.
+const AUTH_SHELL_PATHS = [
+  '/',
+  '/welcome',
+  '/onboarding',
+  '/onboarding/customer',
+  '/seller/onboarding',
+  '/login/customer',
+  '/login/seller',
+  '/register/customer',
+  '/register/seller',
+  '/verify-email',
+  '/verify-otp',
+  '/forgot-password',
+]
+
+function isAuthShellPath(pathname) {
+  if (pathname === '/' || pathname.startsWith('/?')) return true
+  return AUTH_SHELL_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+}
 
 import Dashboard from './pages/Dashboard'
 import SplashScreen     from './pages/SplashScreen'
@@ -18,7 +49,7 @@ import Messages         from './pages/Messages'
 import OrdersManagement from "./pages/OrdersManagement";
 import OrderDetails from "./pages/OrderDetails";
 import RatingsManagement from "./pages/RatingsManagement";
-import NotificationsPage from "./pages/NotificationsPage";
+import SellerNotifications from "./pages/SellerNotifications";
 import VerifyOTP from "./pages/VerifyOTP";
 import CustomerCheckoutFailed from "./pages/CustomerCheckoutFailed";
 import ConvertToSeller from "./pages/ConvertToSeller"; //
@@ -38,6 +69,7 @@ import CustomerMessages from "./pages/CustomerMessages";
 import CustomerNotifications from "./pages/CustomerNotifications";
 import CustomerStoreProfile from "./pages/CustomerStoreProfile";
 import CustomerProfilePage from "./pages/CustomerProfilePage";
+import LandingPage from './pages/LandingPage';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import StoreProfile from "./pages/StoreProfile";
@@ -50,23 +82,33 @@ import AdminCategories from './pages/AdminCategories';
 import AdminUsers from './pages/AdminUsers';
 import AdminDashboard from './pages/AdminDashboard';
 
+// 🆕 صفحات الحساب الوسيط (Escrow) — قبول/رفض الطلب، المحفظة، تحرير مبكر، نتيجة نزاع
+import OrderAcceptReject from "./pages/OrderAcceptReject";
+import SellerWallet from "./pages/SellerWallet";
+import EarlyReleaseRequest from "./pages/EarlyReleaseRequest";
+import DisputeResolved from "./pages/DisputeResolved";
+import SellerMap from "./pages/SellerMap"; // 🆕 خريطة البائع
+import DeliverySettings from "./pages/DeliverySettings"; // 🆕 إعدادات شركة التوصيل المفضلة
+
 
 import FloatingChatWidget from "./components/FloatingChatWidget";
 import CustomerChatWidget from "./components/CustomerChatWidget";
 import RoleSwitchListener from "./components/RoleSwitchListener";
-
 // ← الليّاوت الجديد يلي بيحتوي CustomerNavbar مرة وحدة لكل صفحات الزبون
 import CustomerLayout from "./components/CustomerLayout";
+import LegacyStoreRedirect from "./components/LegacyStoreRedirect";
+
+// ✅ زر تبديل الثيم العائم (FAB) — يظهر من Onboarding وما بعده
+import FloatingThemeToggle from "./components/FloatingThemeToggle";
 
 // ── حراس المسارات (Route Guards) ──
 import RequireSeller from "./components/RequireSeller";
 import RequireCustomer from "./components/RequireCustomer";
+import RequireAdmin from "./components/RequireAdmin";
 // AuthSuccess ما عاد مستخدم — كان للـ OAuth callback القديم
 // (الآن في googleAuth.js بنعمل كل شي client-side)
 
 // ── صفحات المشتري (الزبون) يلي بيظهر فيها الـ CustomerChatWidget ──
-// ✅ استثنينا صفحات البروفايل العمومي (public view-only) حتى لو الزائر بائع
-//    أو حتى مش مسجّل — الـ widget لازم يظهر فقط للزائر اللي وضعه customer.
 const CUSTOMER_AREA_PREFIXES = [
   "/home/customer",
   "/products",
@@ -81,13 +123,16 @@ const CUSTOMER_AREA_PREFIXES = [
   "/product-missing",
 ];
 
-// صفحات public view-only (بروفايل مشتري / بروفايل متجر) —
-// ما بدها widget، وما بدها role switch، وبدها تتشاف بنفس الشكل للجميع.
+// صفحات public view-only (بروفايل مشتري / بروفايل متجر / تفاصيل منتج) —
+// ما بدها widget، وما بدها role switch، وبدها تتشاف بنفس الشكل للجميع
+// (زائر غير مسجّل / بائع / مشتري) — لأنها مصممة تُفتح من روابط خارجية.
 const PUBLIC_VIEW_ONLY_PATTERNS = [
   /^\/profile\/customer\/[^/]+$/i, // /profile/customer/:id
   /^\/customer\/profile\/[^/]+$/i, // /customer/profile/:id
   /^\/store\/[^/]+$/i,            // /store/:sellerId
   /^\/customer\/store\/[^/]+$/i,  // /customer/store/:sellerId
+  /^\/customer\/store$/i,         // /customer/store (بدون id)
+  /^\/product\/[^/]+$/i,          // 🆕 /product/:id — رابط الترويج، لازم يتفتح لأي حد
 ];
 
 function isPublicViewOnly(pathname) {
@@ -98,8 +143,32 @@ function isCustomerPath(pathname) {
   return CUSTOMER_AREA_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
 }
 
-export default function App() {
+/**
+ * ✅ ScrollToTop
+ * ─────────────────────────────────────────────────────────
+ * بعد أي navigation، بنرجّع السكرول لأعلى الصفحة.
+ *   - يمنع ظهور "صفحة بيضاء" أو scroll position قديم من الدور السابق
+ *     (مثلاً: المستخدم كان بآخر /my-orders كبائع، بعد التحويل لـ customer
+ *      يروح لـ /home/customer — بدون ScrollToTop السكرول رح يفضل تحت).
+ *   - instant: ما في animation، السكرول يصير فوراً.
+ *   - بنستثني الـ Splash ("/") لأنه بيشتغل أول مرة.
+ */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // بنستثني الـ Splash لأنه بيشتغل animation منظّم
+    if (pathname === "/") return;
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
+  return null;
+}
 
+export default function App() {
   // ← 2) اجلب المسار الحالي
   const location = useLocation();
 
@@ -108,21 +177,41 @@ export default function App() {
   const { currentRole } = useAuth();
 
   // ← 3) شرط: الويدجت يظهر بس إذا المسار الحالي يبلش بـ /seller
-  const isSellerArea = location.pathname.startsWith('/seller');
+  //    (مُستبدل بشرط مركزي: يظهر فقط في الـ Seller Home عبر visibility.js)
+  const isSellerArea = shouldShowSellerChatWidget(location.pathname);
   // ✅ الـ CustomerChatWidget يظهر فقط للزائر اللي دوره customer
   //    * مش للضيوف، ومش للبائعين، ومش للأدمن
-  //    * ومش على الصفحات public view-only (بروفايل/متجر)
+  //    * فقط على الـ Customer Home (route-based central)
+  //    * ومش على الصفحات public view-only (بروفايل/متجر/تفاصيل منتج)
   const isCustomerArea =
     currentRole === 'customer' &&
-    isCustomerPath(location.pathname) &&
+    shouldShowCustomerChatWidget(location.pathname) &&
     !isPublicViewOnly(location.pathname);
+
+  // ✅ زر تبديل الثيم العائم (FAB)
+  //    • مركزي عبر visibility.js → يظهر فقط في الـ Home (Customer/Seller)
+  //    • z-index عالي (10000) فيطفو فوق كل المحتوى
+  //    • السلوك القديم: location.pathname !== '/' (ما عدا Splash)
+  //      — حافظنا على هذا عبر helper (يرجع false على "/").
+  const showFloatingThemeToggle = shouldShowFloatingThemeToggle(location.pathname);
+
+  // ملاحظة: isHomeRoute محجوز للقراءة/الاختبار — لا حاجة لاستخدامه هنا
+  void isHomeRoute;
 
   return (
     <>
+      {/* ✅ ScrollToTop — يضمن إنو كل navigation يبدأ من فوق
+          (يمنع scroll position قديم / صفحات بيضاء فجائية) */}
+      <ScrollToTop />
+
       <Routes>
 
         {/* الشاشة الترحيبية تظهر أولاً عند فتح التطبيق */}
         <Route path="/" element={<SplashScreen />} />
+
+        {/* ✅ صفحة اللاندينغ — صفحة مستقلة لحالها، بروابط لها من أي مكان
+            (فيها أزرار توديك للأونبوردينغ أو لتسجيل الدخول) */}
+        <Route path="/welcome" element={<LandingPage />} />
 
         {/* بعد انتهاء الـ SplashScreen يتم التوجيه لهذا المسار */}
         <Route path="/onboarding" element={<Onboarding />} />
@@ -135,43 +224,53 @@ export default function App() {
         <Route path="/verify-email"         element={<VerifyEmail />} />
         <Route path="/forgot-password"      element={<ForgotPassword />} />
 
-        {/* مسارات الكاستمر — كلها محمية بـ RequireCustomer */}
+        {/* مسارات الكاستمر — كلها محمية بـ RequireCustomer
+            الـ guard بيعرض FullPageLoading + الـ RoleSwitchOverlay
+            بيغطي الشاشة أثناء أي تبديل دور.
+            ⚠️ /product/:id اتشالت من هون (كانت هون سابقاً) لأنها لازم
+            تكون متاحة لأي حد — زائر / بائع / مشتري — بدون تسجيل دخول
+            كمشتري تحديداً. شوفوها تحت كـ public view-only route. */}
         <Route element={<RequireCustomer />}>
           <Route element={<CustomerLayout />}>
             <Route path="/customer/become-seller" element={<ConvertToSeller />} />
             <Route path="/messages" element={<CustomerMessages />} />
             <Route path="/notifications" element={<CustomerNotifications />} />
-            <Route path="/home/customer" element={<CustomerHome />} />
-            <Route path="/products" element={<CustomerProducts />} />
-            <Route path="/product/:id" element={<CustomerProductDetails />} />
+            {/* ⚠️ /home/customer و /products انتقلوا تحت لصفحات الضيف (تصفّح بدون login) */}
             <Route path="/cart" element={<CustomerCart />} />
             <Route path="/profile/customer" element={<CustomerProfile />} />
             <Route path="/favorites" element={<CustomerFavorites />} />
             <Route path="/my-orders" element={<CustomerMyOrders />} />
             <Route path="/my-orders/:id" element={<CustomerOrderTracking />} />
-            <Route path="/customer/store" element={<CustomerStoreProfile />} />
-            <Route path="/customer/store/:sellerId" element={<CustomerStoreProfile />} />
           </Route>
         </Route>
 
         {/* ──────────────────────────────────────────────────────────
-            صفحات Public View-Only (بدون role switch، بدون layout)
+            صفحات Public View-Only (بدون role switch، بدون حماية RequireCustomer)
             ──────────────────────────────────────────────────────────
             الهدف: أي زائر (بائع / مشتري آخر / زائر غير مسجّل) يقدر يفتح
-            بروفايل المشتري بنفس الشكل تماماً، بدون أن يتحول دوره إلى
-            customer، وبدون أن يتأثر الـ AuthContext / Session.
+            بروفايل المتجر أو بروفايل المشتري أو صفحة منتج بنفس الشكل تماماً.
 
-            الـ onClick handlers في:
-              - OrdersManagement.jsx
-              - OrderDetails.jsx
-              - Messages.jsx
-              - RatingsManagement.jsx
-              - Dashboard.jsx
-            كلها تنادي customerProfilePath(person) بترجع
-            /profile/customer/:customerId أو /customer/profile/:customerId
-        */}
+            - CustomerStoreProfile (صفحة المتجر): standalone page، تتعامل
+              مع دور الزائر داخلياً عبر useAuth() — تخفي/تعطّل زر المراسلة
+              للبائع، وتبقيه فعّالاً للمشتري والزائر.
+            - CustomerProfilePage (بروفايل المشتري): نفس الفكرة.
+            - 🆕 CustomerProductDetails (تفاصيل المنتج): نفس المبدأ — هاي
+              الصفحة يوصلها زر "الترويج" من خارج الموقع (سوشيال ميديا)،
+              فلازم تشتغل لأي زائر بدون ما يكون مسجّل دخول كمشتري.
+              حاطينها جوا CustomerLayout بس (بدون RequireCustomer) عشان
+              يضل شكلها متناسق (نفس الـ navbar) لكل الأدوار. */}
+        <Route path="/customer/store" element={<CustomerStoreProfile />} />
+        <Route path="/customer/store/:sellerId" element={<CustomerStoreProfile />} />
         <Route path="/customer/profile/:customerId" element={<CustomerProfilePage />} />
         <Route path="/profile/customer/:customerId" element={<CustomerProfilePage />} />
+
+        {/* ✅ تصفّح الضيف: الرئيسية + المنتجات + تفاصيل المنتج مفتوحين لأي حد.
+            الأفعال (سلة، مفضلة، مراسلة...) بتطلب login عبر useLoginPrompt(). */}
+        <Route element={<CustomerLayout />}>
+          <Route path="/home/customer" element={<CustomerHome />} />
+          <Route path="/products" element={<CustomerProducts />} />
+          <Route path="/product/:id" element={<CustomerProductDetails />} />
+        </Route>
 
         {/* مسارات الكاستمر بدون Navbar — عملية الدفع بتظهر لحالها بدون تشتيت */}
         <Route path="/checkout/review" element={<CustomerCheckoutReview />} />
@@ -180,7 +279,8 @@ export default function App() {
         <Route path="/product-missing" element={<ProductMissing />} />
         <Route path="/checkout/failed" element={<CustomerCheckoutFailed />} />
 
-        {/* مسارات البائع — كلها محمية بـ RequireSeller */}
+        {/* مسارات البائع — كلها محمية بـ RequireSeller
+            الـ guard بيعرض FullPageLoading + الـ RoleSwitchOverlay. */}
         <Route element={<RequireSeller />}>
           <Route path="/seller/dashboard" element={<Dashboard />} />
           <Route path="/seller/profile/edit"    element={<EditStoreProfile />} />
@@ -191,20 +291,33 @@ export default function App() {
           <Route path="/seller/products" element={<ProductsList />} />
           <Route path="/seller/orders/:id" element={<OrderDetails />} />
           <Route path="/seller/ratings" element={<RatingsManagement />} />
-          <Route path="/seller/notifications" element={<NotificationsPage />} />
+          <Route path="/seller/notifications" element={<SellerNotifications />} />
+
+          {/* 🆕 مسارات الحساب الوسيط (Escrow) للبائع */}
+          <Route path="/seller/orders/:id/request" element={<OrderAcceptReject />} />
+          <Route path="/seller/wallet" element={<SellerWallet />} />
+          <Route path="/seller/wallet/early-release/:orderId" element={<EarlyReleaseRequest />} />
+          <Route path="/seller/disputes/:id/resolved" element={<DisputeResolved />} />
+          <Route path="/seller/map" element={<SellerMap />} /> {/* 🆕 */}
+
+          {/* 🆕 إعدادات شركة التوصيل المفضلة */}
+          <Route path="/seller/delivery-settings" element={<DeliverySettings />} />
         </Route>
         {/* مسارات البائع يلي ما بدها حماية (onboarding + public store view) */}
         <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
-        <Route path="/store/:sellerId" element={<StoreProfile />} />
-        {/* مسارات الأدمن */}
-        <Route path="/admin/settings" element={<AdminSettings />} />
-        <Route path="/admin/profile" element={<AdminProfile />} />
-        <Route path="/admin/notifications" element={<AdminNotifications />} />
-        <Route path="/admin/reports" element={<AdminReports />} />
-        <Route path="/admin/categories" element={<AdminCategories />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        {/* ✅ الرابط القديم للمتجر (روابط مشاركة قديمة) → صفحة المتجر للمشتري */}
+        <Route path="/store/:sellerId" element={<LegacyStoreRedirect />} />
+        {/* مسارات الأدمن — كلها محمية بـ RequireAdmin */}
+        <Route element={<RequireAdmin />}>
+          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/profile" element={<AdminProfile />} />
+          <Route path="/admin/notifications" element={<AdminNotifications />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        </Route>
 
         {/* أي رابط غير موجود يتم توجيهه للبداية */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -215,11 +328,18 @@ export default function App() {
       {isSellerArea && <FloatingChatWidget />}
 
       {/* ✅ ويدجت الزبون — بيظهر بس للزائر اللي دوره customer، وعلى صفحات الزبون فقط
-          (مش على صفحات public view-only زي بروفايل/متجر) */}
+          (مش على صفحات public view-only زي بروفايل/متجر/تفاصيل منتج) */}
       {isCustomerArea && <CustomerChatWidget />}
 
+      {/* ✅ زر تبديل الثيم العائم (FAB) — bottom-right
+          • يظهر من Onboarding وما بعده (مش على Splash "/")
+          • z-index: 10000 (فوق كل المحتوى)
+          • يبدّل بين Light/Dark بنقرة واحدة */}
+      {showFloatingThemeToggle && <FloatingThemeToggle />}
+
       {/* ✅ RoleSwitchOverlay — بيظهر أثناء تبديل الدور (customer ↔ seller)
-          سكلتون يحاكي الـ layout الجديد، بدون layout shift */}
+          z-index: 9999 (فوق FullPageLoading اللي بـ 1000، وتحت الـ FAB بـ 10000)
+          سكلتون يحاكي الـ layout الجديد، بدون layout shift. */}
       <RoleSwitchListener />
     </>
   )

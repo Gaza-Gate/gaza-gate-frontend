@@ -202,3 +202,60 @@
     padding: 20px 16px 40px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .co-wrapper { background: var(--bg-page); }
+.dark .co-header h1 { color: #FFFFFF; }
+.dark .co-header p { color: #94a3b8; }
+
+.dark .co-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .co-card:hover {
+  border-color: rgba(249, 115, 22, 0.40);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.40), 0 0 18px rgba(249, 115, 22, 0.15);
+}
+.dark .co-card-id { color: #FFFFFF; }
+.dark .co-card-id svg { color: #fb923c; }
+
+.dark .co-status--waiting {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+.dark .co-status--approved,
+.dark .co-status--preparing {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+.dark .co-status--delivery {
+  background: var(--orange);
+  color: #fff;
+}
+.dark .co-status--completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.dark .co-status--cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.dark .co-card-item { color: #FFFFFF; }
+.dark .co-card-store { color: #94a3b8; }
+.dark .co-card-date { color: #94a3b8; }
+.dark .co-card-total { color: #fb923c; }
+.dark .co-card-arrow { color: #94a3b8; }
+
+.dark .co-empty {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .co-empty h3 { color: #FFFFFF; }
+.dark .co-empty p { color: #94a3b8; }

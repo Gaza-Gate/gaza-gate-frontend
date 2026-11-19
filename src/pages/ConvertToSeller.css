@@ -235,3 +235,68 @@
 .cts-spinner--inline {
   color: #ffffff;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .cts-root { background: var(--bg-page); }
+.dark .cts-breadcrumb { color: #94a3b8; }
+.dark .cts-title { color: #FFFFFF; }
+
+.dark .cts-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.dark .cts-field label { color: #cbd5e1; }
+.dark .cts-field-label-icon svg { color: #94a3b8; }
+
+.dark .cts-field input,
+.dark .cts-field select,
+.dark .cts-field textarea {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .cts-field input::placeholder,
+.dark .cts-field select::placeholder,
+.dark .cts-field textarea::placeholder { color: #94a3b8; }
+.dark .cts-field input:focus,
+.dark .cts-field select:focus,
+.dark .cts-field textarea:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20);
+}
+.dark .cts-input-error { border-color: #f87171 !important; }
+.dark .cts-error { color: #f87171; }
+.dark .cts-required { color: #f87171; }
+
+.dark .cts-banner-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+.dark .cts-banner-success {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+  color: #34d399;
+}
+.dark .cts-api-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #fca5a5;
+}
+
+.dark .cts-btn-submit { background: var(--orange); }
+.dark .cts-btn-submit:hover:not(:disabled) { background: #fb923c; }
+.dark .cts-spinner { color: #fb923c; }
+
+.dark .cts-success-icon-wrap {
+  background: rgba(16, 185, 129, 0.18);
+}
+.dark .cts-success-icon { color: #34d399; }
+.dark .cts-success-title { color: #FFFFFF; }
+.dark .cts-success-text { color: #cbd5e1; }

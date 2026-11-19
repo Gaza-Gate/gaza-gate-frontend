@@ -195,3 +195,59 @@
   -webkit-text-fill-color: #2b2b2b !important;
   transition: background-color 9999s ease-in-out 0s;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-settings-page { background: var(--bg-page); }
+.dark .admin-settings-page__title { color: #FFFFFF; }
+
+.dark .settings-card {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.dark .settings-card__header { border-bottom-color: rgba(148, 163, 184, 0.18); }
+.dark .settings-card__header h2 { color: #FFFFFF; }
+.dark .settings-card__header-icon { color: #fb923c; }
+.dark .settings-card__loading { color: #94a3b8; }
+
+.dark .settings-row { border-bottom-color: rgba(138, 158, 201, 0.12); }
+.dark .settings-row__label { color: #FFFFFF; }
+.dark .settings-row__hint { color: #94a3b8; }
+
+.dark .password-field__label { color: #cbd5e1; }
+.dark .password-field__input-wrap {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .password-field__input-wrap input { color: #FFFFFF; }
+.dark .password-field__input-wrap input::placeholder { color: #94a3b8; }
+.dark .password-field__input-wrap:focus-within { border-color: #fb923c; }
+.dark .password-field__eye { color: #94a3b8; }
+.dark .password-field__eye:hover { color: #fb923c; }
+
+.dark .password-form__error { color: #f87171; }
+.dark .password-form__success { color: #34d399; }
+
+.dark .btn--primary { background: var(--orange); color: #ffffff; }
+.dark .btn--outline {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .btn--outline:hover {
+  background: rgba(51, 65, 85, 0.55);
+  color: #FFFFFF;
+  border-color: #fb923c;
+}
+
+.dark .password-field input:-webkit-autofill,
+.dark .password-field input:-webkit-autofill:hover,
+.dark .password-field input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(30, 41, 59, 0.95) inset !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  caret-color: #FFFFFF;
+}

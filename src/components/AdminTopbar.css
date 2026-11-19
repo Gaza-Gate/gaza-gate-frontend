@@ -100,3 +100,29 @@
     height: 32px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-topbar__search {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(138, 158, 201, 0.22);
+  color: #94a3b8;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.30);
+}
+.dark .admin-topbar__search input { color: #FFFFFF; }
+.dark .admin-topbar__search input::placeholder { color: #94a3b8; }
+.dark .admin-topbar__search input:-webkit-autofill,
+.dark .admin-topbar__search input:-webkit-autofill:hover,
+.dark .admin-topbar__search input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(30, 41, 59, 0.95) inset !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  caret-color: #FFFFFF;
+}
+
+.dark .admin-topbar__icons { color: #cbd5e1; }
+.dark .admin-topbar__icons svg { color: #cbd5e1; }
+.dark .admin-topbar__icons svg:hover { color: #fb923c; }
+.dark .admin-topbar__icon-btn { color: #f87171; }

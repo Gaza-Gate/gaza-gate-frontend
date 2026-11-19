@@ -94,8 +94,19 @@
 }
 
 @media (max-width: 900px) {
+  /* ✅ Mobile: حوّل الـ grid لـ flex column عشان نقدر نتحكم بالترتيب
+     عبر `order` بدون ما نغيّر الـ DOM. */
   .cpp-top-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ✅ Mobile: انقل بطاقة المشتري (الصورة + الاسم + تاريخ الانضمام)
+     لتكون أول عنصر في الـ container — تظهر مباشرة بعد زر الرجوع.
+     Desktop ما بيأثّر فيها لأنها أصلاً ما بتاخد `order` فوق 900px. */
+  .cpp-top-grid > .cpp-profile-card {
+    order: -1;
   }
 }
 
@@ -405,16 +416,18 @@
   align-items: stretch;
   justify-content: space-between;
   gap: 14px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   background: #fcfcfd;
   border: 1px solid var(--cpp-border);
-  border-radius: 10px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  border-radius: 12px;
+  transition: background 0.2s ease, border-color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .cpp-review-item:hover {
   background: #ffffff;
   border-color: var(--cpp-orange);
+  box-shadow: var(--cpp-shadow-sm);
 }
 
 .cpp-review-left {
@@ -429,19 +442,25 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--cpp-text-soft);
+  font-weight: 500;
 }
 
 .cpp-review-date {
   color: var(--cpp-text-mute);
-  font-size: 12px;
+  font-size: 12.5px;
+  font-weight: 500;
 }
 
 .cpp-stars {
-  display: inline-flex;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center;
   gap: 1px;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .cpp-review-seller {
@@ -457,11 +476,28 @@
   color: inherit;
   padding: 2px 4px;
   border-radius: 6px;
-  transition: background 0.15s ease;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .cpp-review-seller-link:hover {
   background: var(--cpp-orange-soft);
+}
+
+.cpp-review-seller-link:active {
+  transform: scale(0.98);
+}
+
+.cpp-review-seller-link:focus-visible {
+  outline: 2px solid var(--cpp-orange);
+  outline-offset: 2px;
+}
+
+.cpp-review-seller-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
 }
 
 .cpp-review-avatar {
@@ -492,13 +528,22 @@
 
 .cpp-review-seller-link:hover .cpp-review-store-name {
   color: var(--cpp-orange-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
 }
 
 .cpp-review-comment {
   margin: 0;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--cpp-text);
+  /* ✅ wrap safety net — يضمن إن النص ما يطلع برا البطاقة حتى لو فيه URLs أو علامات */
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ── Product chip on the right ── */
@@ -508,13 +553,15 @@
   gap: 8px;
   background: #ffffff;
   border: 1px solid var(--cpp-border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 6px 10px 6px 12px;
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
   max-width: 220px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.15s ease, background 0.15s ease,
+              box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .cpp-review-product:hover {
@@ -551,10 +598,22 @@
 @media (max-width: 600px) {
   .cpp-review-item {
     flex-direction: column;
+    padding: 14px 14px;
   }
   .cpp-review-product {
-    align-self: flex-start;
+    align-self: stretch;
     max-width: 100%;
+  }
+  .cpp-review-comment {
+    font-size: 13.5px;
+  }
+  .cpp-reviews-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .cpp-reviews-summary {
+    font-size: 14px;
   }
 }
 
@@ -626,4 +685,311 @@
 
 .cpp-retry-btn:active {
   transform: scale(0.98);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — مطابق لستايل CustomerHome (كحلي + برتقالي)
+   ═══════════════════════════════════════════════════════════════ */
+.dark {
+  --cpp-bg: #1e293b;
+  --cpp-card: #334155;
+  --cpp-border: rgba(90, 115, 168, 0.30);
+  --cpp-text: #FFFFFF;
+  --cpp-text-soft: #cbd5e1;
+  --cpp-text-mute: #94a3b8;
+  --cpp-orange-soft: rgba(249, 115, 22, 0.15);
+  --cpp-green-soft: rgba(16, 185, 129, 0.18);
+  --cpp-teal-soft: rgba(13, 148, 136, 0.18);
+  --cpp-amber-soft: rgba(245, 158, 11, 0.18);
+  --cpp-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --cpp-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --cpp-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.40);
+}
+
+.dark .cpp-page { background: var(--cpp-bg); }
+
+/* ── Topbar (back button) ── */
+.dark .cpp-back-btn {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--cpp-text-soft);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-back-btn:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+/* ── Hero (cover + profile) ── */
+.dark .cpp-hero {
+  background: var(--cpp-card);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-cover {
+  background: linear-gradient(135deg, var(--cpp-orange) 0%, var(--cpp-orange-deep) 100%);
+}
+.dark .cpp-avatar-ring {
+  background: var(--cpp-card);
+  border-color: var(--cpp-card);
+}
+.dark .cpp-avatar {
+  background: rgba(51, 65, 85, 0.65);
+  color: #fb923c;
+}
+.dark .cpp-name   { color: #FFFFFF; }
+.dark .cpp-username,
+.dark .cpp-bio    { color: var(--cpp-text-soft); }
+
+.dark .cpp-stat-pill {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+  color: var(--cpp-text-soft);
+}
+.dark .cpp-stat-pill strong { color: #FFFFFF; }
+
+.dark .cpp-trust-pill {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--cpp-text-soft);
+  border-color: var(--cpp-border);
+}
+
+/* ── Action buttons (message, follow, etc.) ── */
+.dark .cpp-btn-primary {
+  background: var(--cpp-orange);
+  color: #fff;
+}
+.dark .cpp-btn-primary:hover { background: var(--cpp-orange-deep); }
+
+.dark .cpp-btn-secondary,
+.dark .cpp-btn-ghost {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+  color: var(--cpp-text-soft);
+}
+.dark .cpp-btn-secondary:hover,
+.dark .cpp-btn-ghost:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+.dark .cpp-btn-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.30);
+}
+.dark .cpp-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.20);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.50);
+}
+
+/* ── Section cards ── */
+.dark .cpp-section {
+  background: var(--cpp-card);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-section-header {
+  border-bottom-color: var(--cpp-border);
+}
+.dark .cpp-section-title  { color: #FFFFFF; }
+.dark .cpp-last-order     { color: var(--cpp-text-soft); }
+.dark .cpp-section-icon   { color: #fb923c; }
+
+/* ── Reviews header — رفع prominence للـ title + stars + summary ── */
+.dark .cpp-reviews-title .cpp-section-title {
+  color: #FFFFFF;
+  font-weight: 800;
+}
+.dark .cpp-reviews-title .cpp-section-icon {
+  color: #fbbf24;                                /* النجمة بلون ذهبي */
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.45));
+}
+.dark .cpp-reviews-summary {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+}
+.dark .cpp-reviews-count {
+  color: #cbd5e1;                                /* ثانوي واضح مش باهت */
+  font-weight: 500;
+}
+
+/* ── Pills (badges) ── */
+.dark .cpp-pill--green {
+  background: var(--cpp-green-soft);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.30);
+}
+.dark .cpp-pill--teal {
+  background: var(--cpp-teal-soft);
+  color: #2dd4bf;
+  border-color: rgba(13, 148, 136, 0.30);
+}
+.dark .cpp-pill--amber {
+  background: var(--cpp-amber-soft);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.30);
+}
+.dark .cpp-pill--orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+/* ── Top categories / lists ── */
+.dark .cpp-top-cat-row {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-top-cat-name  { color: #FFFFFF; }
+.dark .cpp-top-cat-count { color: var(--cpp-text-mute); }
+.dark .cpp-top-cat-bar   { background: rgba(90, 115, 168, 0.20); }
+.dark .cpp-top-cat-bar-fill { background: var(--cpp-orange); }
+
+/* ── Orders list ── */
+.dark .cpp-order-row {
+  background: rgba(51, 65, 85, 0.45);
+  border-color: var(--cpp-border);
+}
+.dark .cpp-order-row:hover {
+  background: rgba(51, 65, 85, 0.65);
+  border-color: rgba(249, 115, 22, 0.25);
+}
+.dark .cpp-order-id    { color: #FFFFFF; }
+.dark .cpp-order-meta  { color: var(--cpp-text-mute); }
+.dark .cpp-order-total { color: #fb923c; }
+.dark .cpp-order-status {
+  background: rgba(51, 65, 85, 0.55);
+  color: var(--cpp-text-soft);
+  border-color: var(--cpp-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Reviews — Dark Mode (مراجعة كاملة — رفع contrast + hierarchy)
+   ─────────────────────────────────────────────────────────────
+   المشكلة السابقة: الـ CSS كان يستهدف .cpp-review-card
+   (كلاس مش موجود بالـ JSX — الاسم الفعلي .cpp-review-item)
+   → الكروت كانت تفضل بلون فاتح والنصوص تختفي.
+   الحل: نضيف قواعد dark mode لكل العناصر الفعلية + رفع
+   الـ contrast و الـ hierarchy بشكل احترافي.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── خلفية البطاقة منفصلة عن القسم + border أوضح + shadow خفيف ── */
+.dark .cpp-review-item {
+  background: rgba(30, 41, 59, 0.55);          /* slate-800 بشفافية */
+  border: 1px solid rgba(148, 163, 184, 0.22); /* border أوضح */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
+  transition: background 0.2s ease, border-color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.dark .cpp-review-item:hover {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: rgba(249, 115, 22, 0.45);       /* لمسة برتقالية على الـ hover */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
+  transform: translateY(-1px);
+}
+
+/* ── اسم البائع (Handmade Touch / زيون رابع) — أبيض واضح ── */
+.dark .cpp-review-store-name {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* ── تعليق التقييم — رمادي فاتح واضح، مقروء، line-height مريح ── */
+.dark .cpp-review-comment {
+  color: #E2E8F0;                                /* slate-200 */
+  line-height: 1.75;
+  font-size: 14px;
+}
+
+/* ── تاريخ التقييم — رمادي متوسط واضح، أقل prominence من الاسم ── */
+.dark .cpp-review-date {
+  color: #cbd5e1;                                /* slate-300 */
+  font-weight: 500;
+}
+
+/* ── meta row (الـ wrapper للـ date + stars) ── */
+.dark .cpp-review-meta {
+  color: var(--cpp-text-soft);
+}
+
+/* ── رابط البائع (avatar + name) — affordance عند الـ hover ── */
+.dark .cpp-review-seller-link:hover {
+  background: rgba(249, 115, 22, 0.14);
+}
+.dark .cpp-review-seller-link:hover .cpp-review-store-name {
+  color: #fb923c;
+}
+
+/* ── product chip (الـ thumbnail + name) — خلفية مرئية، border واضح ── */
+.dark .cpp-review-product {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.dark .cpp-review-product:hover {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.45);
+}
+.dark .cpp-review-product-name {
+  color: #FFFFFF;                                /* اسم المنتج واضح */
+  font-weight: 600;
+}
+.dark .cpp-review-product-img {
+  background: rgba(249, 115, 22, 0.15);          /* خلفية بديلة أوضح */
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+.dark .cpp-review-product-img--placeholder {
+  color: #fb923c;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+/* ── empty state ── */
+.dark .cpp-empty-reviews {
+  color: var(--cpp-text-soft);
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 32px 16px;
+}
+.dark .cpp-empty-reviews p {
+  color: #E2E8F0;
+  font-weight: 600;
+}
+.dark .cpp-empty-icon {
+  color: #fb923c;
+  opacity: 0.7;
+}
+
+/* ── Skeletons / Empty / Error ── */
+.dark .cpp-skeleton-card,
+.dark .cpp-skeleton,
+.dark .cpp-empty,
+.dark .cpp-error {
+  background: rgba(51, 65, 85, 0.4);
+  border-color: var(--cpp-border);
+  color: var(--cpp-text-soft);
+}
+.dark .cpp-empty h3,
+.dark .cpp-error h3 { color: #FFFFFF; }
+.dark .cpp-empty p,
+.dark .cpp-error p   { color: var(--cpp-text-mute); }
+
+/* ── Inputs / forms ── */
+.dark .cpp-input,
+.dark .cpp-textarea,
+.dark .cpp-select {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: var(--cpp-border);
+  color: #FFFFFF;
+}
+.dark .cpp-input::placeholder,
+.dark .cpp-textarea::placeholder { color: var(--cpp-text-mute); }
+.dark .cpp-input:focus,
+.dark .cpp-textarea:focus,
+.dark .cpp-select:focus {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: var(--cpp-orange);
 }

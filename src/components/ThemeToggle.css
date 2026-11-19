@@ -1,0 +1,280 @@
+/* src/components/ThemeToggle.css
+ *
+ * زر تبديل الثيم — نفس شكل NotificationBell / أيقونات الـ navbar.
+ * تأثيرات زجاجية خفيفة في الـ dark mode + glow برتقالي.
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Wrap — حاوي الزر + القائمة المنسدلة
+   ═══════════════════════════════════════════════════════════════ */
+.tt-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Button — الزر الأساسي
+   ═══════════════════════════════════════════════════════════════ */
+.tt-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tt-btn:hover {
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.tt-btn:active {
+  transform: scale(0.94);
+}
+
+.tt-btn:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* ── Variant: navbar (مع chevron بجانب الأيقونة) ── */
+.tt-btn--navbar {
+  border-radius: 999px;
+  padding: 6px 10px;
+  gap: 4px;
+}
+
+.tt-btn--navbar:hover {
+  background: rgba(249, 115, 22, 0.10);
+}
+
+/* ── Variant: compact (داخل dropdown الإشعارات) ── */
+.tt-btn--compact {
+  padding: 6px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glass);
+  border-radius: 50%;
+}
+
+.tt-btn--compact:hover {
+  background: var(--bg-glass-strong);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Icon — أيقونة الشمس / القمر / المونيتور
+   ═══════════════════════════════════════════════════════════════ */
+.tt-icon {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+}
+
+.tt-btn:hover .tt-icon {
+  transform: rotate(15deg) scale(1.08);
+}
+
+.tt-icon--light {
+  color: #f59e0b; /* شمس ذهبية */
+}
+
+.tt-icon--dark {
+  color: #fbbf24; /* قمر كريمي */
+  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.4));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Chevron — السهم الصغير بجانب الزر
+   ═══════════════════════════════════════════════════════════════ */
+.tt-chevron {
+  color: var(--text-mid);
+  opacity: 0.7;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tt-chevron--open {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.tt-btn:hover .tt-chevron {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark mode active — glow برتقالي خفيف
+   ═══════════════════════════════════════════════════════════════ */
+.tt-btn.tt-btn--active-dark {
+  background: rgba(249, 115, 22, 0.08);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.18);
+}
+
+.tt-btn.tt-btn--active-dark:hover {
+  background: rgba(249, 115, 22, 0.14);
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.28);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Menu — القائمة المنسدلة
+   ═══════════════════════════════════════════════════════════════ */
+.tt-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 60;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12),
+              0 2px 6px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: tt-menu-pop 0.16s ease-out;
+  transform-origin: top right;
+}
+
+@keyframes tt-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Menu item — عنصر داخل القائمة
+   ═══════════════════════════════════════════════════════════════ */
+.tt-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  text-align: start;
+  transition: background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tt-menu-item:hover {
+  background: rgba(249, 115, 22, 0.10);
+  color: var(--orange);
+}
+
+.tt-menu-item--active {
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.tt-menu-item--active:hover {
+  background: rgba(249, 115, 22, 0.18);
+}
+
+.tt-menu-item:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: -2px;
+}
+
+.tt-menu-icon {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.tt-menu-check {
+  margin-inline-start: auto;
+  color: var(--orange);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Pulse animation لما يضغط المستخدم
+   ═══════════════════════════════════════════════════════════════ */
+.tt-btn:active .tt-icon {
+  animation: tt-icon-pop 0.4s ease;
+}
+
+@keyframes tt-icon-pop {
+  0%   { transform: scale(1) rotate(0); }
+  50%  { transform: scale(1.25) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — تحسينات إضافية
+   ═══════════════════════════════════════════════════════════════ */
+.dark .tt-btn:focus-visible {
+  outline-color: #fb923c;
+}
+
+.dark .tt-chevron {
+  color: #CBD5E1;
+}
+
+.dark .tt-menu {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(138, 158, 201, 0.18);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4),
+              0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.dark .tt-menu-item {
+  color: #E2E8F0;
+}
+
+.dark .tt-menu-item:hover {
+  background: rgba(249, 115, 22, 0.14);
+  color: #fb923c;
+}
+
+.dark .tt-menu-item--active {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fb923c;
+}
+
+.dark .tt-btn--compact {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+
+.dark .tt-btn--compact:hover {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: rgba(249, 115, 22, 0.40);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Responsive — شاشة صغيرة
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .tt-menu {
+    min-width: 160px;
+  }
+
+  .tt-menu-item {
+    font-size: 12px;
+    padding: 7px 9px;
+  }
+}

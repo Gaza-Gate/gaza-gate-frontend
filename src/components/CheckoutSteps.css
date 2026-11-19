@@ -96,3 +96,20 @@
     min-width: 20px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .ck-step-circle {
+  background: rgba(138, 158, 201, 0.20);
+  color: #94a3b8;
+}
+.dark .ck-step-circle.active { background: var(--orange); color: #fff; }
+.dark .ck-step-circle.done { background: #34d399; color: #052e1a; }
+
+.dark .ck-step-label { color: #94a3b8; }
+.dark .ck-step-label.active { color: #fb923c; }
+.dark .ck-step-label.done { color: #34d399; }
+
+.dark .ck-step-line { background: rgba(138, 158, 201, 0.20); }
+.dark .ck-step-line.done { background: #34d399; }

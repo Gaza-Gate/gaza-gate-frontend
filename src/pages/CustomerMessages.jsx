@@ -23,12 +23,14 @@ import {
 import {
   getAuthToken,
   getCurrentUser,
+} from "../services/authService";
+import {
   getCustomerConversations,
   getCustomerMessages,
   sendCustomerMessage,
   createConversation,
   markConversationAsRead,
-} from "../services/authService";
+} from "../services/conversationService";
 
 import { getSocket, connectSocket } from "../utils/socket";
 import api from "../utils/api";
@@ -47,6 +49,7 @@ import {
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { Skeleton } from "../components/LoadingState";
+import { canSendMessage } from "../utils/featureFlags";
 
 import "./Messages.css";
 
@@ -161,9 +164,29 @@ export default function CustomerMessages() {
               }
             } catch (e) {
               console.error("فشل إنشاء محادثة:", e);
-              const info = formatApiError(e, "تعذّر بدء محادثة مع هذا البائع");
-              setErrorInfo(info);
-              setError(info.message);
+              // ✅ حالة خاصة: مراسلة ذاتية (نفس الـ user بيبيع وبيشتري بنفس الإيميل)
+              //    الباك بيرجّع 400 "Cannot start a conversation with yourself".
+              //    هذا سيناريو متوقع (testing/dual-session) → ما بنعرض بانر خطأ أحمر.
+              const status = e?.response?.status;
+              const apiMsg =
+                e?.response?.data?.data?.message ||
+                e?.response?.data?.message ||
+                "";
+              const isSelfConversation =
+                status === 400 &&
+                typeof apiMsg === "string" &&
+                /conversation with yourself/i.test(apiMsg);
+
+              if (isSelfConversation) {
+                console.info(
+                  "[CustomerMessages] تم تجاهل خطأ المراسلة الذاتية (نفس الإيميل → نفس البائع/المشتري)."
+                );
+                // نخلّي الـ list زي ما هي ونتجاهل الـ error UI
+              } else {
+                const info = formatApiError(e, "تعذّر بدء محادثة مع هذا البائع");
+                setErrorInfo(info);
+                setError(info.message);
+              }
             }
           }
         } else if (list.length > 0) {
@@ -355,11 +378,28 @@ export default function CustomerMessages() {
 
   const totalUnread = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
+  // مشتق من الـ Feature Flag — يقرأ في كل render
+  const sendEnabled = canSendMessage();
+
   // ── إرسال رسالة (REST كـ fallback + socket للعـرض الحي) ──
   const handleSend = useCallback(
     async (override) => {
       const text = (override ?? messageText).trim();
       if (!text || !selectedId || sending) return;
+
+      // ─── Feature Flag: تعطيل الإرسال من المنطق (مش فقط من الـ UI) ───
+      // لو MESSAGING_SEND_ENABLED = false: نمنع الإرسال حتى لو المستخدم
+      //   ضغط Enter أو استدعى الـ handler أو استدعى الـ API مباشرة.
+      //   لا REST call، لا إنشاء رسالة في الـ DB، لا تحديث conversation state.
+      if (!canSendMessage()) {
+        console.info(
+          "[CustomerMessages] إرسال الرسالة معطّل عبر Feature Flag (MESSAGING_SEND_ENABLED=false)."
+        );
+        // نفرّغ الـ input (UX متوقع)، لكن ما نضيف أي رسالة.
+        setMessageText("");
+        return;
+      }
+
       setMessageText("");
       setSending(true);
 
@@ -381,9 +421,16 @@ export default function CustomerMessages() {
         const sent = await sendCustomerMessage(selectedId, text);
         const officialMsg = sent?.data?.message;
         if (officialMsg) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === tempId ? { ...officialMsg } : m)).filter((m) => m.id !== tempId || !m._optimistic)
-          );
+          // ✅ منع تكرار الرسالة: شيل الـ optimistic (tempId) أولاً،
+          //    ثم ضيف الرسمي عبر addMessageUnique — لو الـ socket
+          //    سبَق وحطّ الرسمي، ما رح ينضاف مرة ثانية
+          setMessages((prev) => {
+            const withoutOptimistic = prev.filter((m) => m.id !== tempId);
+            return addMessageUnique(withoutOptimistic, officialMsg);
+          });
+        } else {
+          // لو الباك ما رجّع message، على الأقل شيل الـ optimistic
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
         }
       } catch (err) {
         // إزالة الرسالة المؤقتة وإرجاع النص
@@ -904,7 +951,7 @@ export default function CustomerMessages() {
                 </div>
 
                 <div className="messages-input-area">
-                  {messages.length > 0 && (
+                  {messages.length > 0 && sendEnabled && (
                     <div className="messages-quick-replies">
                       {CUSTOMER_QUICK_REPLIES.map((q) => (
                         <button
@@ -923,7 +970,7 @@ export default function CustomerMessages() {
                     <button
                       className="messages-send-btn"
                       onClick={() => handleSend()}
-                      disabled={sending || !messageText.trim()}
+                      disabled={sending || !sendEnabled || !messageText.trim()}
                       aria-label="إرسال"
                     >
                       {sending ? (
@@ -942,15 +989,17 @@ export default function CustomerMessages() {
                           handleSend();
                         }
                       }}
-                      placeholder="اكتب رسالتك للتاجر..."
+                      placeholder={sendEnabled ? "اكتب رسالتك للتاجر..." : "إرسال الرسائل معطّل حالياً"}
                       className="messages-text-input"
                       rows={1}
+                      disabled={!sendEnabled}
                     />
                     <button
                       className="messages-emoji-btn"
                       type="button"
                       aria-label="إيموجي"
                       onClick={() => setMessageText((t) => `${t} 😊`)}
+                      disabled={!sendEnabled}
                     >
                       <Smile size={18} />
                     </button>
@@ -961,6 +1010,7 @@ export default function CustomerMessages() {
                       onClick={() =>
                         setError("ميزة إرفاق الصور ستتوفر قريباً 📎")
                       }
+                      disabled={!sendEnabled}
                     >
                       <Paperclip size={18} />
                     </button>

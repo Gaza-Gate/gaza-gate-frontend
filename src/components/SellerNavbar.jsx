@@ -1,28 +1,34 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, ChevronDown, Menu, X, ArrowLeftRight } from "lucide-react";
-import logo from "../assets/logo.png";
+import ThemeLogo from "./ThemeLogo";
 import ConvertToBuyerModal from "./ConvertToBuyerModal";
 import { logout } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
+import SimpleToast from "./SimpleToast"; // 🆕 لعرض رسالة "تحت التطوير"
 import "./SellerNavbar.css";
 
 const NAV_LINKS = [
   { to: "/seller/dashboard", label: "لوحة التحكم" },
   { to: "/seller/products", label: "المنتجات" },
   { to: "/store-profile", label: "ملف المتجر" },
+  { to: "/seller/map", label: "الخريطة" }, // 🆕
 ];
 
+// 🆕 comingSoon: true → بدل ما يفتح رابط حقيقي، بيعرض توست "تحت التطوير"
 const MORE_LINKS = [
   { to: "/seller/orders", label: "الطلبات" },
   { to: "/seller/ratings", label: "التقييمات" },
   { to: "/seller/messages", label: "المراسلات" },
+  { to: "/seller/wallet", label: "المحفظة" }, // 🆕 صفحة حقيقية الآن — تعرض بانر "تحت التطوير" بنفسها
+  { to: "/seller/delivery-settings", label: "إعدادات التوصيل" }, // 🆕 اختيار شركة التوصيل المفضلة
 ];
 
 export default function SellerNavbar() {
   const {
-    switchRole,
+    switchRoleAndNavigate,
     becomeCustomer,
     logout: authLogout,
     currentRole,
@@ -37,6 +43,7 @@ export default function SellerNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [toastMsg, setToastMsg] = useState(""); // 🆕 رسالة "تحت التطوير"
   // ✅ تم إزالة unreadCount و useEffect و socket listeners من هنا —
   //    كله صار بيدار في NotificationBell + useNotificationCount(role="seller")
 
@@ -56,13 +63,17 @@ export default function SellerNavbar() {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logout();
-    } catch (err) {
-      console.error("Logout API failed:", err);
+      // ✅ 1) محاولة تسجيل الخروج من السيرفر
+      //    لو فشل (network/server) — منكمل بمسح محلي
+      await logout().catch((err) => {
+        console.warn("[SellerNavbar] logout API failed (continuing local cleanup):", err?.message);
+      });
     } finally {
+      // ✅ 2) تنظيف شامل محلي (state + caches + token)
       authLogout();
       setLoggingOut(false);
-      navigate("/login/seller");
+      // ✅ 3) navigate بـ replace عشان نمنع back لصفحة محمية
+      navigate("/login/seller", { replace: true });
     }
   }
 
@@ -70,6 +81,17 @@ export default function SellerNavbar() {
     setShowMore(false);
     setMobileMenuOpen(false);
     setShowConvertModal(true);
+  }
+
+  // 🆕 معالج موحّد لأي رابط بقائمة "المزيد" — لو comingSoon، نعرض توست
+  //    بدل ما ننقل المستخدم لصفحة غير جاهزة بعد.
+  function handleMoreLinkClick(e, item) {
+    if (item.comingSoon) {
+      e.preventDefault();
+      setShowMore(false);
+      setMobileMenuOpen(false);
+      setToastMsg("هذه الخدمة تحت التطوير");
+    }
   }
 
   // ✅ منستخدم فقط دوال AuthContext — ممنوع نعمل api.post يدوياً
@@ -83,15 +105,23 @@ export default function SellerNavbar() {
       try {
         // أول محاولة: تحويل حقيقي (أول مرة يصير فيها العميل customer)
         result = await becomeCustomer();
+        // ✅ atomic: state + tokens + socket → navigate
+        navigate("/home/customer", { replace: true });
       } catch (err) {
-        // لو عنده صلاحية customer أصلاً (409)، بنستخدم switch-role بس للتنقل
+        // لو عنده صلاحية customer أصلاً (409)، بنستخدم switchRoleAndNavigate
         if (err.response?.status === 409) {
-          result = await switchRole("customer");
+          await switchRoleAndNavigate("customer", navigate, {
+            path: "/home/customer",
+            replace: true,
+          });
+          // ✅ navigate صار من جوا الـ helper
+          return;
         } else {
           throw err;
         }
       }
 
+      // (fallback socket reconnect — الـ helper الجديد بيشتغل تلقائياً)
       if (result?.reconnectSocket) {
         const { connectSocket, disconnectSocket } = await import(
           "../utils/socket"
@@ -99,8 +129,6 @@ export default function SellerNavbar() {
         disconnectSocket();
         connectSocket();
       }
-
-      navigate("/home/customer");
     } catch (error) {
       console.error("فشل التحويل لحساب المشتري:", error);
     }
@@ -111,7 +139,7 @@ export default function SellerNavbar() {
   return (
     <nav className="snb-nav" dir="rtl">
       <Link to="/seller/dashboard" className="snb-logo-link">
-        <img src={logo} alt="Gaza Gate" className="snb-logo" />
+        <ThemeLogo className="snb-logo" />
       </Link>
 
       <div className="snb-links snb-links-desktop">
@@ -139,7 +167,12 @@ export default function SellerNavbar() {
           {showMore && (
             <div className="snb-dropdown-menu">
               {MORE_LINKS.map((item) => (
-                <Link key={item.to} to={item.to} className="snb-dropdown-item">
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="snb-dropdown-item"
+                  onClick={(e) => handleMoreLinkClick(e, item)}
+                >
                   {item.label}
                 </Link>
               ))}
@@ -159,6 +192,9 @@ export default function SellerNavbar() {
       </div>
 
       <div className="snb-actions snb-actions-desktop">
+        {/* ✅ زر تبديل الثيم (Light/Dark/System) */}
+        <ThemeToggle variant="navbar" size={18} />
+
         {/* ✅ جرس الإشعارات المعزول — NotificationBell بيدير كل شي داخلياً */}
         <NotificationBell role="seller" />
         <button className="snb-logout-btn" onClick={handleLogout} disabled={loggingOut}>
@@ -167,16 +203,21 @@ export default function SellerNavbar() {
         </button>
       </div>
 
-      <button
-        className="snb-hamburger-btn"
-        aria-label="فتح القائمة"
-        onClick={(e) => {
-          e.stopPropagation();
-          setMobileMenuOpen((s) => !s);
-        }}
-      >
-        {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-      </button>
+      {/* ✅ شريط الأفعال للموبايل — جرس الإشعارات ظاهر دائماً جنب زر القائمة
+           حتى ما يضطر المستخدم يفتح القائمة كل مرة يبي يشوف إشعار جديد. */}
+      <div className="snb-actions snb-actions-mobile" aria-label="إجراءات سريعة">
+        <NotificationBell role="seller" />
+        <button
+          className="snb-hamburger-btn"
+          aria-label="فتح القائمة"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMobileMenuOpen((s) => !s);
+          }}
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
 
       {mobileMenuOpen && (
         <div className="snb-mobile-menu" onClick={(e) => e.stopPropagation()}>
@@ -185,6 +226,7 @@ export default function SellerNavbar() {
               key={item.to}
               to={item.to}
               className={`snb-mobile-link ${location.pathname.startsWith(item.to) ? "snb-link-active" : ""}`}
+              onClick={(e) => handleMoreLinkClick(e, item)}
             >
               {item.label}
             </Link>
@@ -222,6 +264,9 @@ export default function SellerNavbar() {
           isLoading={isConverting}
         />
       )}
+
+      {/* 🆕 توست "تحت التطوير" لأي ميزة لسا غير جاهزة */}
+      <SimpleToast message={toastMsg} onDone={() => setToastMsg("")} />
     </nav>
   );
 }

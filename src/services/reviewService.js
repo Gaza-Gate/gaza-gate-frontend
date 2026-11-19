@@ -24,9 +24,9 @@ import api, { API_BASE_URL } from "../utils/api";
  *  ─ DELETE /api/seller/review/customer/:id      → deleteSellerCustomerReview
  *
  *  Public / Shared:
- *  ─ GET    /api/review/product/:productId?page=1   → getProductReviews
+ *  ─ GET    /api/review/product/:productId?page=1&pageSize=10   → getProductReviews
  *           تقييمات منتج معيّن + الإحصائيات + التوزيع
- *  ─ GET    /api/review/seller/:sellerId/product-reviews?page=1
+ *  ─ GET    /api/review/seller/:sellerId/product-reviews?page=1&pageSize=10
  *           كل تقييمات منتجات بائع معيّن (للتجميع في صفحة المتجر)
  *  ─ GET    /api/review/customer/:customerId/seller-reviews
  *           تقييمات البائعين عن زبون معيّن
@@ -34,6 +34,18 @@ import api, { API_BASE_URL } from "../utils/api";
  *           تقييمات المنتج اللي بعتهم زبون معيّن
  *  ─ GET    /api/review/seller/:sellerId/customer-reviews
  *           تقييمات الزبائن عن بائع معيّن
+ *
+ *  Seller Review Reply (محدّث من Postman — NEW contract):
+ *  ─ POST   /api/seller/review/:id/reply
+ *           body: { reply: "..." }     ← اسم الحقل "reply" (ليس "text")
+ *           response: { status, data: { id, sellerReply: "string", sellerRepliedAt: "ISO date" } }
+ *
+ *  شكل رد البائع في كل الـ lists (محدّث من Postman):
+ *  كل تقييم جوا list بيرجع:
+ *    { id, rating, comment, imageUrl,
+ *      sellerReply:    string | null,    ← نص مباشر (مش object)
+ *      sellerRepliedAt: string | null,   ← تاريخ منفصل
+ *      createdAt, customer: {...}, product?: {...} }
  *
  *  شكل الـ response المؤكد من الباك لـ POST review:
  *  Success:  { status: "success", data: { id, productId, orderId, rating, comment, imageUrl, createdAt } }
@@ -196,9 +208,9 @@ function extractFieldErrors(data) {
  * @throws {ReviewApiError} عند أي خطأ من الباك
  */
 /**
- * POST /api/customer/review
- * ⚠️ لاحظ: شلنا الـ trailing slash بناءً على طلب صريح — لو رجع 404/400 غريب،
- *    جرب ترجعها لـ "/api/customer/review/" (كانت موثقة إنها مطلوبة على الباك القديم).
+ * POST /api/customer/review/
+ * ✅ Trailing slash مطلوب (مؤكد من Postman — الباك على الإنتاج يرفض بدونه).
+ *    لا تحذف الـ "/" من نهاية المسار وإلا رح يرجع 404 أو 400.
  */
 export async function submitReview({ productId, orderId, rating, comment, image }) {
   if (!productId) throw new Error("productId is required");
@@ -422,7 +434,10 @@ export async function deleteReview(reviewId) {
  *      reviews: [
  *        {
  *          id, rating, comment, imageUrl, createdAt,
- *          customer: { id, firstName, lastName, avatar }  // ⚠️ flat — مش customer.user
+ *          // ✅ محدّث: رد البائع بشكل مباشر (top-level) — string
+ *          sellerReply: "شكراً" | null,
+ *          sellerRepliedAt: "2026-07-17T..." | null,
+ *          customer: { id, firstName, lastName, avatar, actionUrl, isTrustedBuyer }
  *        }
  *      ],
  *      pagination: { totalItems, totalPages, currentPage, pageSize, hasNextPage, hasPreviousPage }
@@ -452,23 +467,23 @@ export async function getProductReviews(productId, page = 1, pageSize = 10) {
  *      reviews: [
  *        {
  *          id, rating, comment, imageUrl, createdAt,
- *          customer: { id, firstName, lastName, avatar },
- *          product: { id, name },    // ⚠️ مفيد لعرض اسم المنتج داخل كل تقييم
- *          // ⚠️ رد البائع — ممكن يرجع بأي من الأشكال التالية (شوف normalizeSellerReply):
- *          sellerReply: "شكراً" | { text, createdAt } | { reply, repliedAt } | ...
- *          // أو جوا seller/store object
- *          seller: { id, storeName, avatar, reply: "..." }
+ *          // ✅ محدّث: sellerReply كنص مباشر + sellerRepliedAt منفصل
+ *          sellerReply: "شكراً" | null,
+ *          sellerRepliedAt: "2026-07-17T..." | null,
+ *          customer: { id, firstName, lastName, avatar, actionUrl, isTrustedBuyer },
+ *          product: { id, name }    // مفيد لعرض اسم المنتج داخل كل تقييم
  *        }
  *      ],
  *      pagination: { totalItems, totalPages, currentPage, pageSize, hasNextPage, hasPreviousPage }
  *    }
  *  }
  *
- *  تنسيق رد البائع — BuyerProductReviewsSection.normalizeSellerReply() يتعامل مع:
- *    أسماء الحقول: sellerReply, reply, response, storeReply, sellerResponse, replyText, ...
- *    أشكال القيم: string, { text, createdAt }, { reply, repliedAt }, { message, replyAt }, ...
- *    التواريخ: createdAt, replyCreatedAt, repliedAt, replyAt, updatedAt
- *    بيانات المتجر: seller, store, vendor → { id, name/storeName, avatar/logo }
+ *  تنسيق رد البائع (محدّث من Postman NEW contract):
+ *  الباك الآن يرجّع الرد بشكل موحّد:
+ *    sellerReply:    "string" | null       ← نص مباشر (مش object)
+ *    sellerRepliedAt: "ISO date" | null     ← تاريخ منفصل
+ *  BuyerProductReviewsSection.normalizeSellerReply() بيحوّلهم لشكل موحّد
+ *    { text, createdAt, seller } للاستخدام داخل الـ UI.
  */
 export async function getSellerProductReviews(sellerId, page = 1, pageSize = 10) {
   const params = new URLSearchParams({
@@ -493,108 +508,27 @@ export async function getSellerReviews({ page = 1, rating } = {}) {
 /**
  * POST /api/seller/review/:id/reply
  * البائع يرد على تقييم
- *  body: { text: string }
+ *
+ * ✅ محدّث من Postman NEW contract:
+ *  body: { reply: "..." }     ← اسم الحقل "reply" (مش "text" مثل الإصدار القديم)
+ *  response: { status, data: { id, sellerReply: "string", sellerRepliedAt: "ISO date" } }
+ *
+ * الـ frontend بيخزّن الرد بشكل موحّد:
+ *  { text: "string", createdAt: "string" }
+ * حتى يبقى الـ UI layer (BuyerProductReviewsSection, RatingsManagement) شغّال
+ * بدون تعديل على شكل الـ data في state.
  */
 export async function replyToReview(reviewId, text) {
   if (!text?.trim()) throw new Error("reply text is required");
   const res = await api.post(`/api/seller/review/${reviewId}/reply`, {
-    text: text.trim(),
+    reply: text.trim(),
   });
-  return res.data?.data ?? res.data;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   ⚠️ Fallback Endpoints — لجلب الرد لو الـ public list ما رجّعته
-   ─────────────────────────────────────────────────────────────
-   المشكلة: GET /api/review/product/:id و GET /api/review/seller/:id/product-reviews
-   (الـ public) ممكن ما يرجّعوا حقل الرد (sellerReply) في الـ response.
-   فهول الـ endpoints بنستخدموهم كـ fallback لما الرد ناقص من الـ list.
-
-   ⚠️ هول endpoints غير مؤكدين — ممكن يرجعوا 404 من الباك.
-   الـ frontend بيتعامل مع 404 بصمت (silent fail) — يعني لو مش موجودين
-   ما بيطلع error للمستخدم، بس ما بيظهر رد.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/**
- * GET /api/review/:id  (محتمل)
- * جلب تقييم واحد بالـ id — بيرجّع الرد لو موجود
- *  Response: { status: "success", data: { id, rating, comment, sellerReply: {...}, ... } }
- */
-export async function getReviewById(reviewId) {
-  if (!reviewId) return null;
-  try {
-    const res = await api.get(`/api/review/${reviewId}`);
-    return res.data?.data ?? res.data;
-  } catch (err) {
-    // 404 → الباك ما عنده هاد الـ endpoint
-    if (err.response?.status === 404 || err.response?.status === 405) {
-      return null;
-    }
-    throw err;
-  }
-}
-
-/**
- * GET /api/review/:id/reply  (محتمل)
- * جلب رد البائع فقط لتقييم واحد — لو الـ endpoint موجود
- *  Response: { status: "success", data: { text, createdAt, ... } }
- */
-export async function getReviewReply(reviewId) {
-  if (!reviewId) return null;
-  try {
-    const res = await api.get(`/api/review/${reviewId}/reply`);
-    return res.data?.data ?? res.data;
-  } catch (err) {
-    if (err.response?.status === 404 || err.response?.status === 405) {
-      return null;
-    }
-    throw err;
-  }
-}
-
-/**
- * Batch fetch للردود الناقصة — بيجيب رد لكل review id بـ parallel
- * (مع throttling بسيط عشان ما نغرق الباك بطلبات).
- *
- * @param {string[]} reviewIds — قائمة IDs للتقييمات اللي ناقصها رد
- * @returns {Promise<Map<string, object>>} — Map من reviewId → normalized reply
- */
-export async function fetchMissingReplies(reviewIds) {
-  if (!Array.isArray(reviewIds) || reviewIds.length === 0) return new Map();
-
-  const unique = [...new Set(reviewIds.filter(Boolean))];
-  const results = new Map();
-
-  // ✅ بنفّذ بـ chunks من 5 طلبات متوازي — عشان ما نغرق الباك
-  const CHUNK_SIZE = 5;
-  for (let i = 0; i < unique.length; i += CHUNK_SIZE) {
-    const chunk = unique.slice(i, i + CHUNK_SIZE);
-    const promises = chunk.map(async (id) => {
-      // نجرب endpoint الرد أولاً (أخف على الباك)
-      let reply = await getReviewReply(id);
-
-      // لو ما في، نجيب الـ review كامل (ممكن يكون الرد جوا)
-      if (!reply) {
-        const fullReview = await getReviewById(id);
-        if (fullReview) {
-          reply = fullReview.sellerReply
-            || fullReview.reply
-            || fullReview.response
-            || null;
-        }
-      }
-      return { id, reply };
-    });
-
-    const chunkResults = await Promise.allSettled(promises);
-    chunkResults.forEach((r) => {
-      if (r.status === "fulfilled" && r.value.reply) {
-        results.set(r.value.id, r.value.reply);
-      }
-    });
-  }
-
-  return results;
+  const data = res.data?.data ?? res.data ?? {};
+  // ✅ توحيد شكل الرد: { text, createdAt } — حتى يبقى متوافق مع UI
+  return {
+    text: data.sellerReply ?? text.trim(),
+    createdAt: data.sellerRepliedAt ?? new Date().toISOString(),
+  };
 }
 
 /**

@@ -2,7 +2,7 @@ import { FiBell, FiSearch, FiShoppingCart, FiMenu, FiLogOut } from 'react-icons/
 import { useNavigate } from 'react-router-dom'
 import { authAPI } from '../utils/api'
 import { useSidebar } from './SidebarContext'
-import logo from '../assets/logo.png'
+import ThemeLogo from './ThemeLogo'
 import './AdminTopbar.css'
 
 export default function AdminTopbar() {
@@ -15,8 +15,14 @@ export default function AdminTopbar() {
     } catch {
       // حتى لو فشل الطلب منسجل خروج محلياً
     } finally {
+      // ✅ تنظيف شامل + إطلاق event للـ contexts (Cart/Wishlist) يمسحوا caches
       localStorage.clear()
-      navigate('/login/seller')
+      sessionStorage.clear()
+      // ✅ إطلاق auth-changed event عشان باقي الـ React components تنحدّث
+      //    (RequireAdmin، CustomerNavbar، إلخ)
+      window.dispatchEvent(new Event('gaza-gate-auth-changed'))
+      // ✅ استخدم replace عشان ما يقدر يرجع بـ back لصفحة محمية
+      navigate('/login/seller', { replace: true })
     }
   }
 
@@ -31,7 +37,7 @@ export default function AdminTopbar() {
         <FiMenu />
       </button>
 
-      <img src={logo} alt="Gaza Gate" className="admin-topbar__logo" />
+      <ThemeLogo className="admin-topbar__logo" />
 
     <div className="admin-topbar__search">
   <FiSearch />

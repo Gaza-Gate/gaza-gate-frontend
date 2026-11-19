@@ -277,42 +277,71 @@ export default function Dashboard() {
               reviews.map((r, idx) => {
                 // ✅ استخراج الـ customer ID الصحيح (actionUrl > customerId > id)
                 const customerPath = customerProfilePath(r.customer);
+                // 🆕 الـ backend ما بيرجع أي id للتقييم نفسه (لا بالـ Dashboard
+                // ولا بصفحة RatingsManagement). فبدل الاعتماد على reviewId
+                // (غير موجود أصلاً)، منبني مفتاح مركّب من (customer.id + rating
+                // + التاريخ + التعليق) — نفس المنطق بالضبط المستخدم جوا
+                // RatingsManagement.jsx (buildReviewMatchKey/getReviewIdentity)
+                // عشان تنطابق الاثنتين وتوصل بالضبط لنفس التقييم بالسكرول+الهايلايت.
+                const goToReview = () => {
+                  const dateStr = (r.date || "").toString().slice(0, 10);
+                  const commentStr = (r.comment || "").toString().trim().slice(0, 60);
+                  const reviewKey = `${r.customer?.id || ""}|${r.rating || ""}|${dateStr}|${commentStr}`;
+                  navigate(`/seller/ratings?reviewKey=${encodeURIComponent(reviewKey)}`);
+                };
+
                 return (
-                <div className="dsh-review-row" key={idx}>
-                  {customerPath ? (
-                    <Link to={customerPath} className="dsh-avatar dsh-avatar--link" title={`بروفايل ${r.customerName ?? ""}`}>
-                      {r.avatar ? (
-                        <img src={r.avatar} alt={r.customerName ?? ""} />
-                      ) : (
-                        r.customerName?.[0] ?? "؟"
-                      )}
-                    </Link>
-                  ) : (
-                    <div className="dsh-avatar">
-                      {r.avatar ? (
-                        <img src={r.avatar} alt={r.customerName ?? ""} />
-                      ) : (
-                        r.customerName?.[0] ?? "؟"
-                      )}
+                  <div
+                    className="dsh-review-row dsh-row--clickable"
+                    key={idx}
+                    onClick={goToReview}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    {customerPath ? (
+                      <Link
+                        to={customerPath}
+                        className="dsh-avatar dsh-avatar--link"
+                        title={`بروفايل ${r.customerName ?? ""}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {r.avatar ? (
+                          <img src={r.avatar} alt={r.customerName ?? ""} />
+                        ) : (
+                          r.customerName?.[0] ?? "؟"
+                        )}
+                      </Link>
+                    ) : (
+                      <div className="dsh-avatar">
+                        {r.avatar ? (
+                          <img src={r.avatar} alt={r.customerName ?? ""} />
+                        ) : (
+                          r.customerName?.[0] ?? "؟"
+                        )}
+                      </div>
+                    )}
+                    <div className="dsh-review-body">
+                      <div className="dsh-review-top">
+                        {customerPath ? (
+                          <Link
+                            to={customerPath}
+                            className="dsh-review-name dsh-review-name--link"
+                            title="عرض بروفايل الزبون"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {r.customerName}
+                          </Link>
+                        ) : (
+                          <span className="dsh-review-name">{r.customerName}</span>
+                        )}
+                        <span className="dsh-review-stars">
+                          {"★".repeat(r.rating)}
+                          {"☆".repeat(5 - r.rating)}
+                        </span>
+                      </div>
+                      <p className="dsh-review-text">{r.comment}</p>
                     </div>
-                  )}
-                  <div className="dsh-review-body">
-                    <div className="dsh-review-top">
-                      {customerPath ? (
-                        <Link to={customerPath} className="dsh-review-name dsh-review-name--link" title="عرض بروفايل الزبون">
-                          {r.customerName}
-                        </Link>
-                      ) : (
-                        <span className="dsh-review-name">{r.customerName}</span>
-                      )}
-                      <span className="dsh-review-stars">
-                        {"★".repeat(r.rating)}
-                        {"☆".repeat(5 - r.rating)}
-                      </span>
-                    </div>
-                    <p className="dsh-review-text">{r.comment}</p>
                   </div>
-                </div>
                 );
               })
             )}
@@ -339,8 +368,19 @@ export default function Dashboard() {
                 const id = order._id ?? order.id;
                 // ✅ استخراج الـ customer ID الصحيح للـ Link
                 const customerPath = customerProfilePath(order.customer);
+
+                const goToOrder = () => {
+                  if (id) navigate(`/seller/orders/${id}`);
+                };
+
                 return (
-                  <div className="dsh-order-row" key={id}>
+                  <div
+                    className="dsh-order-row dsh-row--clickable"
+                    key={id}
+                    onClick={goToOrder}
+                    role="button"
+                    tabIndex={0}
+                  >
                     <div>
                       <span className="dsh-order-number">
                         {order.orderNumber ?? `ORD-${id?.toString().slice(-3)}`}
@@ -350,6 +390,7 @@ export default function Dashboard() {
                           to={customerPath}
                           className="dsh-order-buyer dsh-order-buyer--link"
                           title="عرض بروفايل الزبون"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {order.customerName ?? "مشتري"}
                         </Link>

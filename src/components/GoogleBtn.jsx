@@ -1,12 +1,23 @@
 import { useEffect } from 'react'
 import { GoogleLogin } from '@react-oauth/google'
+import { useTheme } from '../hooks/useTheme.jsx'
 
+/**
+ * ✅ زر تسجيل الدخول عبر جوجل — متجاوب مع الثيم الحالي.
+ *    - light → overlay أبيض شفاف
+ *    - dark  → overlay كحلي شفاف
+ */
 export default function GoogleBtn({ onSuccess, onError, loading = false }) {
+  const { isDark } = useTheme()
+
   useEffect(() => {
     // نمنع جوجل من تسجيل الدخول تلقائياً بحساب محفوظ من قبل (FedCM / One Tap auto-select)
     // هيك نضمن إنه كل ضغطة على الزر تفتح فعلياً قائمة اختيار الحساب
     window.google?.accounts?.id?.disableAutoSelect?.()
   }, [])
+
+  const overlayBg = isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255,255,255,0.75)'
+  const overlayColor = isDark ? '#f1f5f9' : '#374151'
 
   return (
     <div style={{
@@ -24,12 +35,13 @@ export default function GoogleBtn({ onSuccess, onError, loading = false }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(255,255,255,0.75)',
+          background: overlayBg,
           borderRadius: '12px',
           fontFamily: "'Tajawal', sans-serif",
           fontSize: 14,
-          color: '#374151',
+          color: overlayColor,
           fontWeight: 600,
+          transition: 'background 0.3s ease, color 0.3s ease',
         }}>
           جاري المعالجة...
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -8,26 +8,30 @@ import {
   Search,
   CreditCard,
   PackagePlus,
-  Monitor,
+  Loader2,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
-import { getPublicProducts } from "../services/productService";
-import { getCurrentUser } from "../services/authService";
-import heroBanner from "../assets/hero-banner.webp";
-import handcraftIconImg from "../assets/icon-park-outline_traditional-chinese-medicine.jpg";
-import foodIconImg from "../assets/ion_fast-food-outline.png";
-import clothesIconImg from "../assets/hugeicons_clothes.jpg";
+import { getPublicProducts, getPublicCategories } from "../services/productService";
+import HeroSlider from "../components/HeroSlider";
 import logoFallback from "../assets/logo.png";
 import "./CustomerHome.css";
 
-
-// ── بيانات الأقسام والمنتجات والبانرات ──
-const categories = [
-  { id: "handicraft", label: "الأشغال اليدوية", iconSrc: handcraftIconImg },
-  { id: "food", label: "المأكولات المنزلية", iconSrc: foodIconImg },
-  { id: "clothes", label: "ملابس", iconSrc: clothesIconImg },
-  { id: "electronics", label: "الإلكترونيات", icon: Monitor },
+/**
+ * ✅ Fallback categories — بتتعرض لما الـ API يرجّع فاضي أو يفشل
+ * (نفس الـ shape والـ IDs اللي بـ CustomerProducts.jsx — كل ID بـ "fb-" prefix
+ *  عشان ما يتعارض مع UUIDs الحقيقية من الباك)
+ */
+const FALLBACK_CATEGORIES = [
+  { id: "fb-electronics", name: "electronics", nameAr: "الإلكترونيات",  iconKey: "electronics", productCount: 0 },
+  { id: "fb-food",        name: "food",        nameAr: "المأكولات المنزلية", iconKey: "food",        productCount: 0 },
+  { id: "fb-clothes",     name: "clothes",     nameAr: "ملابس",          iconKey: "clothes",     productCount: 0 },
+  { id: "fb-handicraft",  name: "handicraft",  nameAr: "الأشغال اليدوية",  iconKey: "handicraft",  productCount: 0 },
+  { id: "fb-books",       name: "books",       nameAr: "الكتب",          iconKey: "books",       productCount: 0 },
+  { id: "fb-beauty",      name: "beauty",      nameAr: "الجمال والعناية",  iconKey: "beauty",      productCount: 0 },
+  { id: "fb-sports",      name: "sports",      nameAr: "الرياضة",        iconKey: "sports",      productCount: 0 },
+  { id: "fb-toys",        name: "toys",        nameAr: "الألعاب",        iconKey: "toys",        productCount: 0 },
+  { id: "fb-furniture",   name: "furniture",   nameAr: "الأثاث",         iconKey: "furniture",   productCount: 0 },
 ];
 
 
@@ -98,17 +102,13 @@ export default function CustomerHome() {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
-  // ✅ اسم حقيقي من auth (يقرأ من localStorage بدون API call)
-  const userName = useMemo(() => {
-    const user = getCurrentUser();
-    if (!user) return "ضيف";
-    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
-    return name || user.email?.split("@")[0] || "ضيف";
-  }, []);
-
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // ✅ الفئات من الباك — نفس منطق CustomerProducts.jsx بالظبط
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
     // ✅ mounted flag — يمنع setState بعد ما الـ component يتفكك
@@ -129,6 +129,30 @@ export default function CustomerHome() {
     return () => { mounted = false; };
   }, []);
 
+  // ✅ جلب الفئات من الباك (/api/category/all) — نفس منطق CustomerProducts.jsx
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setCategoriesLoading(true);
+        const list = await getPublicCategories();
+        if (cancelled) return;
+        const apiCategories = Array.isArray(list) ? list : [];
+        // ✅ لو الـ API رجّع فاضي → نعرض الـ fallback عشان قسم "تصفح الأقسام" ما يطلع فاضي
+        const visible = apiCategories.length > 0 ? apiCategories : FALLBACK_CATEGORIES;
+        setCategories(visible);
+      } catch (err) {
+        console.warn("[home-categories] فشل جلب الفئات:", err?.message);
+        if (!cancelled) {
+          setCategories(FALLBACK_CATEGORIES);
+        }
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const goToProduct = useCallback((id) => navigate(`/product/${id}`), [navigate]);
   const goToProducts = useCallback(() => navigate("/products"), [navigate]);
 
@@ -136,37 +160,8 @@ export default function CustomerHome() {
     <div className="home-wrapper" dir="rtl">
       
 
-      {/* ── Hero ── */}
-      <section className="home-hero">
-        {/* ✅ WebP فقط — أصغر 99% من PNG الأصلي (~96KB vs 14MB) — مدعوم في 96%+ من المتصفحات */}
-        <img
-          src={heroBanner}
-          alt=""
-          className="home-hero-bg"
-          // ✅ above-the-fold → eager + high priority عشان تظهر فوراً
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-          width={1920}
-          height={600}
-        />
-        <div className="home-hero-overlay" />
-
-        <div className="home-hero-content">
-          <span className="home-hero-pill">مرحبا {userName} </span>
-          <h1 className="home-hero-title">
-            تسوق بذكاء
-            <br />
-            وعش الفرق
-          </h1>
-          <p className="home-hero-text">
-            آلاف المنتجات من أفضل المتاجر بأسعار لا تُقاوم. شحن مجاني وإرجاع سهل خلال 14 يوم.
-          </p>
-          <button className="home-hero-btn" onClick={goToProducts}>
-            تسوق الان
-          </button>
-        </div>
-      </section>
+      {/* ── Hero Slider (يستبدل الـ Hero Banner القديم) ── */}
+      <HeroSlider />
 
       {/* ── الأقسام ── */}
       <section className="home-section">
@@ -179,29 +174,27 @@ export default function CustomerHome() {
         </div>
 
        <div className="home-categories">
-    {categories.map(({ id, label, iconSrc, icon: Icon }) => (
-      <button
-        key={id}
-        className="home-category-card"
-        onClick={() => navigate(`/products?category=${id}`)}
-      >
-        <span className="home-category-icon">
-          {iconSrc ? (
-            <img
-              src={iconSrc}
-              alt={label}
-              loading="lazy"
-              decoding="async"
-              width={28}
-              height={28}
-            />
-          ) : (
-            Icon && <Icon size={28} />
-          )}
-        </span>
-        {label}
-      </button>
-    ))}
+    {categoriesLoading ? (
+      <div className="home-categories-loading">
+        <Loader2 size={20} className="home-spin" />
+        <span>جاري تحميل الأقسام…</span>
+      </div>
+    ) : categories.length === 0 ? (
+      <div className="home-categories-empty">لا توجد أقسام حالياً</div>
+    ) : (
+      // ✅ أول 4 أقسام بس — بدون أيقونة، اسم القسم فقط
+      categories.slice(0, 4).map((cat) => (
+        <button
+          key={cat.id}
+          className="home-category-card"
+          onClick={() => navigate(`/products?category=${encodeURIComponent(cat.id)}`)}
+          aria-label={`تصفح قسم ${cat.nameAr}`}
+          title={cat.nameAr}
+        >
+          <span className="home-category-label">{cat.nameAr}</span>
+        </button>
+      ))
+    )}
   </div>
       </section>
 

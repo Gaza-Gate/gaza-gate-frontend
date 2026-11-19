@@ -182,3 +182,21 @@
     border-right-color: var(--border);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — يستخدم متغيرات index.css اللي بتتبدّل تلقائياً
+   ═══════════════════════════════════════════════════════════════ */
+.dark {
+  --accent: #fb923c;
+  --accent-bg: rgba(51, 65, 85, 0.55);
+  --accent-border: #fb923c;
+  --text-h: #FFFFFF;
+  --social-bg: rgba(51, 65, 85, 0.55);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.40), 0 0 18px rgba(249, 115, 22, 0.18);
+}
+
+.dark .counter { color: #fb923c; background: rgba(51, 65, 85, 0.55); }
+.dark .counter:hover { border-color: #fb923c; }
+.dark #next-steps { border-top-color: rgba(138, 158, 201, 0.20); }
+.dark #docs { border-right-color: rgba(138, 158, 201, 0.20); }
+.dark #spacer { border-top-color: rgba(138, 158, 201, 0.20); }

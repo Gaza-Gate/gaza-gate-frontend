@@ -204,3 +204,42 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .ckf-wrapper { background: var(--bg-page); }
+
+.dark .ckf-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.dark .ckf-icon-glow { background: rgba(239, 68, 68, 0.20); }
+.dark .ckf-icon-circle { background: #f87171; }
+
+.dark .ckf-title { color: #FFFFFF; }
+.dark .ckf-desc { color: #cbd5e1; }
+
+.dark .ckf-info-card {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+.dark .ckf-info-head { color: #FFFFFF; }
+.dark .ckf-info-head svg { color: #94a3b8; }
+.dark .ckf-info-sub { color: #cbd5e1; }
+
+.dark .ckf-btn-support {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .ckf-btn-support:hover { border-color: #fb923c; color: #fb923c; }
+
+.dark .ckf-btn-cart { color: #FFFFFF; }
+.dark .ckf-btn-cart:hover { background: #fb923c; }
+
+.dark .ckf-thumb { background: rgba(30, 41, 59, 0.55); }

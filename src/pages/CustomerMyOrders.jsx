@@ -6,7 +6,7 @@ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { getMyOrders } from "../services/orderService";
 import { ORDER_STEPS, getStepIndex, isCancelledStatus, isCancellableStatus, getStatusLabel, getStatusClass } from "../utils/orderStatus";
-import logo from "../assets/logo.png";
+import { getProductImageUrl } from "../utils/productImage";
 import "./CustomerMyOrders.css";
 import CancelOrderModal from "../components/CancelOrderModal";
 import { useToast, ToastContainer } from "../components/Toast";
@@ -197,7 +197,7 @@ export default function CustomerMyOrders() {
                         </div>
                         <div className="co-card-img">
                           <img
-                            src={firstItem.primaryImage || logo}
+                            src={getProductImageUrl(firstItem)}
                             alt={firstItem.productName || "منتج"}
                           />
                         </div>

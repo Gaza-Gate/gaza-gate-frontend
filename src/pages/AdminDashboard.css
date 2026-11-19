@@ -264,3 +264,52 @@
     gap: 6px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-dashboard-page { background: var(--bg-page); }
+.dark .dashboard-loading { color: #94a3b8; }
+
+.dark .dashboard-skel-chart-card,
+.dark .dashboard-stat-card,
+.dark .dashboard-chart-card,
+.dark .dashboard-recent-orders-card {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .dashboard-stat-card__change--positive {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+}
+.dark .dashboard-stat-card__change--negative {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+.dark .dashboard-stat-card__value { color: #FFFFFF; }
+.dark .dashboard-stat-card__label { color: #94a3b8; }
+
+.dark .dashboard-chart-card__header h3 { color: #FFFFFF; }
+.dark .dashboard-chart-card__hint { color: #94a3b8; }
+
+.dark .dashboard-recent-orders-card__title { color: #FFFFFF; }
+.dark .recent-order-row { border-bottom-color: rgba(138, 158, 201, 0.10); }
+.dark .recent-order-row__id { color: #94a3b8; }
+.dark .recent-order-row__customer { color: #FFFFFF; }
+.dark .recent-order-row__amount { color: #FFFFFF; }
+
+.dark .status-tag--success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.dark .status-tag--pending {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+.dark .status-tag--cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}

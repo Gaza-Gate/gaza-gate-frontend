@@ -13,19 +13,24 @@ import {
   RefreshCw,
   ChevronRight,
   ChevronLeft,
-  Inbox,
   Filter,
   X,
   ExternalLink,
   Calendar,
   Clock,
   Eye,
+  Trash2,
 } from "lucide-react";
 
 import {
   getCustomerNotifications,
   markCustomerNotificationRead,
   markAllCustomerNotificationsRead,
+  deleteCustomerNotification,
+  deleteAllCustomerNotifications,
+  extractNotifications,
+  extractStats,
+  extractPagination,
 } from "../services/notificationService";
 
 import { connectSocket } from "../utils/socket";
@@ -38,6 +43,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { formatApiError } from "../utils/errorHelper";
+import { useSwipeToDismiss } from "../hooks/useSwipeToDismiss";
 
 import "./NotificationsPage.css";
 
@@ -46,6 +53,7 @@ const NEW_NOTIFICATION_EVENT = "notification:new";
 
 // ── Constants ──────────────────────────────────────────────
 // 4 أنواع الإشعارات بالـ API (بالحروف الكبيرة): ORDER, SYSTEM, PROMOTIONAL, GENERAL
+// ✅ فقط لونين: أزرق + برتقالي
 const TYPE_META = {
   ORDER: {
     key: "ORDER",
@@ -58,8 +66,8 @@ const TYPE_META = {
     key: "SYSTEM",
     label: "النظام",
     icon: Settings,
-    color: "#475569",
-    bg: "#f1f5f9",
+    color: "#2563eb",
+    bg: "#dbeafe",
   },
   PROMOTIONAL: {
     key: "PROMOTIONAL",
@@ -72,8 +80,8 @@ const TYPE_META = {
     key: "GENERAL",
     label: "عام",
     icon: Bell,
-    color: "#7c3aed",
-    bg: "#f3e8ff",
+    color: "#2563eb",
+    bg: "#dbeafe",
   },
 };
 
@@ -319,6 +327,7 @@ export default function CustomerNotifications() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [selectedNotif, setSelectedNotif] = useState(null);
   const inFlightRef = useRef(false);
 
@@ -335,26 +344,15 @@ export default function CustomerNotifications() {
         else setLoading(true);
         setError(null);
 
-        const data = await getCustomerNotifications(pageNum);
-        const rawList = Array.isArray(data?.notifications)
-          ? data.notifications
-          : [];
+        const data = await getCustomerNotifications({ page: pageNum, limit: 20 });
+        const rawList = extractNotifications(data);
 
         // 🔒 فلتر أمان: حتى لو الـ endpoint بيرجّع إشعار للبائع
         //    (bug في الباك)، ما نعرضه بواجهة الزبون
         const list = rawList.filter(isCustomerNotification);
-        const s = data?.stats ?? {};
-        const p = data?.pagination ?? null;
 
-        setStats({
-          total: s.total ?? list.length,
-          order: s.order ?? 0,
-          general: s.general ?? 0,
-          system: s.system ?? 0,
-          promotional: s.promotional ?? 0,
-          unRead: s.unRead ?? 0,
-        });
-        setPagination(p);
+        setStats(extractStats(data, list.length));
+        setPagination(extractPagination(data));
         setPage(pageNum);
 
         if (append) {
@@ -364,9 +362,9 @@ export default function CustomerNotifications() {
         }
       } catch (err) {
         console.error("Notifications error:", err);
-        setError(
-          err?.response?.data?.message || err.message || "تعذر جلب الإشعارات"
-        );
+        // ✅ استخدام formatApiError الموحّد لاستخراج رسالة الخطأ بشكل متسق
+        const info = formatApiError(err, "تعذر جلب الإشعارات");
+        setError(info.message);
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -480,6 +478,35 @@ export default function CustomerNotifications() {
     }
   }, [markingAll, stats.unRead]);
 
+  // ── Delete one (optimistic) ──
+  // ✅ تم استبداله بـ swipe-to-delete (mobile) + per-item X (desktop) في NotificationRow
+  const deleteOne = useCallback(async (id) => {
+    if (!id || deletingId === id) return;
+    setDeletingId(id);
+    const snapshot = notifs;
+    const prevUnread = stats.unRead;
+    setNotifs((prev) => (Array.isArray(prev) ? prev : []).filter((n) => getId(n) !== id));
+    setStats((prev) => {
+      const wasUnread = (snapshot.find((n) => getId(n) === id) || {}).isRead === false;
+      return {
+        ...prev,
+        total: Math.max(0, prev.total - 1),
+        unRead: wasUnread ? Math.max(0, prev.unRead - 1) : prev.unRead,
+      };
+    });
+
+    try {
+      await deleteCustomerNotification(id);
+    } catch (err) {
+      console.error("Delete one error:", err);
+      // rollback
+      setNotifs(snapshot);
+      setStats((prev) => ({ ...prev, total: prev.total + 1, unRead: prevUnread }));
+    } finally {
+      setDeletingId(null);
+    }
+  }, [notifs, stats, deletingId]);
+
   // ── Tabs (filtering) ──
   // 🔒 Defense in depth: نطبّق فلتر الدور حتى لو الـ state فيه
   //    عناصر مش للزبون (مثلاً وصلت من socket قبل ما نضيف الـ guard)
@@ -535,13 +562,6 @@ export default function CustomerNotifications() {
     },
     [selectedNotif, navigate] // eslint-disable-line react-hooks/exhaustive-deps
   );
-
-  const statCards = [
-    { key: "total", label: "إجمالي الإشعارات", value: stats.total, icon: Inbox, accent: "#6b7280" },
-    { key: "unRead", label: "غير مقروءة", value: stats.unRead, icon: Bell, accent: "#f97316" },
-    { key: "order", label: "الطلبات", value: stats.order, icon: ShoppingBag, accent: "#2563eb" },
-    { key: "system", label: "النظام", value: stats.system, icon: Settings, accent: "#475569" },
-  ];
 
   // 🔒 حارس العرض: لو اليوزر مو بوضعية المشتري (مثلاً بائع)
   //    نعرض شاشة فارغة بدل إشعارات البائع — حماية كاملة
@@ -609,30 +629,6 @@ export default function CustomerNotifications() {
           </div>
         </div>
 
-        {/* ── Stats cards ── */}
-        <div className="np-stats">
-          {statCards.map((s) => {
-            const Icon = s.icon;
-            return (
-              <div className="np-stat-card" key={s.key}>
-                <div
-                  className="np-stat-icon"
-                  style={{
-                    background: `${s.accent}15`,
-                    color: s.accent,
-                  }}
-                >
-                  <Icon size={18} />
-                </div>
-                <div className="np-stat-info">
-                  <span className="np-stat-value">{s.value}</span>
-                  <span className="np-stat-label">{s.label}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         {/* ── Tabs + filters ── */}
         <div className="np-tabs">
           <div className="np-tabs-list">
@@ -698,67 +694,15 @@ export default function CustomerNotifications() {
               </p>
             </div>
           ) : (
-            visible.map((n) => {
-              const id = getId(n);
-              const meta = getMeta(n.type);
-              const Icon = meta.icon;
-              const read = isRead(n);
-              const title = getTitle(n);
-              const content = getContent(n);
-              const sender = getSender(n);
-              const order = getOrder(n);
-              const date = getNotifDate(n);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  className={`np-item ${!read ? "np-item-unread" : ""}`}
-                  onClick={() => openNotif(n)}
-                >
-                  <div
-                    className="np-item-icon"
-                    style={{
-                      background: meta.bg,
-                      color: meta.color,
-                    }}
-                  >
-                    <Icon size={18} strokeWidth={2} />
-                  </div>
-                  <div className="np-item-body">
-                    {title && <div className="np-item-title">{title}</div>}
-                    {content && (
-                      <div className="np-item-desc">{content}</div>
-                    )}
-                    <div className="np-item-meta">
-                      <span
-                        className="np-item-type-tag"
-                        style={{
-                          background: meta.bg,
-                          color: meta.color,
-                        }}
-                      >
-                        {meta.label}
-                      </span>
-                      {order?.orderNumber && (
-                        <span className="np-item-order-tag">
-                          {order.orderNumber}
-                        </span>
-                      )}
-                      {date && (
-                        <span className="np-item-time">{timeAgo(date)}</span>
-                      )}
-                    </div>
-                    {sender?.name && (
-                      <div className="np-item-sender">من: {sender.name}</div>
-                    )}
-                  </div>
-                  <div className="np-item-right">
-                    {!read && <span className="np-unread-dot" aria-label="غير مقروء" />}
-                    <Eye size={14} color="#cbd5e1" style={{ marginTop: 4 }} />
-                  </div>
-                </button>
-              );
-            })
+            visible.map((n) => (
+              <NotificationRow
+                key={getId(n)}
+                n={n}
+                onOpen={() => openNotif(n)}
+                onDelete={() => deleteOne(getId(n))}
+                deletingId={deletingId}
+              />
+            ))
           )}
 
           {/* ── Pagination ── */}
@@ -796,6 +740,93 @@ export default function CustomerNotifications() {
           onAction={handleActionClick}
         />
       )}
+    </div>
+  );
+}
+
+// ── NotificationRow ────────────────────────────────────────
+// ✅ Swipe-to-delete sub-component (mobile) + per-item X button (desktop).
+//    نستخدم useSwipeToDismiss على مستوى العنصر — لا يمكن استدعاء hooks داخل .map
+//    فلازم sub-component.
+function NotificationRow({ n, onOpen, onDelete, deletingId }) {
+  const id = getId(n);
+  const meta = getMeta(n.type);
+  const Icon = meta.icon;
+  const read = isRead(n);
+  const title = getTitle(n);
+  const content = getContent(n);
+  const sender = getSender(n);
+  const order = getOrder(n);
+  const date = getNotifDate(n);
+  const isDeleting = deletingId === id;
+
+  // ✅ السحب (RTL/LTR aware) لحذف الإشعار
+  const swipe = useSwipeToDismiss({
+    onDismiss: () => {
+      if (!isDeleting) onDelete?.();
+    },
+    direction: "both",
+    enabled: !isDeleting,
+  });
+
+  return (
+    <div
+      className={`np-item-wrap ${!read ? "np-item-unread" : ""}`}
+    >
+      {/* الخلفية الحمراء (تظهر مع السحب) */}
+      <div className="np-item-bg" style={swipe.bgStyle} aria-hidden="true">
+        <Trash2 size={18} />
+      </div>
+
+      <button
+        type="button"
+        className="np-item"
+        onClick={onOpen}
+        {...swipe.bind()}
+        style={swipe.style}
+        disabled={isDeleting}
+        aria-label={title || "إشعار"}
+      >
+        <div
+          className="np-item-icon"
+          style={{
+            background: meta.bg,
+            color: meta.color,
+          }}
+        >
+          <Icon size={18} strokeWidth={2} />
+        </div>
+        <div className="np-item-body">
+          {title && <div className="np-item-title">{title}</div>}
+          {content && <div className="np-item-desc">{content}</div>}
+          <div className="np-item-meta">
+            <span
+              className="np-item-type-tag"
+              style={{
+                background: meta.bg,
+                color: meta.color,
+              }}
+            >
+              {meta.label}
+            </span>
+            {order?.orderNumber && (
+              <span className="np-item-order-tag">
+                {order.orderNumber}
+              </span>
+            )}
+            {date && (
+              <span className="np-item-time">{timeAgo(date)}</span>
+            )}
+          </div>
+          {sender?.name && (
+            <div className="np-item-sender">من: {sender.name}</div>
+          )}
+        </div>
+        <div className="np-item-right">
+          {!read && <span className="np-unread-dot" aria-label="غير مقروء" />}
+          <Eye size={14} color="#cbd5e1" style={{ marginTop: 4 }} />
+        </div>
+      </button>
     </div>
   );
 }

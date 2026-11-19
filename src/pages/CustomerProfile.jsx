@@ -12,14 +12,14 @@ import {
  import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { ProfileSkeleton } from "../components/LoadingState";
+import { getAuthToken } from "../services/authService";
 import {
   getCustomerProfile,
   updateCustomerProfile,
   addCustomerAddress,
   updateCustomerAddress,
   deleteCustomerAddress,
-  getAuthToken,
-} from "../services/authService";
+} from "../services/profileService";
 import logo from "../assets/logo.png";
 import "./CustomerProfile.css";
 
@@ -61,7 +61,7 @@ export default function CustomerProfile() {
         navigate("/login/customer");
         return;
       }
-      const data = await getCustomerProfile(token);
+      const data = await getCustomerProfile();
       setProfile(data);
       setAddresses(data.addresses || []);
       setEditForm({
@@ -95,14 +95,11 @@ export default function CustomerProfile() {
     setSavingProfile(true);
     setProfileError("");
     try {
-      await updateCustomerProfile(
-        {
-          firstName: editForm.firstName,
-          lastName: editForm.lastName,
-          phone: editForm.phone,
-        },
-        token
-      );
+      await updateCustomerProfile({
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        phone: editForm.phone,
+      });
       setProfile((prev) => ({ ...prev, ...editForm }));
       setEditingProfile(false);
     } catch (err) {
@@ -122,14 +119,11 @@ const handleAddAddress = async () => {
   setAddressLoading(true);
   setAddressError("");
   try {
-    const newAddress = await addCustomerAddress(
-      {
-        neighborhood: form.neighborhood,
-        street: form.street,
-        notes: form.notes,
-      },
-      token
-    );
+    const newAddress = await addCustomerAddress({
+      neighborhood: form.neighborhood,
+      street: form.street,
+      notes: form.notes,
+    });
     setAddresses((prev) => [...prev, newAddress]);
     setForm(emptyForm);
     setShowForm(false);
@@ -142,7 +136,7 @@ const handleAddAddress = async () => {
 
 const handleDeleteAddress = async (id) => {
   try {
-    await deleteCustomerAddress(id, token);
+    await deleteCustomerAddress(id);
     setAddresses((prev) => prev.filter((a) => (a.id ?? a._id) !== id));
   } catch (err) {
     setAddressError(err.message || "تعذر حذف العنوان");
@@ -151,7 +145,7 @@ const handleDeleteAddress = async (id) => {
 
   const handleSetDefault = async (id) => {
     try {
-      await updateCustomerAddress(id, { isDefault: true }, token);
+      await updateCustomerAddress(id, { isDefault: true });
       setAddresses((prev) =>
         prev.map((a) => ({ ...a, isDefault: (a.id ?? a._id) === id }))
       );

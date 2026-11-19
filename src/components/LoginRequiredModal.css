@@ -1,0 +1,136 @@
+/* LoginRequiredModal — نفس هوية ConfirmModal (كحلي + برتقالي) */
+
+.lrm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.lrm-card {
+  background: #f8fafc;
+  border-radius: 28px;
+  padding: 2.5rem 2.25rem 1.75rem;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  animation: lrmIn 0.18s ease both;
+}
+
+.lrm-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+}
+
+.lrm-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.lrm-text {
+  font-size: 0.97rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin: 0 0 1.75rem;
+}
+
+.lrm-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.lrm-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lrm-btn--primary {
+  background: #f97316;
+  border: none;
+  color: #fff;
+}
+.lrm-btn--primary:hover { background: #ea6c0a; }
+
+.lrm-btn--outline {
+  background: #fff;
+  border: 1.5px solid #f97316;
+  color: #f97316;
+}
+.lrm-btn--outline:hover { background: rgba(249, 115, 22, 0.06); }
+
+.lrm-cancel {
+  margin-top: 1rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 12px;
+}
+.lrm-cancel:hover { color: #111827; }
+
+@keyframes lrmIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 480px) {
+  .lrm-card { padding: 2rem 1.25rem 1.5rem; border-radius: 22px; }
+  .lrm-title { font-size: 1.15rem; }
+  .lrm-actions { flex-direction: column; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .lrm-overlay { background: rgba(5, 13, 32, 0.75); }
+
+.dark .lrm-card {
+  background: rgba(30, 41, 59, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.dark .lrm-title { color: #ffffff; }
+.dark .lrm-text { color: #cbd5e1; }
+.dark .lrm-icon { background: rgba(249, 115, 22, 0.18); }
+
+.dark .lrm-btn--primary { background: var(--orange); }
+.dark .lrm-btn--primary:hover { background: var(--orange-dark); }
+
+.dark .lrm-btn--outline {
+  background: transparent;
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.55);
+}
+.dark .lrm-btn--outline:hover { background: rgba(249, 115, 22, 0.1); }
+
+.dark .lrm-cancel { color: #94a3b8; }
+.dark .lrm-cancel:hover { color: #ffffff; }

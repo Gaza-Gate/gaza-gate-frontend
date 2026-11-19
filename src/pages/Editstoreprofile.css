@@ -253,3 +253,69 @@ body {
 @media (max-width: 640px) {
   .esp-wrapper { padding: 1.2rem 1rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+body.dark { background-color: var(--bg-page); }
+.dark .esp-wrapper { background-color: var(--bg-page); }
+
+.dark .esp-breadcrumb { color: #fb923c; }
+
+.dark .esp-page-header h1 { color: #FFFFFF; }
+.dark .esp-page-header p { color: #94a3b8; }
+
+.dark .esp-section {
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .esp-section-title { color: #FFFFFF; }
+
+.dark .esp-upload-btn {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .esp-upload-btn:hover { border-color: #fb923c; color: #fb923c; }
+
+.dark .esp-field label { color: #cbd5e1; }
+.dark .esp-field input,
+.dark .esp-field textarea {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+  color: #FFFFFF;
+}
+.dark .esp-field input::placeholder,
+.dark .esp-field textarea::placeholder { color: #94a3b8; }
+.dark .esp-field input:focus,
+.dark .esp-field textarea:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20);
+}
+.dark .esp-field input[disabled] {
+  background: rgba(51, 65, 85, 0.35);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .esp-field-label-icon { color: #cbd5e1; }
+.dark .esp-field-label-icon svg { color: #94a3b8; }
+
+.dark .esp-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+.dark .esp-success {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+  color: #34d399;
+}
+
+.dark .esp-btn-save { background: var(--orange); }
+.dark .esp-btn-save:hover:not(:disabled) { background: #fb923c; }
+.dark .esp-btn-cancel { color: #94a3b8; }
+.dark .esp-btn-cancel:hover { color: #cbd5e1; }

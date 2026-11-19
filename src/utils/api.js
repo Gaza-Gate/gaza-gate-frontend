@@ -54,7 +54,12 @@ export const authAPI = {
   refreshToken:    ()     => api.post('/api/auth/refresh-token'),
 }
 
-// ── 3. Request interceptor — يحط التوكن في كل request ──
+// ── 3. عرّفي customerAPI ──
+export const customerAPI = {
+  getContactDirectory: () => api.get('/api/customer/contact-directory'),
+}
+
+// ── 4. Request interceptor — يحط التوكن في كل request ──
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -87,7 +92,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// ── 4. Response interceptor — الريفريش ──
+// ── 5. Response interceptor — الريفريش ──
 let refreshPromise = null
 
 // الطلبات يلي لازم ما نعمل الها أي refresh أو redirect تلقائي
@@ -105,25 +110,58 @@ const AUTH_ENDPOINTS_NO_REFRESH = [
   '/api/auth/refresh-token',
 ]
 
+/**
+ * استخراج الـ path من URL كامل (يشيل الـ baseURL والـ query string)
+ */
+function getPathFromUrl(fullUrl) {
+  if (!fullUrl || typeof fullUrl !== "string") return ""
+  try {
+    // ✅ لو الـ URL كامل (مثلاً https://api.example.com/api/auth/.../login?page=1)
+    //    بنعمل URL object وناخد pathname
+    if (fullUrl.startsWith("http://") || fullUrl.startsWith("https://")) {
+      const urlObj = new URL(fullUrl)
+      return urlObj.pathname
+    }
+    // ✅ لو path فقط — نشيل query string يدوياً
+    return fullUrl.split("?")[0]
+  } catch {
+    return fullUrl.split("?")[0]
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
 
+    // ✅ استخرج الـ path فقط (بدون baseURL ولا query string)
+    //    عشان نتجنب المطابقات الخاطئة لما URL يحتوي على الـ auth path كـ substring
+    //    (مثلاً لو في endpoint ثاني فيه "login" بكلمة مشابهة)
+    const requestPath = getPathFromUrl(original.url)
+
     // إذا الطلب الفاشل هو أصلاً طلب تسجيل دخول/تسجيل → رجّعي الخطأ زي ما هو
     // بدون أي محاولة refresh أو تحويل لصفحة تانية
-    const isAuthEndpoint = AUTH_ENDPOINTS_NO_REFRESH.some((url) =>
-      original.url?.includes(url)
-    )
+    const isAuthEndpoint = AUTH_ENDPOINTS_NO_REFRESH.some((url) => {
+      // ✅ مطابقة exact على الـ path (مع أو بدون trailing slash)
+      return requestPath === url || requestPath === url + "/"
+    })
 
     if (isAuthEndpoint) {
+      return Promise.reject(error)
+    }
+
+    // ✅ تصفّح الضيف: لو ما في session أصلاً (ما في token)، الـ 401 معناه
+    //    "هالـ endpoint بده login" مش "الجلسة انتهت" → ما في refresh ولا
+    //    redirect لصفحة الدخول. الضيف بيضل بمكانه والصفحة بتتعامل مع الخطأ.
+    const hadSession = Boolean(localStorage.getItem('token') || sessionStorage.getItem('token'))
+    if (error.response?.status === 401 && !hadSession) {
       return Promise.reject(error)
     }
 
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true
 
-      // منع الـ race condition
+      // منع الـ race condition: طلب 401 متوازي → كلهم بيستنوا نفس الـ refresh
       if (!refreshPromise) {
         refreshPromise = authAPI.refreshToken().finally(() => {
           refreshPromise = null
@@ -134,17 +172,33 @@ api.interceptors.response.use(
         const res = await refreshPromise
         const newToken = res.data.data.accessToken
         localStorage.setItem('token', newToken)
+
+        // ✅ إصلاح حاسم: نبعت event للـ AuthContext عشان يحدّث الـ React state
+        //    بدون هذا، أي component يستخدم useAuth() بيفضل يعرض state قديم
+        //    (مثلاً navbar ممكن يعرض "Switch to Seller" غلط لو الـ state
+        //    تغيّر نتيجة الـ token الجديد)
+        window.dispatchEvent(new Event('gaza-gate-auth-changed'))
+
         original.headers.Authorization = `Bearer ${newToken}`
         return api(original)
-      } catch {
+      } catch (refreshErr) {
+        // ✅ فشل الـ refresh: ننضّف الـ session + نبعت event + نعمل redirect
+        //    الـ AuthContext.useEffect بيسمع للـ event وبيمسح الـ user state
+        //    فالـ navbar بيختفي فوراً (مش بس بعد الـ reload)
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+        localStorage.removeItem('userType')
+        window.dispatchEvent(new Event('gaza-gate-auth-changed'))
+
         const userType = localStorage.getItem('userType') || 'customer'
-        localStorage.clear()
-        window.location.href = `/login/${userType}`
+        // نستخدم replace مش href عشان ما نخلي user يرجع بـ back button
+        window.location.replace(`/login/${userType}`)
       }
     }
 
     return Promise.reject(error)
   }
 )
-// ── 5. export ──
+// ── 6. export ──
 export default api

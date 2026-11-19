@@ -1,0 +1,223 @@
+/* ═══════════════════════════════════════════════════════════════
+   FloatingThemeToggle — زر تبديل ثيم عائم (FAB)
+   ─────────────────────────────────────────────────────────
+   • position: fixed; bottom-left (جنب زر الشات بدون تعارض)
+   • z-index: 10000 (فوق FloatingChatWidget و CustomerChatWidget)
+   • شكل زجاجي نظيف يتناسق مع الثيم
+   • أنيميشن rotate + fade بين الشمس ↔ القمر
+   • tooltip عند الـ hover
+   • نبضة برتقالية عند الضغط
+   ═══════════════════════════════════════════════════════════════ */
+
+.ftt-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 96px;            /* ✅ شمال — بعد زر الشات (اللي على left: 24px) بمسافة 72px */
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1px solid var(--border-glass);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;        /* ✅ فوق كل المحتوى (chat widgets = 9998) */
+  font-family: inherit;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+
+  /* زجاجي + ظل برتقالي خفيف */
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(249, 115, 22, 0.12);
+
+  transition:
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s ease,
+    background 0.3s ease,
+    border-color 0.3s ease;
+  animation: ftt-enter 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes ftt-enter {
+  from { opacity: 0; transform: translateY(20px) scale(0.7); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ftt-fab:hover {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow:
+    0 12px 32px rgba(249, 115, 22, 0.32),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(249, 115, 22, 0.32);
+  border-color: rgba(249, 115, 22, 0.45);
+}
+
+.ftt-fab:active {
+  transform: translateY(0) scale(0.94);
+}
+
+.ftt-fab:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 3px;
+}
+
+/* ── Light mode (افتراضي) ───────────────────────────────────── */
+.ftt-fab--light {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(249, 115, 22, 0.2);
+  color: #f59e0b;            /* شمس ذهبية */
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(249, 115, 22, 0.18);
+}
+
+.ftt-fab--light:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 12px 32px rgba(249, 115, 22, 0.28),
+    0 4px 8px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(249, 115, 22, 0.45);
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+.ftt-fab--dark {
+  background: rgba(51, 65, 85, 0.75);
+  border-color: rgba(138, 158, 201, 0.35);
+  color: #fbbf24;            /* قمر كريمي */
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(249, 115, 22, 0.25),
+    0 0 16px rgba(249, 115, 22, 0.18);
+}
+
+.ftt-fab--dark:hover {
+  background: rgba(51, 65, 85, 0.9);
+  box-shadow:
+    0 12px 32px rgba(249, 115, 22, 0.35),
+    0 4px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(249, 115, 22, 0.5),
+    0 0 20px rgba(249, 115, 22, 0.28);
+}
+
+/* ── أيقونة — أنيميشن rotate + fade بين الشمس والقمر ── */
+.ftt-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  animation: ftt-icon-swap 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes ftt-icon-swap {
+  0%   { opacity: 0; transform: rotate(-90deg) scale(0.4); }
+  60%  { opacity: 1; transform: rotate(15deg) scale(1.15); }
+  100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+.ftt-icon {
+  flex-shrink: 0;
+  /* Sun/Moon icons من lucide-react — يرثوا color من parent */
+}
+
+/* ── Pulse — لمسة برتقالية عند الضغط / التبديل ── */
+.ftt-fab--pulse {
+  animation: ftt-pulse 0.5s ease;
+}
+
+@keyframes ftt-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(249, 115, 22, 0.55); }
+  60%  { box-shadow: 0 0 0 18px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(249, 115, 22, 0); }
+}
+
+/* ── Tooltip — يظهر على يمين الزر (في RTL = من جهة البداية) ── */
+.ftt-tooltip {
+  position: absolute;
+  inset-inline-start: calc(100% + 12px);   /* في RTL = على يمين الزر */
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text-dark);
+  font-family: 'Tajawal', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  z-index: 10001;
+}
+
+.ftt-fab--dark .ftt-tooltip {
+  background: rgba(30, 41, 59, 0.92);
+  color: #F8FAFC;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.ftt-fab:hover .ftt-tooltip,
+.ftt-fab:focus-visible .ftt-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ── Responsive — شاشات صغيرة: تصغير + رفع أكبر من الأسفل ── */
+@media (max-width: 640px) {
+  .ftt-fab {
+    width: 48px;
+    height: 48px;
+    bottom: 18px;
+    left: 84px;
+  }
+  .ftt-tooltip {
+    display: none; /* ما في مساحة لإظهار tooltip على الموبايل */
+  }
+}
+
+/* ── احترام reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ftt-fab,
+  .ftt-icon-wrap,
+  .ftt-fab--pulse {
+    animation: none !important;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .ftt-fab:hover {
+    transform: none;
+  }
+}
+
+/* ── دعم LTR (لو احتاج المشروع في المستقبل) ── */
+[dir="ltr"] .ftt-fab {
+  right: auto;
+  left: 96px;
+}
+[dir="ltr"] .ftt-fab .ftt-tooltip {
+  inset-inline-start: auto;
+  inset-inline-end: calc(100% + 12px);
+  transform: translateY(-50%) translateX(6px);
+}
+[dir="ltr"] .ftt-fab:hover .ftt-tooltip {
+  transform: translateY(-50%) translateX(0);
+}
+[dir="ltr"] @media (max-width: 640px) {
+  .ftt-fab {
+    left: 84px;
+  }
+}

@@ -2,13 +2,12 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, Heart, Plus, Star, Store, SlidersHorizontal,
-  ShoppingBag, Monitor, Shirt, Hammer, UtensilsCrossed,
-  BookOpen, Sparkles, Trophy, Gamepad2, Sofa, Package, Loader2,
-  ChevronRight, ChevronLeft, X, AlertCircle,
+  ShoppingBag, Loader2, ChevronRight, ChevronLeft, X, AlertCircle,
 } from "lucide-react";
 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import {
   getPublicProductsWithFilters,
   getPublicCategories,
@@ -23,56 +22,32 @@ import {
 import "./CustomerProducts.css";
 
 /**
- * خريطة الأيقونات حسب iconKey
+ * الـ "الكل" pseudo-category — دائماً أول عنصر بالـ carousel
+ * (مش من الـ API — الباك ما عنده فكرة عن زر "الكل")
  */
-const ICON_BY_KEY = {
-  food:        UtensilsCrossed,
-  clothes:     Shirt,
-  handicraft:  Hammer,
-  electronics: Monitor,
-  books:       BookOpen,
-  beauty:      Sparkles,
-  sports:      Trophy,
-  toys:        Gamepad2,
-  furniture:   Sofa,
-  default:     Package,
+const ALL_PSEUDO_CATEGORY = {
+  id: "all",
+  name: "all",
+  nameAr: "الكل",
+  iconKey: "default",
 };
 
 /**
- * Fallback categories — تُستخدم لما الباك ما يرجع فئات من /api/category/public
- *
- * كل فئة لها:
- *  - id:         معرّف محلي (نبدأ بـ "__" لتمييزه عن UUIDs الحقيقية)
- *  - nameAr:     الاسم بالعربي للعرض
- *  - nameMatches: مصفوفة بأسماء (بالإنجليزي أو العربي) تُطابق product.category.name
- *                عند الفلترة client-side (لأن الـ id محلي)
- *  - isFallback: true = فلتر client-side
+ * ✅ Fallback categories — تتعرض لما الـ API يرجّع فاضي أو يفشل
+ * (نفس الـ shape يلي بيرجّعه `mapCategory` بالـ service)
+ * الهدف: الـ carousel يضل فيه تصنيفات ظاهرة دائماً جنب زر "الكل"
+ * حتى لو الباك رجّع 401/403/500 أو الـ DB فاضية.
  */
 const FALLBACK_CATEGORIES = [
-  {
-    id: "all", name: "all", nameAr: "الكل", iconKey: "default",
-    nameMatches: [], isFallback: true,
-  },
-  {
-    id: "__food", name: "food", nameAr: "المأكولات المنزلية", iconKey: "food",
-    nameMatches: ["Food", "food", "المأكولات المنزلية", "مأكولات منزلية", "Home Food", "home food", "homemade"],
-    isFallback: true,
-  },
-  {
-    id: "__clothes", name: "clothes", nameAr: "ملابس", iconKey: "clothes",
-    nameMatches: ["Clothes", "clothes", "ملابس", "Clothing", "clothing", "Fashion", "fashion"],
-    isFallback: true,
-  },
-  {
-    id: "__handicraft", name: "handicraft", nameAr: "الأشغال اليدوية", iconKey: "handicraft",
-    nameMatches: ["Handicraft", "handicraft", "Handicrafts", "handicrafts", "الأشغال اليدوية", "أشغال يدوية", "Hand Made", "Handmade", "handmade"],
-    isFallback: true,
-  },
-  {
-    id: "__electronics", name: "electronics", nameAr: "الإلكترونيات", iconKey: "electronics",
-    nameMatches: ["Electronics", "electronics", "Electronic", "electronic", "الإلكترونيات", "إلكترونيات", "Tech", "tech"],
-    isFallback: true,
-  },
+  { id: "fb-electronics", name: "electronics", nameAr: "الإلكترونيات",  iconKey: "electronics", productCount: 0 },
+  { id: "fb-food",        name: "food",        nameAr: "المأكولات المنزلية", iconKey: "food",        productCount: 0 },
+  { id: "fb-clothes",     name: "clothes",     nameAr: "ملابس",          iconKey: "clothes",     productCount: 0 },
+  { id: "fb-handicraft",  name: "handicraft",  nameAr: "الأشغال اليدوية",  iconKey: "handicraft",  productCount: 0 },
+  { id: "fb-books",       name: "books",       nameAr: "الكتب",          iconKey: "books",       productCount: 0 },
+  { id: "fb-beauty",      name: "beauty",      nameAr: "الجمال والعناية",  iconKey: "beauty",      productCount: 0 },
+  { id: "fb-sports",      name: "sports",      nameAr: "الرياضة",        iconKey: "sports",      productCount: 0 },
+  { id: "fb-toys",        name: "toys",        nameAr: "الألعاب",        iconKey: "toys",        productCount: 0 },
+  { id: "fb-furniture",   name: "furniture",   nameAr: "الأثاث",         iconKey: "furniture",   productCount: 0 },
 ];
 
 export default function CustomerProducts() {
@@ -80,6 +55,8 @@ export default function CustomerProducts() {
   const [searchParams] = useSearchParams();
   const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
+  // ✅ الضيف بيتصفّح عادي — السلة والمفضلة بيطلبوا حساب مشتري (popup)
+  const { requireCustomer } = useLoginPrompt();
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -94,8 +71,21 @@ export default function CustomerProducts() {
   const [showFilters, setShowFilters] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // ── الفئات من الباك أو fallback ──
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  // ── Pagination meta من الباك (للأزرار Prev/Next) ──
+  // الباك يرجّع: { totalItems, totalPages, currentPage, pageSize, hasNextPage, hasPreviousPage }
+  // بستخدمها للـ "all" + categoryId الحقيقية من الباك (نفس المنطق للـ "كل" والتصنيفات).
+  // ملاحظة: الـ pageSize ما بنحدده بالـ frontend — الباك هو اللي بيقرر
+  const [pagination, setPagination] = useState({
+    totalItems: 0,
+    totalPages: 1,
+    currentPage: 1,
+    pageSize: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
+  // ── الفئات من الباك (مثل البائع تماماً — مصفوفة فاضية بالبداية) ──
+  const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // ── Carousel state للـ categories ──
@@ -141,18 +131,19 @@ export default function CustomerProducts() {
         setCategoriesLoading(true);
         const list = await getPublicCategories();
         if (cancelled) return;
-        if (Array.isArray(list) && list.length > 0) {
-          // الباك رجّع فئات حقيقية — استخدمها
-          setCategories([
-            { id: "all", name: "all", nameAr: "الكل", iconKey: "default", nameMatches: [], isFallback: true },
-            ...list.map((c) => ({ ...c, isFallback: false })),
-          ]);
-        } else {
-          setCategories(FALLBACK_CATEGORIES);
-        }
+        // نفس منطق البائع: استخدم اللي رجّعه الـ API مباشرة
+        // ونضيف "الكل" بالبداية كـ pseudo-category للـ reset
+        const apiCategories = Array.isArray(list) ? list : [];
+        // ✅ لو الـ API رجّع فاضي → نعرض الـ fallback عشان الـ carousel ما يطلع فاضي
+        const visible = apiCategories.length > 0 ? apiCategories : FALLBACK_CATEGORIES;
+        setCategories([ALL_PSEUDO_CATEGORY, ...visible]);
       } catch (err) {
-        console.warn("[categories] fallback to local list:", err.message);
-        setCategories(FALLBACK_CATEGORIES);
+        console.warn("[categories] فشل جلب الفئات:", err?.message);
+        if (!cancelled) {
+          // ✅ حتى لو فشل الـ API (401/403/500/Network) → نعرض "الكل" + fallback
+          // عشان المشتري يشوف التصنيفات ويستعملها بدل ما يطلعله carousel فاضي
+          setCategories([ALL_PSEUDO_CATEGORY, ...FALLBACK_CATEGORIES]);
+        }
       } finally {
         if (!cancelled) setCategoriesLoading(false);
       }
@@ -166,14 +157,20 @@ export default function CustomerProducts() {
     if (categoryFromUrl) setActiveCategory(categoryFromUrl);
   }, [searchParams]);
 
-  // البحث عن الفئة النشطة (للحصول على isFallback)
-  const activeCat = categories.find((c) => c.id === activeCategory) || categories[0];
-
   // ── جلب المنتجات (مع فلترة ذكية) ──
+  // ملاحظة: أي تغيير بالـ search/category/minPrice/maxPrice/sortBy لازم يرجع للصفحة 1
+  // عشان ما نخلي اليوزر على صفحة 5 مع بحث جديد.
   useEffect(() => {
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, activeCategory, page, minPrice, maxPrice, sortBy]);
+
+  // ✅ helper: reset الصفحة لـ 1 لما يتغير أي فلتر (مش الـ page نفسه)
+  const resetToFirstPage = useCallback(() => {
+    setPage(1);
+    // بنعمل scroll لأعلى الصفحة — رح يطلع فوق الـ grid
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -186,31 +183,30 @@ export default function CustomerProducts() {
       setLoading(true);
       setError(null);
 
-      const isFallbackCat = activeCat?.isFallback;
       const baseFilters = { page, search: search || undefined };
       if (minPrice) baseFilters.minPrice = minPrice;
       if (maxPrice) baseFilters.maxPrice = maxPrice;
       if (sortBy) baseFilters.sort = sortBy;
 
-      if (isFallbackCat && activeCategory !== "all") {
-        // ── فلتر محلي: نجيب كل المنتجات ثم نفلتر حسب nameMatches ──
-        const res = await getPublicProductsWithFilters({ ...baseFilters, page: 1 });
-        const all = res.data?.products || [];
-        setAllProducts(all);
-        const nameMatches = activeCat.nameMatches.map((n) => n.toLowerCase());
-        const filtered = all.filter((p) => {
-          const catName = String(p.category?.name || "").toLowerCase();
-          return nameMatches.some((m) => catName === m || catName.includes(m));
-        });
-        setProducts(filtered);
-      } else if (activeCategory === "all") {
-        // ── كل المنتجات ──
+      if (activeCategory === "all") {
+        // ── كل المنتجات (مع pagination من الباك) ──
         const res = await getPublicProductsWithFilters(baseFilters);
         const list = res.data?.products || [];
         setProducts(list);
         setAllProducts(list);
+        setPagination(
+          res.data?.pagination ?? {
+            totalItems: list.length,
+            totalPages: 1,
+            currentPage: 1,
+            pageSize: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        );
       } else {
-        // ── فئة حقيقية من الباك — نرسل categoryId ──
+        // ── فئة حقيقية من الباك — نرسل categoryId (مع pagination من الباك) ──
+        // (نفس منطق البائع — الـ ID دايماً UUID حقيقي من الـ API)
         const res = await getPublicProductsWithFilters({
           ...baseFilters,
           categoryId: activeCategory,
@@ -218,11 +214,30 @@ export default function CustomerProducts() {
         const list = res.data?.products || [];
         setProducts(list);
         setAllProducts(list);
+        setPagination(
+          res.data?.pagination ?? {
+            totalItems: list.length,
+            totalPages: 1,
+            currentPage: 1,
+            pageSize: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        );
       }
     } catch (err) {
       console.error("[products] fetch error:", err);
       setError(err.message || "حدث خطأ في جلب المنتجات");
       setProducts([]);
+      // ✅ reset pagination عند الفشل
+      setPagination({
+        totalItems: 0,
+        totalPages: 1,
+        currentPage: 1,
+        pageSize: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
     } finally {
       setLoading(false);
     }
@@ -234,6 +249,25 @@ export default function CustomerProducts() {
     setMinPrice("");
     setMaxPrice("");
     setSortBy("");
+    setPage(1);
+  };
+
+  // ✅ handlers for filter changes — always reset to page 1
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setPage(1);
+  };
+  const handleMinPriceChange = (val) => {
+    setMinPrice(val);
+    setPage(1);
+  };
+  const handleMaxPriceChange = (val) => {
+    setMaxPrice(val);
+    setPage(1);
+  };
+  const handleSortChange = (val) => {
+    setSortBy(val);
+    setPage(1);
   };
 
   /**
@@ -255,6 +289,7 @@ export default function CustomerProducts() {
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation();
+    if (!requireCustomer("تضيف المنتج للسلة")) return;
     try {
       await addItem(product);
       setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
@@ -279,7 +314,7 @@ export default function CustomerProducts() {
             className="cp-search-input"
             placeholder="ابحث عن منتج أو متجر..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
           <button
             className={`cp-filter-toggle ${showFilters ? "active" : ""}`}
@@ -295,15 +330,15 @@ export default function CustomerProducts() {
               <h4 className="cp-filter-popup-title">السعر</h4>
               <div className="cp-price-filter">
                 <input type="number" placeholder="من" className="cp-price-input"
-                  value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
+                  value={minPrice} onChange={(e) => handleMinPriceChange(e.target.value)} />
                 <span>-</span>
                 <input type="number" placeholder="إلى" className="cp-price-input"
-                  value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+                  value={maxPrice} onChange={(e) => handleMaxPriceChange(e.target.value)} />
               </div>
             </div>
             <div className="cp-filter-popup-section">
               <h4 className="cp-filter-popup-title">الترتيب حسب</h4>
-              <select className="cp-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <select className="cp-sort-select" value={sortBy} onChange={(e) => handleSortChange(e.target.value)}>
                 <option value="">الافتراضي</option>
                 <option value="price_asc">السعر: من الأقل للأعلى</option>
                 <option value="price_desc">السعر: من الأعلى للأقل</option>
@@ -343,7 +378,6 @@ export default function CustomerProducts() {
                   <div className="cp-categories-empty">لا توجد فئات</div>
                 ) : (
                   categories.map((cat) => {
-                    const Icon = ICON_BY_KEY[cat.iconKey] || Package;
                     const isActive = activeCategory === cat.id;
                     return (
                       <button
@@ -355,7 +389,6 @@ export default function CustomerProducts() {
                         }}
                         title={cat.nameAr}
                       >
-                        <Icon size={15} />
                         <span className="cp-category-label">{cat.nameAr}</span>
                         {cat.productCount > 0 && cat.id !== "all" && (
                           <span className="cp-category-count">{cat.productCount}</span>
@@ -379,7 +412,11 @@ export default function CustomerProducts() {
             </div>
             <div className="cp-count">
               <SlidersHorizontal size={16} />
-              <span>{products.length} منتج</span>
+              <span>
+                {pagination.totalItems > 0
+                  ? `${pagination.totalItems} منتج`
+                  : `${products.length} منتج`}
+              </span>
             </div>
           </div>
 
@@ -399,108 +436,151 @@ export default function CustomerProducts() {
               description="جرّب تغيير البحث أو الفئة"
             />
           ) : (
-            <div className="cp-grid">
-              {products.map((product) => {
-                const wishlisted = isWishlisted(product.id);
-                const productId = product.id;
-                const productImage =
-                  product.primaryImage?.imageUrl ??
-                  product.primaryImage ??
-                  product.image ??
-                  logo;
-                return (
-                  <article
-                    className="cp-card cp-card--clickable"
-                    key={productId}
-                    onClick={() => navigate(`/product/${productId}`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        navigate(`/product/${productId}`);
-                      }
-                    }}
-                  >
-                    <div className="cp-card-img-wrap">
-                      <img src={productImage} alt={product.name} />
-                      <button
-                        className={`cp-wishlist-btn ${wishlisted ? "active" : ""}`}
-                        aria-label="إضافة للمفضلة"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleWishlist(product);
-                        }}
-                      >
-                        <Heart size={16} fill={wishlisted ? "currentColor" : "none"} />
-                      </button>
-                      <span className="cp-cat-badge">
-                        {product.category?.name ?? "منتج"}
-                      </span>
-                    </div>
-
-                    <div className="cp-card-body">
-                      <span className="cp-status">
-                        {product.stockType === "limited" && Number(product.quantity) > 0
-                          ? "متوفر"
-                          : product.stockType === "limited" && Number(product.quantity) === 0
-                          ? "نفذ"
-                          : "متوفر"}
-                      </span>
-                      <h3 className="cp-card-title">{product.name}</h3>
-
-                      {(() => {
-                        const storePath = storeProfilePath(product);
-                        // لو ما عندنا seller ID (API response قديم) → plain text
-                        if (!storePath) {
-                          return (
-                            <div className="cp-store cp-store--static">
-                              <Store size={13} />
-                              <span>{product.seller?.storeName || "متجر"}</span>
-                            </div>
-                          );
+            <>
+              <div className="cp-grid">
+                {products.map((product) => {
+                  const wishlisted = isWishlisted(product.id);
+                  const productId = product.id;
+                  const productImage =
+                    product.primaryImage?.imageUrl ??
+                    product.primaryImage ??
+                    product.image ??
+                    logo;
+                  return (
+                    <article
+                      className="cp-card cp-card--clickable"
+                      key={productId}
+                      onClick={() => navigate(`/product/${productId}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/product/${productId}`);
                         }
-                        // ✅ <Link> من react-router-dom — يفتح صفحة المتجر
-                        // stopPropagation يمنع parent card من الـ navigate لـ /product/:id
-                        return (
-                          <Link
-                            to={storePath}
-                            className="cp-store cp-store--link"
-                            onClick={(e) => e.stopPropagation()}
-                            title={`زيارة متجر ${product.seller?.storeName || "البائع"}`}
-                            aria-label={`زيارة متجر ${product.seller?.storeName || "البائع"}`}
-                          >
-                            <Store size={13} />
-                            <span>{product.seller?.storeName || "متجر"}</span>
-                          </Link>
-                        );
-                      })()}
-
-                      <div className="cp-meta">
-                        <div className="cp-rating">
-                          <Star size={14} fill="#fbbf24" stroke="#fbbf24" />
-                          <span>{Number(product.averageRating ?? 0).toFixed(1)}</span>
-                          {Number(product.reviewsCount ?? 0) > 0 && (
-                            <span className="cp-rating-count">({product.reviewsCount})</span>
-                          )}
-                        </div>
-                        <span className="cp-price">{Number(product.price ?? 0).toFixed(2)}₪</span>
+                      }}
+                    >
+                      <div className="cp-card-img-wrap">
+                        <img src={productImage} alt={product.name} />
+                        <button
+                          className={`cp-wishlist-btn ${wishlisted ? "active" : ""}`}
+                          aria-label="إضافة للمفضلة"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!requireCustomer("تضيف المنتج للمفضلة")) return;
+                            toggleWishlist(product);
+                          }}
+                        >
+                          <Heart size={16} fill={wishlisted ? "currentColor" : "none"} />
+                        </button>
+                        <span className="cp-cat-badge">
+                          {product.category?.name ?? "منتج"}
+                        </span>
                       </div>
 
-                      <p className="cp-qty">الكمية: {product.quantity ?? 0}</p>
+                      <div className="cp-card-body">
+                        <span className="cp-status">
+                          {/* ✅ Status badge: محدود + كمية 0 → "نفذ"
+                              أي حالة ثانية (limited + quantity > 0، أو unlimited) → "متوفر" */}
+                          {product.stockType === "limited" && Number(product.quantity) === 0
+                            ? "نفذ"
+                            : "متوفر"}
+                        </span>
+                        <h3 className="cp-card-title">{product.name}</h3>
 
-                      <button
-                        className="cp-add-btn"
-                        onClick={(e) => handleAddToCart(e, product)}
-                      >
-                        <Plus size={16} />
-                        أضف
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                        {(() => {
+                          const storePath = storeProfilePath(product);
+                          // لو ما عندنا seller ID (API response قديم) → plain text
+                          if (!storePath) {
+                            return (
+                              <div className="cp-store cp-store--static">
+                                <Store size={13} />
+                                <span>{product.seller?.storeName || "متجر"}</span>
+                              </div>
+                            );
+                          }
+                          // ✅ <Link> من react-router-dom — يفتح صفحة المتجر
+                          // stopPropagation يمنع parent card من الـ navigate لـ /product/:id
+                          return (
+                            <Link
+                              to={storePath}
+                              className="cp-store cp-store--link"
+                              onClick={(e) => e.stopPropagation()}
+                              title={`زيارة متجر ${product.seller?.storeName || "البائع"}`}
+                              aria-label={`زيارة متجر ${product.seller?.storeName || "البائع"}`}
+                            >
+                              <Store size={13} />
+                              <span>{product.seller?.storeName || "متجر"}</span>
+                            </Link>
+                          );
+                        })()}
+
+                        <div className="cp-meta">
+                          <div className="cp-rating">
+                            <Star size={14} fill="#fbbf24" stroke="#fbbf24" />
+                            <span>{Number(product.averageRating ?? 0).toFixed(1)}</span>
+                            {Number(product.reviewsCount ?? 0) > 0 && (
+                              <span className="cp-rating-count">({product.reviewsCount})</span>
+                            )}
+                          </div>
+                          <span className="cp-price">{Number(product.price ?? 0).toFixed(2)}₪</span>
+                        </div>
+
+                        <p className="cp-qty">
+                          {/* ✅ عرض الكمية بشكل صحيح بناءً على نوع المخزون:
+                              - stockType === "unlimited" → "غير محدود"
+                              - غير هيك → نعرض الكمية الحقيقية (أو 0 إذا ما متوفرة) */}
+                          {product.stockType === "unlimited"
+                            ? "الكمية: غير محدود"
+                            : `الكمية: ${Number(product.quantity ?? 0)}`}
+                        </p>
+
+                        <button
+                          className="cp-add-btn"
+                          onClick={(e) => handleAddToCart(e, product)}
+                        >
+                          <Plus size={16} />
+                          أضف
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              {/* ═══════ Prev/Next pagination (بس لما في أكثر من صفحة) ═══════
+                  ✅ أزرار بأيقونات فقط — touch target 40px+ على الموبايل */}
+              {pagination.totalPages > 1 && (
+                <div className="cp-pagination" role="navigation" aria-label="ترقيم صفحات المنتجات">
+                  <button
+                    type="button"
+                    className="cp-page-btn cp-page-btn--prev"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={!pagination.hasPreviousPage || loading}
+                    aria-label="الصفحة السابقة"
+                    title="الصفحة السابقة"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+
+                  <span className="cp-page-info" aria-live="polite">
+                    صفحة <strong>{pagination.currentPage}</strong> من <strong>{pagination.totalPages}</strong>
+                    <span className="cp-page-total">({pagination.totalItems} منتج)</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    className="cp-page-btn cp-page-btn--next"
+                    onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                    disabled={!pagination.hasNextPage || loading}
+                    aria-label="الصفحة التالية"
+                    title="الصفحة التالية"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

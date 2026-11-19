@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Package as PackageIcon, Eye } from "lucide-react";
 import "./RatingsManagement.css";
 import api from "../utils/api";
 import SellerNavbar from "../components/SellerNavbar";
 import { ErrorState } from "../components/LoadingState";
 import { customerProfilePath } from "../utils/sellerHelpers";
+import ProductDetailsModal from "../components/ProductDetailsModal";
+import { getSellerProductDetails } from "../services/productService";
 
 // ══════════════════════════════════════════════════
 //  ⚙️  الـ endpoints — تأكدي من المسار الصحيح ببوستمان
@@ -22,6 +24,32 @@ const customerReviewUrl = (id) => `/api/seller/review/customer/${id}`;
 
 //   مدة بقاء الهايلايت المؤقت على التقييم المستهدف (بالميلي ثانية)
 const HIGHLIGHT_DURATION_MS = 2500;
+
+// ══════════════════════════════════════════════════
+//  🆕 مفتاح هوية بديل للتقييم (بما إنه الـ backend ما بيرجع _id/id
+//  للتقييمات لا بالـ Dashboard ولا بـ /api/seller/review) — مبني من
+//  (customer.id + rating + التاريخ + أول 60 حرف من التعليق). هاي التركيبة
+//  عملياً فريدة لكل تقييم، وبتُستخدم فقط للتعرّف/السكرول/الهايلايت،
+//  مش لأي إجراء حقيقي على السيرفر (تعديل/حذف بيستخدموا الـ id الحقيقي
+//  الموجود بتبويب "تقييماتي للزبائن" لو موجود).
+// ══════════════════════════════════════════════════
+const buildReviewMatchKey = ({ customerId, rating, comment, date }) => {
+  const dateStr = (date || "").toString().slice(0, 10);
+  const commentStr = (comment || "").toString().trim().slice(0, 60);
+  return `${customerId || ""}|${rating || ""}|${dateStr}|${commentStr}`;
+};
+
+// يرجع هوية التقييم: الـ id الحقيقي لو موجود، وإلا المفتاح المركّب كبديل
+const getReviewIdentity = (review) => {
+  const realId = review._id ?? review.id;
+  if (realId) return String(realId);
+  return buildReviewMatchKey({
+    customerId: review.customer?.id,
+    rating: review.rating,
+    comment: review.comment,
+    date: review.createdAt ?? review.date,
+  });
+};
 
 // ── Icons ──
 const StarIcon = ({ filled }) => (
@@ -99,7 +127,7 @@ const fetchProductReviews = async () => {
     ? payload
     : [];
 
-  return list.map((r) => {
+  const normalized = list.map((r) => {
     const firstName = r.customer?.user?.firstName ?? r.customer?.firstName ?? "";
     const lastName = r.customer?.user?.lastName ?? r.customer?.lastName ?? "";
     const fullName = `${firstName} ${lastName}`.trim();
@@ -116,6 +144,50 @@ const fetchProductReviews = async () => {
       sellerReply,
     };
   });
+
+  // ✅ إثراء: نجيب تفاصيل كل منتج بشكل متوازٍ — للحصول على image و price
+  //    الـ /api/seller/review بيرجع product: { id, name } بس — مش كافية للعرض النظيف
+  //    بنجلب التفاصيل بالتوازي (parallel) عشان نحد من وقت الانتظار
+  const uniqueProductIds = [
+    ...new Set(
+      normalized
+        .map((r) => r.product?.id)
+        .filter(Boolean)
+    ),
+  ];
+
+  if (uniqueProductIds.length > 0) {
+    const detailResults = await Promise.allSettled(
+      uniqueProductIds.map((id) => getSellerProductDetails(id))
+    );
+    const detailsMap = {};
+    detailResults.forEach((res, i) => {
+      if (res.status === "fulfilled") {
+        const product = res.value?.data?.product ?? res.value?.product ?? null;
+        if (product) {
+          const imageUrl =
+            product.primaryImage?.imageUrl ||
+            product.images?.[0]?.imageUrl ||
+            product.imageUrl ||
+            null;
+          detailsMap[uniqueProductIds[i]] = {
+            id: product.id,
+            name: product.name,
+            image: imageUrl,
+            price: product.price ?? null,
+          };
+        }
+      }
+    });
+
+    normalized.forEach((r) => {
+      if (r.product?.id && detailsMap[r.product.id]) {
+        r.product = { ...r.product, ...detailsMap[r.product.id] };
+      }
+    });
+  }
+
+  return normalized;
 };
 
 // تقييماتي أنا كسيلر للزبائن — كل عنصر فيه customer (الزبون المُقيَّم) + order + product
@@ -182,11 +254,14 @@ const RatingsManagement = () => {
   const [deletingId, setDeletingId]           = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  //   دعم فتح تقييم محدد عبر الرابط (?reviewId=...) — بينطبق بس على تبويب المنتجات
+  //   دعم فتح تقييم محدد عبر الرابط (?reviewKey=...) — بينطبق بس على تبويب المنتجات
   const [highlightedReviewId, setHighlightedReviewId] = useState(null);
   const reviewRefs = useRef({});
   const highlightTimeoutRef = useRef(null);
   const handledReviewIdRef = useRef(null);
+
+  //   مودال تفاصيل المنتج — ينفتح عند الضغط على المنتج داخل التقييم
+  const [activeProductId, setActiveProductId] = useState(null);
 
   const sortRef = useRef(null);
 
@@ -247,24 +322,26 @@ const RatingsManagement = () => {
 
   const reviews = activeTab === "productReviews" ? productReviews : customerReviews;
 
-  //   لمّا يوصل ?reviewId= بالرابط: بينطبق بس على تبويب تقييمات المنتجات
+  //   لمّا يوصل ?reviewKey= بالرابط (جاي من Dashboard): بينطبق بس على تبويب
+  //   تقييمات المنتجات. بما إنه ما في id حقيقي للتقييم بالـ backend، منقارن
+  //   عن طريق getReviewIdentity (الـ id الحقيقي لو موجود، وإلا المفتاح المركّب).
   useEffect(() => {
     if (activeTab !== "productReviews") return;
-    const reviewId = searchParams.get("reviewId");
-    if (!reviewId || loading) return;
-    if (handledReviewIdRef.current === reviewId) return;
+    const reviewKeyParam = searchParams.get("reviewKey");
+    if (!reviewKeyParam || loading) return;
+    if (handledReviewIdRef.current === reviewKeyParam) return;
 
-    const targetExists = reviews.some((r) => String(r._id ?? r.id) === String(reviewId));
-    if (!targetExists) return;
+    const target = reviews.find((r) => getReviewIdentity(r) === reviewKeyParam);
+    if (!target) return;
 
-    handledReviewIdRef.current = reviewId;
+    handledReviewIdRef.current = reviewKeyParam;
     setActiveFilter("all");
 
     const scrollTimer = setTimeout(() => {
-      const node = reviewRefs.current[reviewId];
+      const node = reviewRefs.current[reviewKeyParam];
       if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      setHighlightedReviewId(reviewId);
+      setHighlightedReviewId(reviewKeyParam);
       if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
       highlightTimeoutRef.current = setTimeout(() => setHighlightedReviewId(null), HIGHLIGHT_DURATION_MS);
     }, 150);
@@ -496,8 +573,14 @@ const handleSubmitEdit = async (id, orderId) => {
         {/* Reviews list */}
         <div className="rm-reviews-list">
           {visibleReviews.map((review, i) => {
+            // 🆕 identityKey: id حقيقي لو موجود (تبويب تقييماتي للزبائن)،
+            // وإلا مفتاح مركّب بديل (تبويب تقييمات الزبائن لي، اللي ما فيه id
+            // بالـ backend). يُستخدم فقط لـ key/ref/هايلايت — مش لأي API call.
+            const identityKey = getReviewIdentity(review);
+            // reviewId: يبقى id حقيقي فقط (أو undefined) — يُستخدم حصراً
+            // لإجراءات حقيقية على السيرفر (تعديل/حذف/رد)
             const reviewId = review._id ?? review.id;
-            const isHighlighted = highlightedReviewId === reviewId;
+            const isHighlighted = highlightedReviewId === identityKey;
             const isCustomerTab = activeTab === "customerReviews";
             const isEditing = editingReviewId === reviewId;
 
@@ -506,8 +589,8 @@ const handleSubmitEdit = async (id, orderId) => {
             return (
             <div
               className="rm-review-card"
-              key={reviewId}
-              ref={(el) => { reviewRefs.current[reviewId] = el; }}
+              key={identityKey}
+              ref={(el) => { reviewRefs.current[identityKey] = el; }}
               style={{
                 transition: "background-color 0.6s ease, box-shadow 0.6s ease",
                 ...(isHighlighted
@@ -571,6 +654,40 @@ const handleSubmitEdit = async (id, orderId) => {
                   {review.product?.name && <span>المنتج: {review.product.name}</span>}
                   {review.order?.orderNumber && <span> · الطلبية: {review.order.orderNumber}</span>}
                 </p>
+              )}
+
+              {/* ✅ بطاقة المنتج - بتبويب "تقييمات الزبائن لي" بس — قابلة للضغط لفتح المودال */}
+              {!isCustomerTab && review.product?.id && (
+                <button
+                  type="button"
+                  className="rm-review-product"
+                  onClick={() => setActiveProductId(review.product.id)}
+                  title="عرض تفاصيل المنتج"
+                >
+                  <div className="rm-review-product-img">
+                    {review.product.image || review.product.imageUrl || review.product.primaryImage?.imageUrl ? (
+                      <img
+                        src={review.product.image || review.product.imageUrl || review.product.primaryImage?.imageUrl}
+                        alt={review.product.name}
+                      />
+                    ) : (
+                      <PackageIcon size={20} />
+                    )}
+                  </div>
+                  <div className="rm-review-product-info">
+                    <span className="rm-review-product-name" title={review.product.name}>
+                      {review.product.name}
+                    </span>
+                    <span className="rm-review-product-price">
+                      {review.product.price != null
+                        ? `${Number(review.product.price).toFixed(2)}₪`
+                        : "اضغط لعرض التفاصيل"}
+                    </span>
+                  </div>
+                  <span className="rm-review-product-cta" aria-hidden="true">
+                    <Eye size={14} />
+                  </span>
+                </button>
               )}
 
               {/* فورم التعديل يحل مكان التعليق العادي لما تكون بحالة تعديل */}
@@ -697,6 +814,13 @@ const handleSubmitEdit = async (id, orderId) => {
         </div>
 
       </main>
+
+      {/* ✅ مودال تفاصيل المنتج — يطلع عند الضغط على المنتج داخل التقييم */}
+      <ProductDetailsModal
+        open={!!activeProductId}
+        productId={activeProductId}
+        onClose={() => setActiveProductId(null)}
+      />
     </div>
   );
 };

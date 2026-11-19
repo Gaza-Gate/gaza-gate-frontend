@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Gradient for the orange side -->
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fb923c"/>
+      <stop offset="100%" style="stop-color:#ea580c"/>
+    </linearGradient>
+    <!-- Gradient for the blue side -->
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background - transparent -->
+  
+  <!-- Gate Arch (negative space / white) -->
+  <path d="M256 100 L256 380 Q256 430 206 430 Q156 430 156 380 L156 320 L196 320 L196 380 Q196 395 206 395 Q216 395 216 380 L216 200 L200 180 Q180 150 200 120 Q220 90 240 120 L256 100" 
+        fill="white" opacity="0.95"/>
+  
+  <!-- Left Blue G curve -->
+  <path d="M280 120 Q340 100 380 160 Q420 220 400 300 Q380 380 300 410 Q220 440 160 380 Q120 320 140 240 Q160 160 240 120 Q260 110 280 120" 
+        fill="url(#blueGrad)"/>
+  
+  <!-- Right Orange G curve -->
+  <path d="M232 120 Q280 100 320 140 Q360 180 340 260 Q320 340 260 380 Q200 420 160 360 Q140 320 160 260 Q180 200 240 160 Q260 150 270 150 L290 130 Q270 120 232 120" 
+        fill="url(#orangeGrad)"/>
+  
+  <!-- G crossbar -->
+  <rect x="230" y="190" width="90" height="25" rx="5" fill="url(#orangeGrad)"/>
+  
+  <!-- Inner arch detail -->
+  <path d="M200 250 Q220 220 240 250 L240 300 L200 300 Z" fill="white" opacity="0.3"/>
+  
+  <!-- Text "GAZA GATE" -->
+  <text x="256" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#1e293b">
+    GAZA GATE
+  </text>
+  
+  <!-- Small decorative elements - geometric patterns on orange -->
+  <rect x="250" y="210" width="8" height="8" fill="#fb923c" opacity="0.6"/>
+  <rect x="265" y="225" width="6" height="6" fill="#fdba74" opacity="0.5"/>
+  <rect x="280" y="215" width="10" height="10" fill="#fb923c" opacity="0.4"/>
+</svg>

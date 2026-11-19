@@ -1,8 +1,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ✅ إنشاء stacking context مرتفع على الـ navbar نفسه
+   (position: sticky + z-index عالي) حتى الـ dropdown يطلع فوق أي محتوى في الصفحة. */
 .snb-nav {
-  background: #fff;
-  border-bottom: 1px solid #f3f4f6;
+  /* ✅ Solid color matching the logo's background square (light logo = white) */
+  background: #ffffff;
+  border-bottom: 1px solid #E5E5E5;
   padding: 0 32px;
   height: 80px;
   display: flex;
@@ -10,10 +13,41 @@
   justify-content: space-between;
   font-family: "Tajawal", "Segoe UI", Tahoma, sans-serif;
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;             /* ✅ فوق أي محتوى في الصفحة */
+  isolation: isolate;        /* ✅ stacking context مستقل */
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-.snb-logo-link { display: flex; align-items: center; }
-.snb-logo { height: 72px; object-fit: contain; }
+.dark .snb-nav {
+  /* ✅ Solid #1e293b (slate-800) — exact match for the dark logo's background square */
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+.snb-logo-link {
+  display: flex;
+  align-items: center;
+  background: transparent;
+}
+
+.snb-logo {
+  height: 72px;
+  object-fit: contain;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* ✅ إصلاح اللوغو في الثيم الليلي — لو الـ PNG نفسه فيه خلفية سوداء
+   نستخدم mix-blend-mode: screen عشان الأسود يختفي ويبان لون الناف بار من وراه. */
+.dark .snb-logo {
+  mix-blend-mode: screen;
+  background: transparent !important;
+  background-color: transparent !important;
+}
 
 .snb-links {
   display: flex;
@@ -30,6 +64,7 @@
   border-radius: 10px;
   transition: background 0.15s, color 0.15s;
 }
+.dark .snb-link { color: #CBD5E1; }
 .snb-link:hover { color: #f97316; }
 .snb-link-active {
   background: #f97316;
@@ -51,6 +86,7 @@
   padding: 9px 18px;
   font-family: inherit;
 }
+.dark .snb-dropdown-btn { color: #CBD5E1; }
 .snb-dropdown-btn:hover { color: #f97316; }
 
 .snb-dropdown-icon { transition: transform 0.2s; }
@@ -60,13 +96,21 @@
   position: absolute;
   top: 44px;
   right: 0;
-  background: #fff;
-  border: 1px solid #f3f4f6;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-glass);
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   min-width: 160px;
-  z-index: 100;
+  z-index: 1100;             /* ✅ فوق الـ navbar (1000) وفوق أي محتوى صفحة */
   padding: 6px 0;
+}
+
+.dark .snb-dropdown-menu {
+  background: rgba(51, 65, 85, 0.92);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(249, 115, 22, 0.1);
 }
 
 .snb-dropdown-item {
@@ -77,12 +121,19 @@
   text-decoration: none;
   text-align: right;
 }
+.dark .snb-dropdown-item { color: #CBD5E1; }
 .snb-dropdown-item:hover { background: #fff7ed; color: #f97316; }
 
 .snb-actions {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* ✅ حاوية الأفعال الخاصة بالموبايل — بنخفيها على الديسكتوب
+   (الديسكتوب بيستخدم .snb-actions-desktop بدالها) */
+.snb-actions-mobile {
+  display: none;
 }
 
 .snb-bell-btn {
@@ -115,12 +166,26 @@
 }
 
 @media (max-width: 900px) {
+  /* ✅ بنخفي روابط الديسكتوب والأكشنز على نفس الـ breakpoint (900px)
+     عشان ما يصير فيه فراغ بصري بين 769px–900px.
+     الـ rule التفصيلية لتبديل الهامبرغر تحت بنفس الـ breakpoint. */
   .snb-links { display: none; }
+  .snb-links-desktop,
+  .snb-actions-desktop { display: none; }
+  .snb-hamburger-btn { display: flex; }
+  .snb-nav {
+    position: relative;
+    padding: 0 12px;
+    height: 64px;
+  }
+  .snb-logo { height: 56px; }
 }
 
 /* ══════════════════════════════════════
    إضافات القائمة المتجاوبة (موبايل)
-   الصقي هاد المحتوى بآخر ملف SellerNavbar.css الحالي
+   ملاحظة: القاعدة القديمة يلي كانت بتخفي .snb-links عند 900px انحذفت،
+   لأنها كانت بتعمل فجوة (900px→768px) تختفي فيها القائمة بالكامل قبل ما
+   يظهر الهامبرغر. البريكبوينت هلأ موحّد عند 900px للاثنين مع بعض.
    ══════════════════════════════════════ */
 
 .snb-hamburger-btn {
@@ -133,16 +198,27 @@
   align-items: center;
   justify-content: center;
 }
+.dark .snb-hamburger-btn { color: #CBD5E1; }
 
 .snb-mobile-menu {
   display: none;
 }
 
-/* تحت هاد العرض (تابلت وموبايل) نخفي الروابط العادية ونظهر الهامبرغر */
-@media (max-width: 768px) {
+/* تحت هاد العرض (تابلت وموبايل) نخفي الروابط العادية + الأفعال،
+   ونظهر زر الهامبرغر + القائمة الجانبية.
+   لازم الـ breakpoint هنا يطابق 900px من فوق
+   عشان ما يصير فيه فراغ بين 769px–900px (اللينكات مخفية والهامبرغر لسا ما ظهر). */
+@media (max-width: 900px) {
   .snb-links-desktop,
   .snb-actions-desktop {
-    display: none;
+    display: none !important;
+  }
+
+  /* ✅ حاوية الأفعال للموبايل — بنظهرها (تحتوي على جرس الإشعارات + الهامبرغر) */
+  .snb-actions-mobile {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .snb-hamburger-btn {
@@ -160,12 +236,19 @@
     top: 100%;
     right: 0;
     left: 0;
-    background: #ffffff;
-    border-top: 1px solid #f3f4f6;
+    background: var(--bg-glass-strong);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid var(--border-glass);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     padding: 8px;
     gap: 2px;
-    z-index: 999;
+    z-index: 1100;            /* ✅ فوق الـ navbar وفوق أي محتوى صفحة */
+  }
+
+  .dark .snb-mobile-menu {
+    background: rgba(30, 41, 59, 0.95);
+    border-top-color: rgba(148, 163, 184, 0.2);
   }
 
   .snb-mobile-link {
@@ -184,8 +267,14 @@
     width: 100%;
   }
 
+  .dark .snb-mobile-link { color: #CBD5E1; }
+
   .snb-mobile-link:hover {
     background: #f9fafb;
+  }
+
+  .dark .snb-mobile-link:hover {
+    background: rgba(249, 115, 22, 0.08);
   }
 
   .snb-mobile-link.snb-link-active {
@@ -207,6 +296,53 @@
   .snb-mobile-logout {
     color: #f97316;
     font-weight: 600;
+  }
+}
+
+/* ══════════════════════════════════════
+   تحسينات الموبايل الصغيرة (≤ 480px)
+   - تكبير مساحة اللمس لجرس الإشعارات
+   - ضمان تباين كافٍ وخلفية خفيفة لإبراز الجرس
+   - منع التكدس بين اللوغو والأفعال
+   ══════════════════════════════════════ */
+@media (max-width: 480px) {
+  .snb-nav {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .snb-logo { height: 50px; }
+
+  /* جرس الإشعارات — لمس مريح + إبراز بصري */
+  .snb-actions-mobile .nb-bell {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    background: rgba(249, 115, 22, 0.08);
+    border-radius: 12px;
+  }
+  .snb-actions-mobile .nb-bell:hover {
+    background: rgba(249, 115, 22, 0.15);
+  }
+  .dark .snb-actions-mobile .nb-bell {
+    background: rgba(249, 115, 22, 0.12);
+  }
+  .dark .snb-actions-mobile .nb-bell:hover {
+    background: rgba(249, 115, 22, 0.22);
+  }
+
+  /* زر القائمة — نفس مساحة اللمس البالغة 44px */
+  .snb-hamburger-btn {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .snb-hamburger-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .dark .snb-hamburger-btn:hover {
+    background: rgba(249, 115, 22, 0.1);
   }
 }
 .snb-link-btn {

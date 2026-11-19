@@ -77,3 +77,52 @@ export async function changeSellerPassword(payload) {
   const res = await api.put("/api/seller/profile/changePassword", payload);
   return res.data;
 }
+
+// ════════════════════════════════════════════════════════════
+//  Customer Profile (private — الزبون يعدّل بروفايله)
+// ════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/profile/customer
+ * جلب بروفايل الزبون الحالي
+ */
+export async function getCustomerProfile() {
+  const res = await api.get("/api/profile/customer");
+  return res.data?.data?.profile || res.data?.profile || res.data;
+}
+
+/**
+ * PUT /api/profile/customer
+ * تعديل بروفايل الزبون
+ */
+export async function updateCustomerProfile(profileData) {
+  const res = await api.put("/api/profile/customer", profileData);
+  return res.data;
+}
+
+/**
+ * POST /api/profile/customer/address
+ * إضافة عنوان جديد للزبون
+ */
+export async function addCustomerAddress(addressData) {
+  const res = await api.post("/api/profile/customer/address", addressData);
+  return res.data?.data?.address || res.data?.address || res.data;
+}
+
+/**
+ * PUT /api/profile/customer/address/:id
+ * تعديل عنوان موجود
+ */
+export async function updateCustomerAddress(addressId, addressData) {
+  const res = await api.put(`/api/profile/customer/address/${addressId}`, addressData);
+  return res.data?.data?.address || res.data?.address || res.data;
+}
+
+/**
+ * DELETE /api/profile/customer/address/:id
+ * حذف عنوان
+ */
+export async function deleteCustomerAddress(addressId) {
+  const res = await api.delete(`/api/profile/customer/address/${addressId}`);
+  return res.data;
+}

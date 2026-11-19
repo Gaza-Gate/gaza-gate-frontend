@@ -10,10 +10,12 @@ import { sellerRegisterSchema, sellerRegisterGoogleSchema } from '../utils/valid
 import { prepareSellerGoogleRegistration } from '../utils/googleAuth'
 import { extractToken, extractUser, saveSellerSession } from '../utils/authSession'
 import GoogleBtn from '../components/GoogleBtn'
+import { useAuth } from '../context/AuthContext'
 
 export default function RegisterSeller() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isAuthenticated, isBootstrapping } = useAuth()
   const [apiError, setApiError] = useState('')
   const [pendingToken, setPendingToken] = useState(null)
   const [googleInitialValues, setGoogleInitialValues] = useState(null)
@@ -29,6 +31,16 @@ export default function RegisterSeller() {
     storeName: '',
     storeDescription: '',
   }
+
+  // ✅ لو في session صالح وما في تدفّق Google (pendingToken) شغّال
+  //    → نحوّله على طول للـ dashboard. (تجنّب redirect بالغلط
+  //    لما يكون المستخدم بوسط تدفّق Google registration)
+  useEffect(() => {
+    if (isBootstrapping) return
+    if (!isAuthenticated) return
+    if (pendingToken) return
+    navigate('/seller/dashboard', { replace: true })
+  }, [isAuthenticated, isBootstrapping, pendingToken, navigate])
 
   useEffect(() => {
     const state = location.state
@@ -105,7 +117,14 @@ export default function RegisterSeller() {
       </button>
 
       <div className="flex items-center justify-center gap-2 mb-3">
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+        <span
+          className="px-3 py-1 rounded-full text-xs font-medium"
+          style={{
+            background: "rgba(249, 115, 22, 0.18)",
+            color: "#fdba74",
+            border: "1px solid rgba(249, 115, 22, 0.35)",
+          }}
+        >
           حساب بائع
         </span>
       </div>
@@ -123,16 +142,16 @@ export default function RegisterSeller() {
 
       {fromGoogleLogin && googleInitialValues?.email && (
         <div style={{
-          background: '#FFF7ED',
-          border: '1px solid #FED7AA',
+          background: 'rgba(249, 115, 22, 0.10)',
+          border: '1px solid rgba(249, 115, 22, 0.35)',
           borderRadius: '10px',
           padding: '10px 14px',
           marginBottom: '1rem',
           fontSize: 13,
-          color: '#9A3412',
+          color: '#fdba74',
           textAlign: 'right',
         }}>
-          تم جلب بريدك من Google: <strong>{googleInitialValues.email}</strong>
+          تم جلب بريدك من Google: <strong style={{ color: '#fb923c' }}>{googleInitialValues.email}</strong>
         </div>
       )}
 

@@ -2,42 +2,34 @@
 //
 // 🔒 فلتر مركزي لعزل الإشعارات حسب الدور (Customer ↔ Seller)
 //
-// المشكلة اللي بيحلها:
-//   الـ socket connection الواحد بيستقبل إشعارات من الباك لكلا الدورين
-//   (لأن نفس الـ user ممكن يكون customer + seller في نفس الوقت).
-//   لو الـ frontend ما فلتر، الإشعارات بتهرب بين الواجهات:
+// ✅ تم تحديثه ليتطابق مع الـ types الفعلية اللي بيرجعها الباك
+//    (من Postman collection — Gaza-Gate API v2):
 //
-//   مثلاً: البائع يفتح واجهة المشتري → بيشوف إشعارات "New message"
-//   من زبائن → (مرحبا، هل المنتج متوفر؟) — bug!
+//    Customer: ORDER, SYSTEM, PROMOTIONAL, GENERAL, REVIEW_REPLY
+//    Seller:   ORDER, SYSTEM, PROMOTIONAL, GENERAL
+//              (الباك بيستخدم نفس الـ 4 types مع تمييز الدور من الـ endpoint)
 //
-// الحل:
-//   3 طبقات فلترة مستقلة، أي واحدة منهم بتقول "هذا للبائع" = ارفض:
-//
-//   1) Type-based    — الباك بيبعت أنواع مميزة لكل دور
-//   2) actionUrl     — مسارات البائع (/seller/...) أو (/conversations/...)
-//   3) Recipient     — لو الباك بيبعت recipient.role أو audience
-//   4) Sender.role   — لو sender.role = customer والـ type = MESSAGE
-//                       → على الأغلب البائع هو المستقبل
-//
-// الاستخدام:
-//   import { isCustomerNotification, isSellerNotification } from "...";
-//   if (isCustomerNotification(notif)) { ... }     // ✅ اعرضه
-//   if (isSellerNotification(notif))    { return; } // ❌ تجاهله
-//
-//   // أو على array:
-//   const safe = notifs.filter(isCustomerNotification);
-//
-// ⚠️ الفلسفة: عزل صارم (deny by default).
-//   أي إشعار ما نقدر نأكد إنه للمشتري → بيتجاهل.
-//   هذا أأمن من اعتماده على الـ endpoint filtering (اللي ما بيمشي
-//   على الـ socket events).
+//    النتيجة: فلترنا لازم يتعامل مع الأنواع الـ 4 الأساسية كنوع "مشترك"
+//    ونعتمد على الـ endpoint + auth token للفصل بين الأدوار.
 
-/* ── مجموعات الأنواع حسب الدور ── */
+/* ── الأنواع الـ 4 الأساسية اللي الباك بيرجعها للدورين ──
+   (من Postman responses المؤكدة) */
+const BASE_TYPES = new Set([
+  "ORDER",
+  "SYSTEM",
+  "PROMOTIONAL",
+  "GENERAL",
+]);
 
-// أنواع البائع فقط (مأخوذة من BACKEND_TYPE_MAP في NotificationsPage.jsx)
-const SELLER_ONLY_TYPES = new Set([
-  "NEW_ORDER",
-  "NEW_MESSAGE", // ← زبون بعث رسالة للبائع
+/* ── أنواع إضافية خاصة بالمشتري ── */
+const CUSTOMER_EXTRA_TYPES = new Set([
+  "REVIEW_REPLY",  // رد البائع على تقييمك
+]);
+
+/* ── أنواع إضافية خاصة بالبائع (لو الباك غيّر مستقبلاً) ── */
+const SELLER_EXTRA_TYPES = new Set([
+  "NEW_ORDER",      // توافق قديم
+  "NEW_MESSAGE",
   "NEW_CUSTOMER",
   "NEW_PRODUCT",
   "NEW_RATING",
@@ -50,84 +42,48 @@ const SELLER_ONLY_TYPES = new Set([
   "ALERT",
 ]);
 
-// أنواع المشتري الأساسية (من CustomerNotifications.jsx)
-const CUSTOMER_ONLY_TYPES = new Set([
-  "ORDER",
-  "SYSTEM",
-  "PROMOTIONAL",
-  "GENERAL",
-  "REVIEW_REPLY",
-]);
-
 /* ── مسارات URLs حسب الدور ── */
 
 const SELLER_ACTION_PREFIXES = [
   "/seller/",
   "/store/",
-  "/conversations/", // ← الزبون بيشوف /messages، البائع بيشوف /conversations/
+  "/conversations/", // البائع بيشوف /conversations
   "/ratings",
   "/seller-orders",
+  "/seller/notifications",
 ];
 
 const CUSTOMER_ACTION_PREFIXES = [
   "/my-orders",
-  "/orders/",
   "/profile/customer/",
   "/customer/profile/",
   "/customer/store/",
-  "/messages", // ← الزبون يستخدم /messages
-  "/product/", // ← تقييم أو رد على تقييم
+  "/messages",        // الزبون بيستخدم /messages
+  "/product/",
   "/products",
   "/favorites",
   "/cart",
   "/home/customer",
+  "/notifications",
 ];
 
-/* ── كلمات مفتاحية (لحالات الـ fallback فقط) ── */
+/* ── كلمات مفتاحية (fallback فقط) ── */
 
 const SELLER_TITLE_KEYWORDS = [
-  // عربي
-  "متجرك",
-  "متجركم",
-  "متجر",
-  "بائعك",
-  "متجرك ",
-  "نفذ المخزون",
-  "نفذت",
-  "بضاعتك",
-  "مخزون",
-  "تقييم جديد على",
-  "طلب جديد من",
-  "رسالة جديدة من",
-  "زبون جديد",
-  // english
-  "new order from",
-  "new review on",
-  "new message from",
-  "new customer",
-  "low stock",
-  "out of stock",
-  "your store",
-  "your product",
+  "متجرك", "متجركم", "متجر", "بائعك",
+  "نفذ المخزون", "نفذت", "بضاعتك", "مخزون",
+  "تقييم جديد على", "طلب جديد من",
+  "رسالة جديدة من", "زبون جديد",
+  "new order from", "new review on", "new message from",
+  "new customer", "low stock", "out of stock",
+  "your store", "your product",
 ];
 
 const CUSTOMER_TITLE_KEYWORDS = [
-  // عربي
-  "تم تحديث طلبك",
-  "تم الرد على تقييمك",
-  "طلبك",
-  "تقييمك",
-  "مراجعتك",
-  "سلة",
-  "مفضلتك",
-  // english
-  "your order",
-  "your review",
-  "your cart",
-  "your favorites",
-  "order status",
-  "replied to your review",
-  "replied to your rating",
+  "تم تحديث طلبك", "تم الرد على تقييمك",
+  "طلبك", "تقييمك", "مراجعتك", "سلة", "مفضلتك",
+  "your order", "your review", "your cart", "your favorites",
+  "order status", "replied to your review", "replied to your rating",
 ];
 
 /* ── Helpers ── */
@@ -137,21 +93,10 @@ function normType(t) {
   return String(t).toUpperCase().trim();
 }
 
-function getNested(obj, path) {
-  if (!obj) return undefined;
-  const keys = path.split(".");
-  let cur = obj;
-  for (const k of keys) {
-    if (cur == null) return undefined;
-    cur = cur[k];
-  }
-  return cur;
-}
-
 function getString(obj, keys) {
   if (!obj) return "";
   for (const k of keys) {
-    const v = obj[k];
+    const v = obj?.[k];
     if (v != null) return String(v);
   }
   return "";
@@ -165,8 +110,6 @@ function startsWithAny(str, prefixes) {
   if (!str || typeof str !== "string") return false;
   return prefixes.some((p) => str.startsWith(p));
 }
-
-/* ── الكشف عن الدور ── */
 
 function getRecipientRole(n) {
   if (!n) return "";
@@ -188,43 +131,44 @@ function getSenderRole(n) {
   return String(n.sender?.role ?? n.senderRole ?? "").toLowerCase();
 }
 
-/* ── Logic الأساسية ── */
+/* ── المنطق الأساسي ── */
 
 /**
- * هل هذا الإشعار موجّه للبائع تحديداً؟
+ * هل هذا الإشعار موجّه للبائع؟
  *
- * ✅ بنرجّع true لو في أي إشارة واضحة إنه للبائع
- *    (مش بنرجّع false أبداً لو ما في إشارات — هذا تشدد مقصود)
+ * ✅ الاستراتيجية:
+ *   1) لو type من الأنواع الخاصة بالبائع فقط → نعم
+ *   2) لو recipient.role = "seller" → نعم
+ *   3) لو actionUrl بيبدأ بـ /seller/ أو /conversations/ أو /ratings → نعم
+ *   4) لو type من BASE_TYPES (ORDER/SYSTEM/PROMOTIONAL/GENERAL) → ambiguous
+ *      ما بنرجّع true ولا false بناءً على الـ type لحاله — لازم في مؤشر إضافي
  */
 export function isSellerNotification(notif) {
   if (!notif || typeof notif !== "object") return false;
 
-  // 1) النوع
   const type = normType(notif.type);
-  if (type && SELLER_ONLY_TYPES.has(type)) return true;
+
+  // 1) نوع خاص بالبائع فقط
+  if (type && SELLER_EXTRA_TYPES.has(type)) return true;
 
   // 2) recipient.role
-  const recipientRole = getRecipientRole(notif);
-  if (recipientRole === "seller") return true;
+  if (getRecipientRole(notif) === "seller") return true;
 
   // 3) actionUrl
   const actionUrl = getString(notif, ["actionUrl", "action_url"]);
-  if (actionUrl && startsWithAny(actionUrl, SELLER_ACTION_PREFIXES)) {
-    // استثناء: /orders/<id> → للمشتري، /seller/orders/<id> → للبائع
-    // SELLER_ACTION_PREFIXES فيها "/orders/" لكن بنحميها بالـ "/" الإضافية
+  if (actionUrl) {
     if (actionUrl.startsWith("/seller/orders/")) return true;
+    if (actionUrl.startsWith("/seller/notifications")) return true;
     if (actionUrl.startsWith("/seller/")) return true;
     if (actionUrl.startsWith("/conversations/")) return true;
     if (actionUrl.startsWith("/ratings")) return true;
     if (actionUrl.startsWith("/store/")) return true;
   }
 
-  // 4) Sender.role: لو الـ sender customer والـ type = message → للبائع
-  //    (الزبون بيبعت رسالة → البائع هو المستقبل)
-  const senderRole = getSenderRole(notif);
-  if (senderRole === "customer" && type === "MESSAGE") return true;
+  // 4) Sender.role: لو sender customer والـ type = message → للبائع
+  if (getSenderRole(notif) === "customer" && type === "MESSAGE") return true;
 
-  // 5) الكلمات المفتاحية بالـ title/content (fallback أخير)
+  // 5) Fallback: كلمات مفتاحية بالـ title/content
   const text = `${lower(getString(notif, ["title"]))} ${lower(
     getString(notif, ["content", "body", "message"])
   )}`;
@@ -238,28 +182,31 @@ export function isSellerNotification(notif) {
 }
 
 /**
- * هل هذا الإشعار موجّه للمشتري تحديداً؟
+ * هل هذا الإشعار موجّه للمشتري؟
  *
- * ⚠️ الفلسفة: عزل صارم.
- *   - لو inSellerNotification() = true → definitely NOT customer
- *   - لو في إشارات صريحة إنه للزبون (type, recipient, actionUrl) → نعم
- *   - لو ما في إشارات → نرجّع false (نرفض) — أأمن من السماح
+ * ✅ الاستراتيجية (نفس seller لكن معكوسة):
+ *   1) لو مؤشرات البائع قوية (isSellerNotification = true) → definitely NOT customer
+ *   2) نوع خاص بالمشتري → نعم
+ *   3) recipient.role = "customer" → نعم
+ *   4) actionUrl بيبدأ بمسار عميل → نعم
+ *   5) نوع من BASE_TYPES بدون أي مؤشر → default = TRUE (لأن الـ list
+ *      جاي أصلاً من /api/customer/notification — الباك فلتره من قبل)
  */
 export function isCustomerNotification(notif) {
   if (!notif || typeof notif !== "object") return false;
 
-  // 0) عزل قاطع: لو مؤشرات البائع موجودة → definitely not customer
+  // 0) عزل قاطع
   if (isSellerNotification(notif)) return false;
 
-  // 1) النوع
   const type = normType(notif.type);
-  if (type && CUSTOMER_ONLY_TYPES.has(type)) return true;
+
+  // 1) نوع خاص بالمشتري فقط
+  if (type && CUSTOMER_EXTRA_TYPES.has(type)) return true;
 
   // 2) recipient.role
-  const recipientRole = getRecipientRole(notif);
-  if (recipientRole === "customer") return true;
+  if (getRecipientRole(notif) === "customer") return true;
 
-  // 3) actionUrl
+  // 3) actionUrl بمسار عميل
   const actionUrl = getString(notif, ["actionUrl", "action_url"]);
   if (
     actionUrl &&
@@ -269,23 +216,32 @@ export function isCustomerNotification(notif) {
     return true;
   }
 
-  // 4) sender.role: لو الـ sender seller والـ type = MESSAGE → للزبون
-  const senderRole = getSenderRole(notif);
-  if (senderRole === "seller" && type === "MESSAGE") return true;
+  // 4) Sender.role: لو sender seller والـ type = MESSAGE → للمشتري
+  if (getSenderRole(notif) === "seller" && type === "MESSAGE") return true;
 
-  // 5) Fallback: لو ما في أي إشارات → نرفض
-  //    (الـ list الأساسي جاي من /api/customer/notification أصلاً،
-  //     فالإشعارات اللي بتوصل بدون metadata واضحة نادرة —
-  //     وبترفضها أحسن من السماح بتسرب)
+  // 5) Fallback: كلمات مفتاحية
+  const text = `${lower(getString(notif, ["title"]))} ${lower(
+    getString(notif, ["content", "body", "message"])
+  )}`;
+  if (text) {
+    for (const kw of CUSTOMER_TITLE_KEYWORDS) {
+      if (text.includes(kw.toLowerCase())) return true;
+    }
+  }
+
+  // 6) Default: لو وصلنا لهون بدون أي reject = type من BASE_TYPES
+  // (ORDER, SYSTEM, PROMOTIONAL, GENERAL) بدون أي مؤشر إضافي
+  // → بنقبله كإشعار عميل (لأن الـ endpoint هو /api/customer/notification)
+  if (type && BASE_TYPES.has(type)) return true;
+
+  // ⚠️ آخر fallback: لو type غير معروف، نقبل (نثق بالـ endpoint filter للباك)
+  if (type) return true;
+
   return false;
 }
 
-/* ── Helper لكامل الـ payloads (socket events) ── */
+/* ── Helpers لكامل الـ payloads (socket events) ── */
 
-/**
- * يستخرج الإشعار من socket payload
- * (الباك أحياناً يبعت { notification: {...}, stats: {... } } أو الإشعار مباشرة)
- */
 export function extractNotificationFromPayload(payload) {
   if (!payload) return null;
   if (typeof payload === "string") return { title: payload };
@@ -293,18 +249,6 @@ export function extractNotificationFromPayload(payload) {
   return payload.notification ?? payload.data ?? payload;
 }
 
-/**
- * فلتر مخصص لأحداث الـ socket:
- *   - لو الـ payload فيه إشعار واضح إنه للزبون → نعدّي
- *   - لو واضح للبائع → نرفض
- *   - لو مش واضح (ما في type/actionUrl/recipient) → نرفض (أأمن)
- *
- * ✅ الاستخدام:
- *    socket.on("notification:new", (p) => {
- *      if (!shouldAcceptCustomerSocketEvent(p)) return;
- *      ...
- *    });
- */
 export function shouldAcceptCustomerSocketEvent(payload) {
   const notif = extractNotificationFromPayload(payload);
   if (!notif) return false;
@@ -317,7 +261,7 @@ export function shouldAcceptSellerSocketEvent(payload) {
   return isSellerNotification(notif);
 }
 
-/* ── دالة مساعدة: فلترة array ── */
+/* ── فلترة array ── */
 
 export function filterForCustomer(notifs) {
   if (!Array.isArray(notifs)) return [];
@@ -331,14 +275,6 @@ export function filterForSeller(notifs) {
 
 /* ── للتوافق مع الكود القديم ── */
 
-/**
- * بديل عن `isNotificationForRole(notif, role)` من notificationRoutes.js
- * - بنستخدمه بالـ useNotificationCount hook و notificationRoutes
- *
- * @param {Object} notif
- * @param {"customer"|"seller"} role
- * @returns {boolean}
- */
 export function isNotificationForRole(notif, role) {
   if (!notif || !role) return false;
   const r = String(role).toLowerCase();

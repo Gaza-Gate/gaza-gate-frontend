@@ -446,3 +446,41 @@
     padding: 14px 16px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .srs-section {
+  background: linear-gradient(180deg, rgba(51, 65, 85, 0.55) 0%, rgba(30, 41, 59, 0.75) 100%);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.40);
+}
+
+.dark .srs-title { color: #FFFFFF; }
+.dark .srs-subtitle { color: #94a3b8; }
+.dark .srs-header-total { color: #cbd5e1; }
+
+.dark .srs-rating-card {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(138, 158, 201, 0.20);
+}
+.dark .srs-rating-card:hover {
+  border-color: rgba(249, 115, 22, 0.40);
+  background: rgba(51, 65, 85, 0.75);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dark .srs-rating-product { color: #FFFFFF; }
+.dark .srs-rating-name { color: #FFFFFF; }
+.dark .srs-rating-comment { color: #cbd5e1; }
+.dark .srs-rating-date { color: #94a3b8; }
+.dark .srs-rating-empty { color: #94a3b8; }
+
+.dark .srs-reply {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.30);
+  color: #cbd5e1;
+}
+.dark .srs-reply-author { color: #fb923c; }

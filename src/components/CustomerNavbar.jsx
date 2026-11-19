@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import logo from "../assets/logo.png";
+import ThemeLogo from "./ThemeLogo";
 import {
   Home,
   ShoppingBag,
@@ -13,9 +13,13 @@ import {
   ArrowLeftRight,
   ChevronDown,
   MessageCircle,
+  LogIn,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLoginPrompt } from "../context/LoginPromptContext";
+import { logout as logoutApi } from "../services/authService";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 import "./CustomerNavbar.css";
 
 /**
@@ -35,7 +39,8 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   const {
     logout: authLogout,
     hasSellerProfile,
-    switchRole,
+    switchRoleAndNavigate,
+    syncProfileFlags,
     currentRole,
     isSwitchingRole,
     isBecomingSeller,
@@ -46,6 +51,27 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   // ✅ الـ RoleSwitchOverlay بيغطي الشاشة أثناء التبديل، نخلي الزر disabled فقط
   const isConverting = isSwitchingRole || isBecomingSeller;
 
+  // ✅ تصفّح الضيف: كل الأيقونات ظاهرة، بس صفحات الحساب بتفتح popup
+  //    "سجّل دخولك" للضيف بدل ما تنقله. المسجّلين (مشتري/بائع) نفس السلوك القديم
+  //    — الـ RequireCustomer بيدير التبديل للبائع.
+  const { requireCustomer, isGuest } = useLoginPrompt();
+  const GUEST_BLOCKED_PATHS = {
+    "/my-orders": "تشوف طلباتك",
+    "/profile/customer": "تفتح ملفك الشخصي",
+    "/messages": "تشوف مراسلاتك",
+    "/favorites": "تشوف المفضلة",
+    "/cart": "تفتح السلة",
+    "/notifications": "تشوف التنبيهات",
+  };
+  const guardedNavigate = (path) => {
+    const actionLabel = GUEST_BLOCKED_PATHS[path];
+    if (isGuest && actionLabel) {
+      requireCustomer(actionLabel);
+      return;
+    }
+    navigate(path);
+  };
+
   const navItems = [
     { path: "/home/customer", label: "الرئيسية", Icon: Home },
     { path: "/products", label: "المنتجات", Icon: ShoppingBag },
@@ -53,12 +79,18 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   ];
 
   // ✅ خانة "التحول لبائع" تتغير حسب حالة المستخدم:
-  //   - عنده متجر → "العودة لوضع البائع" (switchRole)
-  //   - ما عندوش → "التحول لبائع" (navigate to become-seller)
+  //   - عنده متجر (حسب state المحلي) → "العودة لوضع البائع" (switchRole)
+  //   - ما عندوش متجر (حسب state المحلي) → "التحول لبائع" (نفس الـ action الذكي
+  //     اللي بيجرب switch أولاً — بيعالج حالة الـ stale state)
   //   - بنخبيها بالكامل لمن يكون بالفعل بائع (لتجنب التكرار)
+  //
+  // 📌 الإصلاح: حتى لو الـ state المحلي يقول ما عندوش متجر، الـ action دايماً
+  //    "switch-to-seller" — الـ handler بيجرب الباك (syncProfileFlags + switchRole)
+  //    قبل ما يقرر يودّيه لصفحة become-seller. كذا بنعالج الـ bug "البائع المسجّل
+  //    بيوصل لصفحة إنشاء المتجر بدون logout/login".
   const becomeSellerItem = hasSellerProfile
     ? { path: null, label: "العودة لوضع البائع", Icon: ArrowLeftRight, action: "switch-to-seller" }
-    : { path: "/customer/become-seller", label: "التحول لبائع", Icon: ArrowLeftRight, action: null };
+    : { path: null, label: "التحول لبائع", Icon: ArrowLeftRight, action: "switch-to-seller" };
 
   const moreItems = [
     { path: "/profile/customer", label: "الملف الشخصي", Icon: User },
@@ -76,61 +108,110 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  // ✅ handler موحّد للـ logout — يستدعي API ثم ينظّف الـ state محلياً.
+  //    مستخدم في dropdown logout + drawer logout.
+  //    بنمرّر الـ API أولاً (حتى لو فشل، منكمل بمسح الـ session محلياً
+  //    عشان المستخدم ما يضل عالق بحالة نصف مسجل).
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
     setMobileMenuOpen(false);
+    setShowMore(false);
+    setLoggingOut(true);
     if (onLogout) {
       onLogout();
+      setLoggingOut(false);
       return;
     }
-    // ✅ بنستخدم AuthContext.logout() بدل clearAuthSession()
-    //    عشان:
-    //    1) React state (user) يصفّر
-    //    2) AUTH_CHANGED_EVENT ينطلق → باقي المكونات تنحدّث
-    //    3) RequireSeller/RequireCustomer يعملوا redirect تلقائي
-    authLogout();
-    navigate("/login/customer");
+    try {
+      // ✅ 1) نحاول نسجل خروج من السيرفر (يبطل الـ refreshToken)
+      //    لو فشل (network/server error) — منكمل بمسح محلي.
+      await logoutApi().catch((err) => {
+        console.warn("[CustomerNavbar] logout API call failed (continuing local cleanup):", err?.message);
+      });
+    } finally {
+      // ✅ 2) تنظيف شامل للـ state المحلي (localStorage + React state + caches)
+      //    بنستدعي authLogout() اللي بيمسح كل شي (شامل Cart/Wishlist caches)
+      authLogout();
+      setLoggingOut(false);
+      // ✅ 3) navigate بعد ما الـ state يصفّر
+      //    بنستخدم replace عشان ما يقدر يرجع بزر back لصفحة محمية
+      navigate("/login/customer", { replace: true });
+    }
   };
 
   // ✅ handler ذكي للتحول للبائع — يستخدم switch-role إذا عنده متجر
   //    الدور الموحّد: الـ RoleSwitchOverlay بيدير شاشة الانتظار.
   //    هنا ما بنعرض أي نص "جاري التحويل" — الزر بيبقى disabled لحظياً.
+  //
+  // 🔑 الإصلاح: قبل ما نحاول switch، بنعمل syncProfileFlags() عشان نعالج
+  //    الـ stale state (المستخدم بائع فعلاً بس الـ state المحلي يقول غير ذلك).
+  //    فقط لما الباك يفشل بـ 404/403 (ما عندوش متجر) → نحوّله لصفحة become-seller.
   async function handleMoreItemClick(item) {
     setMobileMenuOpen(false);
     setShowMore(false);
 
     if (item.action === "switch-to-seller") {
       if (isConverting) return; // ✅ بنمنع الضغط المتعدد
-      // عنده متجر → switch-role بدل become-seller
-      // الـ overlay (عالمي) بيظهر تلقائياً لأن AuthContext بيضبط isSwitchingRole
+
+      // ✅ الضيف ما عنده حساب يبدّله — بنوديه على تسجيل البائع
+      if (isGuest) {
+        navigate("/seller/onboarding");
+        return;
+      }
+
+      // ✅ 1) sync state مع الباك (silent — ما بيلمس isBootstrapping)
       try {
-        const result = await switchRole("seller");
-        if (result?.reconnectSocket) {
-          try {
-            const { connectSocket, disconnectSocket } = await import(
-              "../utils/socket"
-            );
-            disconnectSocket();
-            connectSocket();
-          } catch {
-            /* socket غير متاح */
-          }
-        }
-        navigate("/seller/dashboard");
+        await syncProfileFlags();
+      } catch (syncErr) {
+        console.warn(
+          "[CustomerNavbar] syncProfileFlags فشل، بنكمّل بالـ switch:",
+          syncErr?.message
+        );
+      }
+
+      // ✅ 2) بنجرّب switch-role (الباك هو المرجع)
+      try {
+        await switchRoleAndNavigate("seller", navigate, {
+          path: "/seller/dashboard",
+          replace: true,
+        });
+        // ✅ navigate صار من جوا الـ helper
       } catch (err) {
-        // fallback: navigate to become-seller (في حالة غريبة)
-        console.warn("[CustomerNavbar] switch-role فشل، بنحوّل لصفحة become-seller:", err?.message);
+        // ✅ fallback: الباك أكد إنه ما عندوش متجر → صفحة إنشاء المتجر
+        const status = err?.response?.status;
+        if (status === 404 || status === 403 || status === 409) {
+          console.info(
+            "[CustomerNavbar] switch-role رفض الطلب — المستخدم ما عندوش seller profile → become-seller"
+          );
+          navigate("/customer/become-seller");
+          return;
+        }
+        // أي خطأ تاني (شبكة، توكن منتهي، إلخ) — بنفس الـ fallback القديم
+        console.warn(
+          "[CustomerNavbar] switch-role فشل، بنحوّل لصفحة become-seller:",
+          err?.message
+        );
         navigate("/customer/become-seller");
       }
       return;
     }
 
-    if (item.path) navigate(item.path);
+    if (item.path) guardedNavigate(item.path);
   }
 
   const goTo = (path) => {
     setMobileMenuOpen(false);
     setShowMore(false);
-    navigate(path);
+    guardedNavigate(path);
+  };
+
+  // ✅ الضيف: "تسجيل الدخول" مكان "تسجيل الخروج" — وبيرجع لنفس الصفحة بعدها
+  const handleGuestLogin = () => {
+    setMobileMenuOpen(false);
+    setShowMore(false);
+    navigate("/login/customer", { state: { from: pathname } });
   };
 
   const isMoreActive = moreItems.some((item) => pathname === item.path);
@@ -139,11 +220,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     <>
       <nav className="cn-nav" dir="rtl">
         <div className="cn-logo" onClick={() => navigate("/home/customer")}>
-          {logo ? (
-            <img src={logo} alt="Gaza Gate" className="cn-logo-img" />
-          ) : (
-            <span className="cn-logo-text">GAZA GATE</span>
-          )}
+          <ThemeLogo className="cn-logo-img" />
         </div>
 
         <div className="cn-links">
@@ -151,7 +228,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
             <button
               key={path}
               className={`cn-link ${pathname === path || pathname.startsWith(path + "/") ? "active" : ""}`}
-              onClick={() => navigate(path)}
+              onClick={() => guardedNavigate(path)}
             >
               <Icon size={15} />
               {label}
@@ -187,15 +264,22 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
                   );
                 })}
 
-                {/* ✅ تسجيل الخروج تحت "المزيد" */}
+                {/* ✅ تسجيل الخروج تحت "المزيد" (أو تسجيل الدخول للضيف) */}
                 <div className="cn-dropdown-divider" />
-                <button
-                  className="cn-dropdown-item cn-dropdown-item--logout"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={15} />
-                  تسجيل الخروج
-                </button>
+                {isGuest ? (
+                  <button className="cn-dropdown-item" onClick={handleGuestLogin}>
+                    <LogIn size={15} />
+                    تسجيل الدخول
+                  </button>
+                ) : (
+                  <button
+                    className="cn-dropdown-item cn-dropdown-item--logout"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={15} />
+                    تسجيل الخروج
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -204,7 +288,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
         <div className="cn-actions">
           <button
             className={`cn-icon-btn cn-icon-btn--ghost ${pathname === "/favorites" ? "cn-icon-btn--active" : ""}`}
-            onClick={() => navigate("/favorites")}
+            onClick={() => guardedNavigate("/favorites")}
             aria-label="المفضلة"
           >
             <Heart size={18} />
@@ -213,12 +297,15 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
 
           <button
             className="cn-icon-btn cn-icon-btn--ghost"
-            onClick={() => navigate("/cart")}
+            onClick={() => guardedNavigate("/cart")}
             aria-label="السلة"
           >
             <ShoppingCart size={18} />
             {cartCount > 0 && <span className="cn-badge">{cartCount}</span>}
           </button>
+
+          {/* ✅ زر تبديل الثيم (Light/Dark/System) */}
+          <ThemeToggle variant="navbar" size={18} />
 
           {/* ✅ جرس الإشعارات المعزول — NotificationBell بيدير كل شي داخلياً */}
           <NotificationBell role="customer" />
@@ -292,13 +379,20 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
             </div>
 
             <div className="cn-drawer-foot">
-              <button
-                className="cn-drawer-link cn-drawer-link--logout"
-                onClick={handleLogout}
-              >
-                <LogOut size={16} />
-                تسجيل الخروج
-              </button>
+              {isGuest ? (
+                <button className="cn-drawer-link" onClick={handleGuestLogin}>
+                  <LogIn size={16} />
+                  تسجيل الدخول
+                </button>
+              ) : (
+                <button
+                  className="cn-drawer-link cn-drawer-link--logout"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  تسجيل الخروج
+                </button>
+              )}
             </div>
           </aside>
         </>

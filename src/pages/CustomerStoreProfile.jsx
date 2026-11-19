@@ -16,11 +16,11 @@ import {
   Search,
   SlidersHorizontal,
   CheckCircle2,
+  QrCode,
   Sparkles,
   MapPin,
   Calendar,
   ShieldCheck,
-  TrendingUp,
   Tag,
   Award,
   Clock,
@@ -28,10 +28,12 @@ import {
 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
-import { getCurrentUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import { getStoreProfile, getStoreProducts } from "../services/storeService";
 import { avatarColor } from "../utils/chatHelpers";
 import BuyerProductReviewsSection from "../components/BuyerProductReviewsSection";
+import StoreQRCode from "../components/StoreQRCode";
 import {
   EmptyState,
   ErrorState,
@@ -118,6 +120,18 @@ export default function CustomerStoreProfile() {
   const [productSort, setProductSort] = useState("default"); // default | price-asc | price-desc | name
   const [activeCategory, setActiveCategory] = useState("all");
   const [copied, setCopied] = useState(false);
+  const [msgTooltipVisible, setMsgTooltipVisible] = useState(false);
+
+  // ✅ Auth central: لمعرفة دور الزائر الحالي (customer | seller | null للزائر)
+  const { currentRole } = useAuth();
+  // ✅ الضيف بيتصفّح عادي — المراسلة والسلة والمفضلة بيطلبوا حساب مشتري (popup)
+  const { requireCustomer } = useLoginPrompt();
+  // ✅ مودال الـ QR — أي زائر بيقدر يشارك المتجر
+  const [qrOpen, setQrOpen] = useState(false);
+
+  // ✅ لزائر الـ "seller" → زر المراسلة معطّل (API غير جاهز بعد)
+  //    لزائر الـ "customer" أو الزائر غير المسجّل → الزر يبقى فعّال عادي
+  const isCurrentUserSeller = currentRole === "seller";
 
   // عدّاد + متوسط التقييمات — يُحدَّث من BuyerProductReviewsSection بعد ما يجيب البيانات
   const [sellerReviewsCount, setSellerReviewsCount] = useState(0);
@@ -266,11 +280,15 @@ export default function CustomerStoreProfile() {
 
   // ── Handlers ──
   const handleMessageSeller = () => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
+    // ✅ لو الزائر بائع → ما بسمح بفتح المحادثة (الميزة قيد التطوير)
+    if (isCurrentUserSeller) {
+      setMsgTooltipVisible(true);
+      // إخفاء الـ tooltip تلقائياً بعد 3 ثواني
+      setTimeout(() => setMsgTooltipVisible(false), 3000);
       return;
     }
+
+    if (!requireCustomer("تراسل المتجر")) return;
     navigate(`/messages?sellerId=${sellerId}`);
   };
 
@@ -295,11 +313,7 @@ export default function CustomerStoreProfile() {
 
   const handleAddToCart = (product, e) => {
     e?.stopPropagation();
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
-      return;
-    }
+    if (!requireCustomer("تضيف المنتج للسلة")) return;
     addItem(
       {
         id: product.id,
@@ -315,11 +329,7 @@ export default function CustomerStoreProfile() {
 
   const handleToggleFavoriteProduct = (product, e) => {
     e?.stopPropagation();
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
-      return;
-    }
+    if (!requireCustomer("تضيف المنتج للمفضلة")) return;
     toggleWishlist({
       id: product.id,
       name: product.name,
@@ -385,13 +395,26 @@ export default function CustomerStoreProfile() {
     );
   }
 
-  // positive percent
+  // positive percent — يُحسب من مصادر البيانات الحقيقية للمتجر:
+  //   1) stats.positiveReviews  ← الباك يرجّعه مباشرة من /api/customer/store/{sellerId} (المصدر الرسمي)
+  //   2) sellerPositiveCount    ← مجموع تقييمات 4 و 5 نجوم من توزيع التقييمات (BuyerProductReviewsSection)
+  //   3) reviewStats.positiveReviews ← fallback محسوب من المنتجات (للحالات النادرة)
+  // القاسم هو العدد الإجمالي للتقييمات من نفس المصادر (مع التفضيل للقيمة الأكبر لضمان الاتساق).
+  const totalReviewsForPercent = Math.max(
+    sellerReviewsCount || 0,
+    reviewStats.totalReviews || 0,
+    store?.ratingCount || 0
+  );
+  const positiveCountForPercent = Math.max(
+    Number(stats?.positiveReviews || 0),
+    sellerPositiveCount || 0,
+    reviewStats.positiveReviews || 0
+  );
   const positivePercent =
-    reviewStats.totalReviews > 0
-      ? Math.round((reviewStats.positiveReviews / reviewStats.totalReviews) * 100)
+    totalReviewsForPercent > 0
+      ? Math.round((positiveCountForPercent / totalReviewsForPercent) * 100)
       : 0;
 
-  const responseRate = Number(store?.responseRate ?? 95); // fallback
   const shippingTime = store?.shippingTime || "1-3 أيام";
 
   return (
@@ -420,9 +443,11 @@ export default function CustomerStoreProfile() {
                     {initialToShow}
                   </div>
                 )}
+               {store?.isTrustedSeller && (
                 <span className="csp-verified-badge" title="متجر موثّق">
                   <CheckCircle2 size={14} />
                 </span>
+              )}
               </div>
 
               <div className="csp-hero-info">
@@ -459,14 +484,28 @@ export default function CustomerStoreProfile() {
             </div>
 
             <div className="csp-hero-actions">
-              <button
-                className="csp-msg-btn"
-                onClick={handleMessageSeller}
-                title="مراسلة المتجر"
-              >
-                <MessageCircle size={16} />
-                مراسلة المتجر
-              </button>
+              {/* ✅ زر المراسلة — يدعم الزائر بحساب seller (معطّل + tooltip) وبحساب customer (فعّال) */}
+              <div className="csp-msg-btn-wrap">
+                <button
+                  className={`csp-msg-btn ${isCurrentUserSeller ? "csp-msg-btn--disabled" : ""}`}
+                  onClick={handleMessageSeller}
+                  disabled={isCurrentUserSeller}
+                  aria-disabled={isCurrentUserSeller}
+                  title={
+                    isCurrentUserSeller
+                      ? "المراسلة بين البائعين ستتوفر قريباً"
+                      : "مراسلة المتجر"
+                  }
+                >
+                  <MessageCircle size={16} />
+                  مراسلة المتجر
+                </button>
+                {isCurrentUserSeller && msgTooltipVisible && (
+                  <div className="csp-msg-tooltip" role="tooltip">
+                    المراسلة بين البائعين ستتوفر قريباً
+                  </div>
+                )}
+              </div>
               <button
                 className="csp-icon-action"
                 onClick={handleShare}
@@ -475,32 +514,37 @@ export default function CustomerStoreProfile() {
               >
                 {copied ? <CheckCircle2 size={17} /> : <Share2 size={17} />}
               </button>
+              {/* ✅ QR المتجر — أي زائر (ضيف/مشتري/بائع) بيقدر يعرضه ويشاركه */}
+              {sellerId && (
+                <button
+                  className="csp-icon-action"
+                  onClick={() => setQrOpen(true)}
+                  aria-label="QR المتجر"
+                  title="QR المتجر"
+                >
+                  <QrCode size={17} />
+                </button>
+              )}
             </div>
           </div>
         </section>
 
         {/* ═══════ Trust strip — under the hero ═══════ */}
         <section className="csp-trust-strip">
-          <div className="csp-trust-item">
-            <span className="csp-trust-icon csp-trust-icon--orange">
-              <ShieldCheck size={16} />
-            </span>
-            <div className="csp-trust-text">
-              <strong>متجر موثّق</strong>
-              <small>تم التحقق من هويته</small>
-            </div>
-          </div>
-          <div className="csp-trust-divider" />
-          <div className="csp-trust-item">
-            <span className="csp-trust-icon csp-trust-icon--green">
-              <TrendingUp size={16} />
-            </span>
-            <div className="csp-trust-text">
-              <strong>{responseRate}%</strong>
-              <small>نسبة الاستجابة</small>
-            </div>
-          </div>
-          <div className="csp-trust-divider" />
+          {store?.isTrustedSeller && (
+            <>
+              <div className="csp-trust-item">
+                <span className="csp-trust-icon csp-trust-icon--orange">
+                  <ShieldCheck size={16} />
+                </span>
+                <div className="csp-trust-text">
+                  <strong>متجر موثّق</strong>
+                  <small>تم التحقق من هويته</small>
+                </div>
+              </div>
+              <div className="csp-trust-divider" />
+            </>
+          )}
           <div className="csp-trust-item">
             <span className="csp-trust-icon csp-trust-icon--blue">
               <Clock size={16} />
@@ -590,7 +634,7 @@ export default function CustomerStoreProfile() {
             {products.length > 0 && (
               <div className="csp-products-toolbar">
                 <div className="csp-search-input">
-                  <Search size={15} color="#9ca3af" />
+                  <Search size={15} />
                   <input
                     type="text"
                     value={productSearch}
@@ -608,7 +652,7 @@ export default function CustomerStoreProfile() {
                   )}
                 </div>
                 <div className="csp-sort-wrap">
-                  <SlidersHorizontal size={14} color="#6b7280" />
+                  <SlidersHorizontal size={14} />
                   <select
                     value={productSort}
                     onChange={(e) => setProductSort(e.target.value)}
@@ -861,7 +905,7 @@ export default function CustomerStoreProfile() {
               );
             })()}
 
-            {sellerId && (
+            {sellerId ? (
               <BuyerProductReviewsSection
                 mode="seller"
                 sellerId={sellerId}
@@ -872,6 +916,11 @@ export default function CustomerStoreProfile() {
                 onProductTagClick={handleReviewProductClick}
                 onCountLoaded={handleReviewsLoaded}
               />
+            ) : (
+              <div className="csp-empty-reviews">
+                <Package size={32} color="#cbd5e1" />
+                <p>لم يتم تحديد متجر — لا يمكن عرض التقييمات</p>
+              </div>
             )}
           </section>
         )}
@@ -926,17 +975,17 @@ export default function CustomerStoreProfile() {
                       <span className="csp-info-value">{shippingTime}</span>
                     </div>
                   </div>
-                  <div className="csp-info-item">
-                    <span className="csp-info-icon">
-                      <ShieldCheck size={15} />
+                <div className="csp-info-item">
+                  <span className="csp-info-icon">
+                    <ShieldCheck size={15} />
+                  </span>
+                  <div>
+                    <span className="csp-info-label">حالة المتجر</span>
+                    <span className={`csp-info-value ${store?.isTrustedSeller ? "csp-info-value--ok" : ""}`}>
+                      {store?.isTrustedSeller ? "موثّق" : "غير موثّق"}
                     </span>
-                    <div>
-                      <span className="csp-info-label">حالة المتجر</span>
-                      <span className="csp-info-value csp-info-value--ok">
-                        موثّق
-                      </span>
-                    </div>
                   </div>
+                </div>
                 </div>
               )}
 
@@ -981,16 +1030,50 @@ export default function CustomerStoreProfile() {
               </div>
 
               <button
-                className="csp-about-msg-btn"
+                className={`csp-about-msg-btn ${isCurrentUserSeller ? "csp-about-msg-btn--disabled" : ""}`}
                 onClick={handleMessageSeller}
+                disabled={isCurrentUserSeller}
+                aria-disabled={isCurrentUserSeller}
+                title={
+                  isCurrentUserSeller
+                    ? "المراسلة بين البائعين ستتوفر قريباً"
+                    : "تواصل مع المتجر"
+                }
               >
                 <MessageCircle size={18} />
-                تواصل مع المتجر
+                {isCurrentUserSeller ? "تواصل مع المتجر (قريباً)" : "تواصل مع المتجر"}
               </button>
             </div>
           </section>
         )}
       </main>
+
+      {/* ═══════ QR modal ═══════ */}
+      {qrOpen && sellerId && (
+        <div className="csp-qr-overlay" onClick={() => setQrOpen(false)}>
+          <div
+            className="csp-qr-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="QR المتجر"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="csp-qr-close"
+              onClick={() => setQrOpen(false)}
+              aria-label="إغلاق"
+            >
+              <X size={18} />
+            </button>
+            <StoreQRCode
+              storeId={sellerId}
+              storeName={storeName}
+              title={`QR متجر ${storeName}`}
+              subtitle="امسح الكود أو شاركه — بيفتح صفحة المتجر مباشرة، بدون تسجيل دخول"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

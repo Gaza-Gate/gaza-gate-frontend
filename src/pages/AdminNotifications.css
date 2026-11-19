@@ -267,3 +267,43 @@
     padding-right: 0;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ Dark Mode — كحلي + برتقالي
+   ═══════════════════════════════════════════════════════════════ */
+.dark .admin-notifications-page { background: var(--bg-page); }
+.dark .admin-notifications-page__title { color: #FFFFFF; }
+
+.dark .unread-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+
+.dark .filter-tabs {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+.dark .filter-tab { color: #94a3b8; }
+.dark .filter-tab:hover { color: #cbd5e1; }
+.dark .filter-tab.active { background: var(--orange); color: #fff; }
+
+.dark .mark-all-btn:disabled { color: rgba(148, 163, 184, 0.35); }
+
+.dark .notifications-loading,
+.dark .notifications-empty { color: #94a3b8; }
+
+.dark .notification-item {
+  background: rgba(51, 65, 85, 0.55);
+  border-color: rgba(138, 158, 201, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .notification-item.unread {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.30);
+}
+.dark .notification-item__title { color: #FFFFFF; }
+.dark .notification-item__time { color: #94a3b8; }
+.dark .notification-item__description { color: #cbd5e1; }
+.dark .notification-item__dismiss { color: #94a3b8; }
+.dark .notification-item__dismiss:hover { color: #f87171; }

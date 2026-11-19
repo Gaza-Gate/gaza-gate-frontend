@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { AlertCircle, Headphones, ShoppingBag, Wallet, Info } from "lucide-react";
 import CustomerNavbar from "../components/CustomerNavbar";
 import { useCart } from "../context/CartContext";
+import { getProductImageUrl } from "../utils/productImage";
 import logo from "../assets/logo.png";
 import "./CustomerCheckoutFailed.css";
 
@@ -72,7 +73,7 @@ export default function CustomerCheckoutFailed({ affectedItems = [] }) {
           <div className="ckf-thumbs">
             {thumbs.map((item, i) => (
               <div className="ckf-thumb" key={item.id ?? i}>
-                <img src={item.primaryImage?.imageUrl || item.image} alt={item.name || ""} />
+                <img src={getProductImageUrl(item)} alt={item.name || ""} />
               </div>
             ))}
           </div>

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { addToCart, getAuthToken } from "../services/authService";
 import { getPublicProductDetails } from "../services/productService";
 import { getCurrentUserId, scopedKey } from "../utils/userScope";
+import { getProductImageUrl } from "../utils/productImage";
 
 const CART_BASE_KEY = "gaza-gate-cart";
 
@@ -29,7 +30,7 @@ export function CartProvider({ children }) {
   const [userId, setUserId] = useState(getCurrentUserId());
   const [items, setItems] = useState(() => loadItemsForCurrentUser());
 
-  // إعادة تحميل السلة عند تسجيل دخول/خروج (بدون الحاجة لإعادة تحميل الصفحة)
+  // إعادة تحميل السلة عند تسجيل دخول/خروج
   useEffect(() => {
     function handleAuthChanged() {
       setUserId(getCurrentUserId());
@@ -39,28 +40,39 @@ export function CartProvider({ children }) {
       window.removeEventListener("gaza-gate-auth-changed", handleAuthChanged);
   }, []);
 
-  // كل ما يتغير المستخدم، حمّلي سلته الخاصة
+  // حمّلي سلة المستخدم عند تغيّر الـ userId
   useEffect(() => {
     setItems(loadItemsForCurrentUser());
   }, [userId]);
 
-  // احفظي أي تغيير بالسلة بمفتاح خاص بالمستخدم الحالي
+  // احفظي السلة في localStorage عند أي تغيير
   useEffect(() => {
     localStorage.setItem(scopedKey(CART_BASE_KEY), JSON.stringify(items));
   }, [items, userId]);
 
- const addItem = async (product, quantity = 1) => {
+  const addItem = async (product, quantity = 1) => {
     const productId = product.id || product._id;
     let enrichedProduct = product;
     let sellerId = extractSellerId(product);
 
+    // تأكد من الـ sellerId قبل الإضافة
     if (!sellerId) {
       try {
         const fullProduct = await getPublicProductDetails(productId);
         sellerId = extractSellerId(fullProduct);
-        enrichedProduct = { ...product, ...fullProduct };
+        if (sellerId) {
+          enrichedProduct = { ...product, ...fullProduct };
+        } else {
+          throw new Error("تعذّر تحديد البائع لهذا المنتج. حاول مرة أخرى لاحقاً.");
+        }
       } catch (err) {
-        console.error("تعذر جلب تفاصيل المنتج لمعرفة البائع:", err);
+        if (err?.response) {
+          throw new Error(
+            err?.response?.data?.data?.message ||
+              "تعذّر جلب تفاصيل المنتج. حاول مرة أخرى."
+          );
+        }
+        throw err;
       }
     }
 
@@ -69,18 +81,33 @@ export function CartProvider({ children }) {
       throw new Error("الرجاء تسجيل الدخول لإضافة المنتج للسلة");
     }
 
-    // ننادي السيرفر أولاً - لو رفض، منوقف هون ومنرمي الخطأ
-    await addToCart(productId, quantity, token);
+    // التوكن بيُضاف تلقائياً عبر interceptor
+    await addToCart(productId, quantity);
 
-    // لو نجح السيرفر، هلأ منحدث السلة المحلية
+    // ✅ استخراج رابط الصورة بشكل موحّد من الـ enriched product
+    //    (بنخزّنه كحقل image + نخلي primaryImage/imageUrl كما هم للاستخدامات الأخرى)
+    const imageUrl = getProductImageUrl(enrichedProduct, "");
+
+    // حدّث السلة المحلية بعد نجاح الإضافة على السيرفر
     setItems((prev) => {
       const existing = prev.find((i) => i.id === productId);
       if (existing) {
         return prev.map((i) =>
-          i.id === productId ? { ...i, quantity: i.quantity + quantity } : i
+          i.id === productId
+            ? { ...i, quantity: i.quantity + quantity, image: imageUrl || i.image }
+            : i
         );
       }
-      return [...prev, { ...enrichedProduct, id: productId, quantity, sellerId }];
+      return [
+        ...prev,
+        {
+          ...enrichedProduct,
+          id: productId,
+          quantity,
+          sellerId,
+          image: imageUrl, // ✅ حقل موحّد للـ UI (cart/checkout/etc)
+        },
+      ];
     });
   };
 
@@ -105,7 +132,15 @@ export function CartProvider({ children }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, cartCount, total }}
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        cartCount,
+        total,
+      }}
     >
       {children}
     </CartContext.Provider>

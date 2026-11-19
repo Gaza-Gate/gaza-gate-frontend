@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { ArrowRight } from 'lucide-react'
@@ -9,14 +9,25 @@ import { authAPI } from '../utils/api'
 import { resolveSellerGoogleLogin } from '../utils/googleAuth'
 import { extractToken, extractUser } from '../utils/authSession'
 import { useAuth } from '../context/AuthContext'
+import { smartBack } from '../utils/smartBack'
 import GoogleBtn from '../components/GoogleBtn'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, isAuthenticated, isBootstrapping, hasSellerProfile } = useAuth()
   const [apiError, setApiError] = useState('')
   const [remember, setRemember] = useState(true)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  // ✅ لو في session صالح بـ localStorage (إعادة فتح/refresh/Vercel reload)
+  //    بنحوّل البائع للوحة التحكم بدال ما يقدر يوصل لصفحة login.
+  //    بنستنى الـ bootstrap عشان ما نعمل redirect بقرار مبني على state قديم.
+  useEffect(() => {
+    if (isBootstrapping) return
+    if (isAuthenticated) {
+      navigate(hasSellerProfile ? '/seller/dashboard' : '/seller/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, isBootstrapping, hasSellerProfile, navigate])
 
   async function handleSubmit(values, { setSubmitting }) {
     try {
@@ -66,8 +77,13 @@ export default function Login() {
           initialValues: result.initialValues,
         },
       })
-    } catch (err) {
-      setApiError(err.message || 'فشل تسجيل الدخول بجوجل')
+   } catch (err) {
+      setApiError(
+        err?.response?.data?.data?.message ||
+          err?.response?.data?.message ||
+          err.message ||
+          'فشل تسجيل الدخول بجوجل'
+      )
     } finally {
       setGoogleLoading(false)
     }
@@ -77,7 +93,7 @@ export default function Login() {
     <FormCard>
       <button
         type="button"
-        onClick={() => navigate(-1)}
+        onClick={() => smartBack(navigate, { fallback: '/' })}
         aria-label="رجوع"
         className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors mb-2"
       >
@@ -85,7 +101,14 @@ export default function Login() {
       </button>
 
       <div className="flex items-center justify-center gap-2 mb-3">
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+        <span
+          className="px-3 py-1 rounded-full text-xs font-medium"
+          style={{
+            background: "rgba(249, 115, 22, 0.18)",
+            color: "#fdba74",
+            border: "1px solid rgba(249, 115, 22, 0.35)",
+          }}
+        >
           حساب بائع
         </span>
       </div>
