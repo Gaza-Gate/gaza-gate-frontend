@@ -87,8 +87,10 @@ export default function StoreQRCode({
         {subtitle}
       </p>
 
-      {/* 🆕 صف أفقي: QR صغير على اليمين + الرابط والأزرار على الشمال */}
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+      {/* 🆕 صف أفقي: QR صغير على اليمين + الرابط والأزرار على الشمال
+          ✅ flexWrap: على الشاشات الضيقة (موبايل) الأزرار بتنزل تحت الـ QR
+             بدل ما تطلع برّا الكارد */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
         <div
           ref={canvasWrapperRef}
           style={{
@@ -109,7 +111,7 @@ export default function StoreQRCode({
           />
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+        <div style={{ flex: '1 1 150px', minWidth: 150, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               type="button"
