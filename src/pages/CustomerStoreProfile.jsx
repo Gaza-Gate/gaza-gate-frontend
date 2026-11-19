@@ -16,6 +16,7 @@ import {
   Search,
   SlidersHorizontal,
   CheckCircle2,
+  QrCode,
   Sparkles,
   MapPin,
   Calendar,
@@ -28,10 +29,11 @@ import {
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
-import { getCurrentUser } from "../services/authService";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import { getStoreProfile, getStoreProducts } from "../services/storeService";
 import { avatarColor } from "../utils/chatHelpers";
 import BuyerProductReviewsSection from "../components/BuyerProductReviewsSection";
+import StoreQRCode from "../components/StoreQRCode";
 import {
   EmptyState,
   ErrorState,
@@ -122,6 +124,10 @@ export default function CustomerStoreProfile() {
 
   // ✅ Auth central: لمعرفة دور الزائر الحالي (customer | seller | null للزائر)
   const { currentRole } = useAuth();
+  // ✅ الضيف بيتصفّح عادي — المراسلة والسلة والمفضلة بيطلبوا حساب مشتري (popup)
+  const { requireCustomer } = useLoginPrompt();
+  // ✅ مودال الـ QR — أي زائر بيقدر يشارك المتجر
+  const [qrOpen, setQrOpen] = useState(false);
 
   // ✅ لزائر الـ "seller" → زر المراسلة معطّل (API غير جاهز بعد)
   //    لزائر الـ "customer" أو الزائر غير المسجّل → الزر يبقى فعّال عادي
@@ -282,11 +288,7 @@ export default function CustomerStoreProfile() {
       return;
     }
 
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
-      return;
-    }
+    if (!requireCustomer("تراسل المتجر")) return;
     navigate(`/messages?sellerId=${sellerId}`);
   };
 
@@ -311,11 +313,7 @@ export default function CustomerStoreProfile() {
 
   const handleAddToCart = (product, e) => {
     e?.stopPropagation();
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
-      return;
-    }
+    if (!requireCustomer("تضيف المنتج للسلة")) return;
     addItem(
       {
         id: product.id,
@@ -331,11 +329,7 @@ export default function CustomerStoreProfile() {
 
   const handleToggleFavoriteProduct = (product, e) => {
     e?.stopPropagation();
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
-      return;
-    }
+    if (!requireCustomer("تضيف المنتج للمفضلة")) return;
     toggleWishlist({
       id: product.id,
       name: product.name,
@@ -520,6 +514,17 @@ export default function CustomerStoreProfile() {
               >
                 {copied ? <CheckCircle2 size={17} /> : <Share2 size={17} />}
               </button>
+              {/* ✅ QR المتجر — أي زائر (ضيف/مشتري/بائع) بيقدر يعرضه ويشاركه */}
+              {sellerId && (
+                <button
+                  className="csp-icon-action"
+                  onClick={() => setQrOpen(true)}
+                  aria-label="QR المتجر"
+                  title="QR المتجر"
+                >
+                  <QrCode size={17} />
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -1042,6 +1047,33 @@ export default function CustomerStoreProfile() {
           </section>
         )}
       </main>
+
+      {/* ═══════ QR modal ═══════ */}
+      {qrOpen && sellerId && (
+        <div className="csp-qr-overlay" onClick={() => setQrOpen(false)}>
+          <div
+            className="csp-qr-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="QR المتجر"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="csp-qr-close"
+              onClick={() => setQrOpen(false)}
+              aria-label="إغلاق"
+            >
+              <X size={18} />
+            </button>
+            <StoreQRCode
+              storeId={sellerId}
+              storeName={storeName}
+              title={`QR متجر ${storeName}`}
+              subtitle="امسح الكود أو شاركه — بيفتح صفحة المتجر مباشرة، بدون تسجيل دخول"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

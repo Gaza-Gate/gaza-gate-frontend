@@ -9,6 +9,7 @@ import { authAPI } from '../utils/api'
 import { customerGoogleRegisterOnly } from '../utils/googleAuth'
 import { useAuth } from '../context/AuthContext'
 import GoogleBtn from '../components/GoogleBtn'
+import { consumePostLoginRedirect } from '../utils/authRedirect'
 
 // ────────────────────────────────────────────────────────────────────────────
 // useReducer — atomic updates (نفس النمط المعتمد في LoginCustomer)
@@ -65,7 +66,8 @@ export default function RegisterCustomer() {
     if (currentRole === 'seller') {
       navigate('/seller/dashboard', { replace: true })
     } else {
-      navigate('/home/customer', { replace: true })
+      // ✅ رجوع للصفحة اللي فتح منها الضيف popup "سجّل دخولك" (إذا في)
+      navigate(consumePostLoginRedirect('/home/customer'), { replace: true })
     }
   }, [isAuthenticated, isBootstrapping, currentRole, navigate])
 
@@ -86,7 +88,7 @@ export default function RegisterCustomer() {
     try {
       const { user, accessToken } = await customerGoogleRegisterOnly(credential)
       login({ user, accessToken })
-      navigate('/home/customer')
+      navigate(consumePostLoginRedirect('/home/customer'), { replace: true })
     } catch (err) {
       if (!mountedRef.current) return
 

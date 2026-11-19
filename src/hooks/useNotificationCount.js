@@ -54,12 +54,14 @@ const ROLE_CACHE_CLEAR_EVENT = "gaza-gate-role-cache-clear";
  *   - الفلتر بيشتغل بـ 4 طبقات (type, actionUrl, recipient, keywords)
  */
 export function useNotificationCount(role) {
-  const { currentRole } = useAuth();
+  const { currentRole, isAuthenticated } = useAuth();
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const isMountedRef = useRef(true);
 
-  const isActive = currentRole === role;
+  // ✅ الضيف (مش مسجّل) ما عنده إشعارات — ما منعمل fetch ولا socket
+  //    (الـ currentRole الافتراضي للضيف "customer"، فلازم نفحص isAuthenticated)
+  const isActive = isAuthenticated && currentRole === role;
 
   const endpoint = role === "seller" ? "/api/seller/notification" : "/api/customer/notification";
 

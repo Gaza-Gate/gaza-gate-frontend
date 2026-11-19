@@ -2173,3 +2173,44 @@
 .dark .show-all-btn:hover {
   background: rgba(249, 115, 22, 0.18);
 }
+
+/* ══════════════════════════════════════
+   QR MODAL — QR المتجر لأي زائر
+   ══════════════════════════════════════ */
+.csp-qr-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+.csp-qr-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  animation: csp-tooltip-fade-in 0.18s ease both;
+}
+.csp-qr-modal > div {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+.csp-qr-close {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.csp-qr-close:hover { color: #111827; }
+.dark .csp-qr-overlay { background: rgba(5, 13, 32, 0.75); }

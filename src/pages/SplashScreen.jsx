@@ -34,10 +34,11 @@ export default function SplashScreen() {
       return
     }
 
-    // ✅ ما في session — splash عادي ثانيتين وبعدين onboarding
+    // ✅ ما في session — splash عادي ثانيتين وبعدين الرئيسية كضيف
+    //    (تصفّح بدون login — صفحة /welcome بتضل موجودة لحالها)
     const timer = setTimeout(() => {
-  navigate('/welcome')
-}, 2000)
+      navigate('/home/customer', { replace: true })
+    }, 2000)
 
     return () => clearTimeout(timer)
   }, [navigate, isAuthenticated, isBootstrapping, currentRole])

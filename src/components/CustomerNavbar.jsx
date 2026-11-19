@@ -13,8 +13,10 @@ import {
   ArrowLeftRight,
   ChevronDown,
   MessageCircle,
+  LogIn,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import { logout as logoutApi } from "../services/authService";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
@@ -48,6 +50,27 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
   const moreRef = useRef(null);
   // ✅ الـ RoleSwitchOverlay بيغطي الشاشة أثناء التبديل، نخلي الزر disabled فقط
   const isConverting = isSwitchingRole || isBecomingSeller;
+
+  // ✅ تصفّح الضيف: كل الأيقونات ظاهرة، بس صفحات الحساب بتفتح popup
+  //    "سجّل دخولك" للضيف بدل ما تنقله. المسجّلين (مشتري/بائع) نفس السلوك القديم
+  //    — الـ RequireCustomer بيدير التبديل للبائع.
+  const { requireCustomer, isGuest } = useLoginPrompt();
+  const GUEST_BLOCKED_PATHS = {
+    "/my-orders": "تشوف طلباتك",
+    "/profile/customer": "تفتح ملفك الشخصي",
+    "/messages": "تشوف مراسلاتك",
+    "/favorites": "تشوف المفضلة",
+    "/cart": "تفتح السلة",
+    "/notifications": "تشوف التنبيهات",
+  };
+  const guardedNavigate = (path) => {
+    const actionLabel = GUEST_BLOCKED_PATHS[path];
+    if (isGuest && actionLabel) {
+      requireCustomer(actionLabel);
+      return;
+    }
+    navigate(path);
+  };
 
   const navItems = [
     { path: "/home/customer", label: "الرئيسية", Icon: Home },
@@ -132,6 +155,12 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
     if (item.action === "switch-to-seller") {
       if (isConverting) return; // ✅ بنمنع الضغط المتعدد
 
+      // ✅ الضيف ما عنده حساب يبدّله — بنوديه على تسجيل البائع
+      if (isGuest) {
+        navigate("/seller/onboarding");
+        return;
+      }
+
       // ✅ 1) sync state مع الباك (silent — ما بيلمس isBootstrapping)
       try {
         await syncProfileFlags();
@@ -169,13 +198,20 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
       return;
     }
 
-    if (item.path) navigate(item.path);
+    if (item.path) guardedNavigate(item.path);
   }
 
   const goTo = (path) => {
     setMobileMenuOpen(false);
     setShowMore(false);
-    navigate(path);
+    guardedNavigate(path);
+  };
+
+  // ✅ الضيف: "تسجيل الدخول" مكان "تسجيل الخروج" — وبيرجع لنفس الصفحة بعدها
+  const handleGuestLogin = () => {
+    setMobileMenuOpen(false);
+    setShowMore(false);
+    navigate("/login/customer", { state: { from: pathname } });
   };
 
   const isMoreActive = moreItems.some((item) => pathname === item.path);
@@ -192,7 +228,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
             <button
               key={path}
               className={`cn-link ${pathname === path || pathname.startsWith(path + "/") ? "active" : ""}`}
-              onClick={() => navigate(path)}
+              onClick={() => guardedNavigate(path)}
             >
               <Icon size={15} />
               {label}
@@ -228,15 +264,22 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
                   );
                 })}
 
-                {/* ✅ تسجيل الخروج تحت "المزيد" */}
+                {/* ✅ تسجيل الخروج تحت "المزيد" (أو تسجيل الدخول للضيف) */}
                 <div className="cn-dropdown-divider" />
-                <button
-                  className="cn-dropdown-item cn-dropdown-item--logout"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={15} />
-                  تسجيل الخروج
-                </button>
+                {isGuest ? (
+                  <button className="cn-dropdown-item" onClick={handleGuestLogin}>
+                    <LogIn size={15} />
+                    تسجيل الدخول
+                  </button>
+                ) : (
+                  <button
+                    className="cn-dropdown-item cn-dropdown-item--logout"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={15} />
+                    تسجيل الخروج
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -245,7 +288,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
         <div className="cn-actions">
           <button
             className={`cn-icon-btn cn-icon-btn--ghost ${pathname === "/favorites" ? "cn-icon-btn--active" : ""}`}
-            onClick={() => navigate("/favorites")}
+            onClick={() => guardedNavigate("/favorites")}
             aria-label="المفضلة"
           >
             <Heart size={18} />
@@ -254,7 +297,7 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
 
           <button
             className="cn-icon-btn cn-icon-btn--ghost"
-            onClick={() => navigate("/cart")}
+            onClick={() => guardedNavigate("/cart")}
             aria-label="السلة"
           >
             <ShoppingCart size={18} />
@@ -336,13 +379,20 @@ export default function CustomerNavbar({ cartCount = 0, wishlistCount = 0, onLog
             </div>
 
             <div className="cn-drawer-foot">
-              <button
-                className="cn-drawer-link cn-drawer-link--logout"
-                onClick={handleLogout}
-              >
-                <LogOut size={16} />
-                تسجيل الخروج
-              </button>
+              {isGuest ? (
+                <button className="cn-drawer-link" onClick={handleGuestLogin}>
+                  <LogIn size={16} />
+                  تسجيل الدخول
+                </button>
+              ) : (
+                <button
+                  className="cn-drawer-link cn-drawer-link--logout"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  تسجيل الخروج
+                </button>
+              )}
             </div>
           </aside>
         </>
