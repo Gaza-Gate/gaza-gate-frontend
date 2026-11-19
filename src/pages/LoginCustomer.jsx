@@ -1,5 +1,5 @@
 import { useState, useEffect, useReducer, useRef, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import { ArrowRight } from 'lucide-react'
 import { FormCard, CardHeader, PrimaryBtn, Divider, FooterLink, RememberRow, ApiError } from '../components/FormCard'
@@ -10,6 +10,7 @@ import { customerGoogleLoginOnly } from '../utils/googleAuth'
 import { extractToken, extractUser, isMissingAccountError } from '../utils/authSession'
 import { useAuth } from '../context/AuthContext'
 import { smartBack } from '../utils/smartBack'
+import { consumePostLoginRedirect } from '../utils/authRedirect'
 import GoogleBtn from '../components/GoogleBtn'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -39,7 +40,15 @@ function authReducer(state, action) {
 
 export default function LoginCustomer() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login, isAuthenticated, isBootstrapping, currentRole } = useAuth()
+
+  // ✅ بعد الدخول: رجوع لنفس الصفحة اللي كان فيها الضيف (popup "سجّل دخولك"
+  //    أو RequireCustomer)، وإلا الرئيسية — شوف utils/authRedirect.js
+  const stateFrom = location.state?.from
+  const goAfterLogin = useCallback(() => {
+    navigate(consumePostLoginRedirect('/home/customer', stateFrom), { replace: true })
+  }, [navigate, stateFrom])
   const [authState, dispatch] = useReducer(authReducer, initialAuthState)
   // تذكرني — local state لأزرار الـ UI (checkbox)
   const [remember, setRemember] = useState(true)
@@ -62,9 +71,9 @@ export default function LoginCustomer() {
     if (currentRole === 'seller') {
       navigate('/seller/dashboard', { replace: true })
     } else {
-      navigate('/home/customer', { replace: true })
+      goAfterLogin()
     }
-  }, [isAuthenticated, isBootstrapping, currentRole, navigate])
+  }, [isAuthenticated, isBootstrapping, currentRole, navigate, goAfterLogin])
 
   // ── useCallback — stable refs للـ handlers (مهم لـ React.memo على الأطفال) ──
   const handleRememberChange = useCallback((value) => setRemember(value), [])
@@ -87,7 +96,7 @@ export default function LoginCustomer() {
 
       // React state + localStorage ينحدّثوا فوراً بدون reload
       login({ user, accessToken: token })
-      navigate('/home/customer')
+      goAfterLogin()
     } catch (err) {
       if (!mountedRef.current) return
       dispatch({
@@ -101,7 +110,7 @@ export default function LoginCustomer() {
     } finally {
       if (mountedRef.current) setSubmitting(false)
     }
-  }, [login, navigate])
+  }, [login, goAfterLogin])
 
   // ── Google Login ──
   //   السلوك الحالي:
@@ -123,7 +132,7 @@ export default function LoginCustomer() {
     try {
       const { user, accessToken } = await customerGoogleLoginOnly(credential)
       login({ user, accessToken })
-      navigate('/home/customer')
+      goAfterLogin()
     } catch (err) {
       if (!mountedRef.current) return
 
@@ -141,7 +150,7 @@ export default function LoginCustomer() {
         error: err.message || 'فشل تسجيل الدخول بجوجل',
       })
     }
-  }, [login, navigate])
+  }, [login, goAfterLogin])
 
   const handleGoogleError = useCallback(() => {
     dispatch({ type: 'ERROR', error: 'فشل تسجيل الدخول بجوجل' })

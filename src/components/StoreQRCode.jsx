@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Download, Share2 } from 'lucide-react'
+import { storeProfilePath } from '../utils/sellerHelpers'
 
 /**
  * StoreQRCode — يولّد QR code لصفحة المتجر العامة (يلي الزباين بيشوفوها)
@@ -11,12 +12,21 @@ import { Download, Share2 } from 'lucide-react'
  *
  * الاستخدام:
  *   <StoreQRCode storeId={store._id} storeName={store.storeName} />
+ *   // صفحة المتجر للمشتري بتمرّر title/subtitle مختلفين (مش "متجرك")
+ *
+ * ⚠️ الرابط مبني من storeProfilePath() — نفس رابط صفحة المتجر بكل الموقع.
+ *    الـ QR المطبوع لازم يضل شغّال للأبد، فما منغيّر شكل هالرابط بدون redirect.
  */
-export default function StoreQRCode({ storeId, storeName = 'المتجر' }) {
+export default function StoreQRCode({
+  storeId,
+  storeName = 'المتجر',
+  title = 'QR Code تبع متجرك',
+  subtitle = 'شارك هالكود مع زبائنك — أي حدا يمسحه بيوديه مباشرة لصفحة متجرك',
+}) {
   const canvasWrapperRef = useRef(null)
   const [copied, setCopied] = useState(false)
 
-  const storeUrl = `${window.location.origin}/customer/store/${storeId}`
+  const storeUrl = `${window.location.origin}${storeProfilePath(String(storeId))}`
 
   const handleDownload = () => {
     const canvas = canvasWrapperRef.current?.querySelector('canvas')
@@ -71,10 +81,10 @@ export default function StoreQRCode({ storeId, storeName = 'المتجر' }) {
       }}
     >
       <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>
-        QR Code تبع متجرك
+        {title}
       </h3>
       <p style={{ margin: '4px 0 1rem', fontSize: 12.5, color: '#6b7280', lineHeight: 1.5 }}>
-        شارك هالكود مع زبائنك — أي حدا يمسحه بيوديه مباشرة لصفحة متجرك
+        {subtitle}
       </p>
 
       {/* 🆕 صف أفقي: QR صغير على اليمين + الرابط والأزرار على الشمال */}

@@ -150,6 +150,14 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // ✅ تصفّح الضيف: لو ما في session أصلاً (ما في token)، الـ 401 معناه
+    //    "هالـ endpoint بده login" مش "الجلسة انتهت" → ما في refresh ولا
+    //    redirect لصفحة الدخول. الضيف بيضل بمكانه والصفحة بتتعامل مع الخطأ.
+    const hadSession = Boolean(localStorage.getItem('token') || sessionStorage.getItem('token'))
+    if (error.response?.status === 401 && !hadSession) {
+      return Promise.reject(error)
+    }
+
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true
 

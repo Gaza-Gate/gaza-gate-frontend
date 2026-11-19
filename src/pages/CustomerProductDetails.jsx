@@ -14,8 +14,8 @@ import {
 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import { getPublicProductDetails } from "../services/productService";
-import { getCurrentUser } from "../services/authService";
 import { storeProfilePath, extractSellerId } from "../utils/sellerHelpers";
 import { contactStore } from "../utils/chatHelpers";
 import BuyerProductReviewsSection from "../components/BuyerProductReviewsSection";
@@ -47,6 +47,8 @@ export default function CustomerProductDetails() {
   const [error, setError] = useState(null);
   const { addItem, cartCount } = useCart();
   const { isWishlisted, toggleWishlist, wishlistCount } = useWishlist();
+  // ✅ الضيف بيتصفّح عادي — الأفعال بتطلب حساب مشتري (popup)
+  const { requireCustomer } = useLoginPrompt();
   const [quantity, setQuantity] = useState(1);
 
   // ✅ حالة زر "مراسلة المتجر" — نمنع الضغطات المتعددة وندلّ على التحميل
@@ -102,6 +104,7 @@ export default function CustomerProductDetails() {
   const wishlisted = isWishlisted(product.id);
 
   const handleAddToCart = async () => {
+    if (!requireCustomer("تضيف المنتج للسلة")) return;
     try {
       await addItem(product, quantity);
       setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
@@ -121,12 +124,8 @@ export default function CustomerProductDetails() {
   const handleMessageStore = () => {
     if (messagingStore) return; // prevent double-clicks
 
-    // 1) لازم يكون مسجل دخول (المشتري) — وإلا نوجّهه لصفحة الدخول
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      navigate("/login/customer");
-      return;
-    }
+    // 1) لازم يكون مسجل دخول كمشتري — وإلا popup "سجّل دخولك"
+    if (!requireCustomer("تراسل المتجر")) return;
 
     // 2) نستخرج sellerId من أي shape للـ product
     const sellerId = extractSellerId(product);
@@ -298,7 +297,10 @@ export default function CustomerProductDetails() {
             <button
               type="button"
               className={`pd-wishlist-btn ${wishlisted ? "active" : ""}`}
-              onClick={() => toggleWishlist(product)}
+              onClick={() => {
+                if (!requireCustomer("تضيف المنتج للمفضلة")) return;
+                toggleWishlist(product);
+              }}
             >
               <Heart size={18} fill={wishlisted ? "currentColor" : "none"} />
               {wishlisted ? "في المفضلة" : "أضف للمفضلة"}

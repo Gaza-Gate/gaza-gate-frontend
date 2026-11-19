@@ -96,6 +96,7 @@ import CustomerChatWidget from "./components/CustomerChatWidget";
 import RoleSwitchListener from "./components/RoleSwitchListener";
 // ← الليّاوت الجديد يلي بيحتوي CustomerNavbar مرة وحدة لكل صفحات الزبون
 import CustomerLayout from "./components/CustomerLayout";
+import LegacyStoreRedirect from "./components/LegacyStoreRedirect";
 
 // ✅ زر تبديل الثيم العائم (FAB) — يظهر من Onboarding وما بعده
 import FloatingThemeToggle from "./components/FloatingThemeToggle";
@@ -234,8 +235,7 @@ export default function App() {
             <Route path="/customer/become-seller" element={<ConvertToSeller />} />
             <Route path="/messages" element={<CustomerMessages />} />
             <Route path="/notifications" element={<CustomerNotifications />} />
-            <Route path="/home/customer" element={<CustomerHome />} />
-            <Route path="/products" element={<CustomerProducts />} />
+            {/* ⚠️ /home/customer و /products انتقلوا تحت لصفحات الضيف (تصفّح بدون login) */}
             <Route path="/cart" element={<CustomerCart />} />
             <Route path="/profile/customer" element={<CustomerProfile />} />
             <Route path="/favorites" element={<CustomerFavorites />} />
@@ -264,7 +264,11 @@ export default function App() {
         <Route path="/customer/profile/:customerId" element={<CustomerProfilePage />} />
         <Route path="/profile/customer/:customerId" element={<CustomerProfilePage />} />
 
+        {/* ✅ تصفّح الضيف: الرئيسية + المنتجات + تفاصيل المنتج مفتوحين لأي حد.
+            الأفعال (سلة، مفضلة، مراسلة...) بتطلب login عبر useLoginPrompt(). */}
         <Route element={<CustomerLayout />}>
+          <Route path="/home/customer" element={<CustomerHome />} />
+          <Route path="/products" element={<CustomerProducts />} />
           <Route path="/product/:id" element={<CustomerProductDetails />} />
         </Route>
 
@@ -302,7 +306,8 @@ export default function App() {
         {/* مسارات البائع يلي ما بدها حماية (onboarding + public store view) */}
         <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
-        <Route path="/store/:sellerId" element={<StoreProfile />} />
+        {/* ✅ الرابط القديم للمتجر (روابط مشاركة قديمة) → صفحة المتجر للمشتري */}
+        <Route path="/store/:sellerId" element={<LegacyStoreRedirect />} />
         {/* مسارات الأدمن — كلها محمية بـ RequireAdmin */}
         <Route element={<RequireAdmin />}>
           <Route path="/admin/settings" element={<AdminSettings />} />

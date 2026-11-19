@@ -22,6 +22,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { useNotificationCount } from "../hooks/useNotificationCount";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import NotificationDropdown from "./NotificationDropdown";
 import "./NotificationBell.css";
 
@@ -37,8 +38,14 @@ export default function NotificationBell({ role, iconColor = "currentColor" }) {
   const anchorRef = useRef(null);
 
   const label = LABEL_BY_ROLE[role] || "الإشعارات";
+  // ✅ الضيف ما عنده إشعارات — الجرس بيفتح popup "سجّل دخولك"
+  const { requireCustomer, isGuest } = useLoginPrompt();
 
   function handleClick() {
+    if (isGuest) {
+      requireCustomer("تشوف التنبيهات");
+      return;
+    }
     setIsOpen((prev) => !prev);
   }
 

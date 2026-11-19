@@ -7,6 +7,7 @@ import {
 
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { useLoginPrompt } from "../context/LoginPromptContext";
 import {
   getPublicProductsWithFilters,
   getPublicCategories,
@@ -54,6 +55,8 @@ export default function CustomerProducts() {
   const [searchParams] = useSearchParams();
   const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
+  // ✅ الضيف بيتصفّح عادي — السلة والمفضلة بيطلبوا حساب مشتري (popup)
+  const { requireCustomer } = useLoginPrompt();
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -286,6 +289,7 @@ export default function CustomerProducts() {
 
   const handleAddToCart = async (e, product) => {
     e.stopPropagation();
+    if (!requireCustomer("تضيف المنتج للسلة")) return;
     try {
       await addItem(product);
       setToast({ message: "تمت إضافة المنتج إلى السلة", type: "success" });
@@ -463,6 +467,7 @@ export default function CustomerProducts() {
                           aria-label="إضافة للمفضلة"
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (!requireCustomer("تضيف المنتج للمفضلة")) return;
                             toggleWishlist(product);
                           }}
                         >

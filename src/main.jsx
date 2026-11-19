@@ -7,6 +7,7 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import './index.css';
 import { AuthProvider } from "./context/AuthContext";
+import { LoginPromptProvider } from "./context/LoginPromptContext";
 import { ThemeProvider, initTheme } from "./hooks/useTheme.jsx";
 
 initTheme();
@@ -35,7 +36,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <CartProvider>
               <WishlistProvider>
-                <App />
+                {/* ✅ popup "سجّل دخولك" للضيف — مرة وحدة للتطبيق كله */}
+                <LoginPromptProvider>
+                  <App />
+                </LoginPromptProvider>
               </WishlistProvider>
             </CartProvider>
           </AuthProvider>
