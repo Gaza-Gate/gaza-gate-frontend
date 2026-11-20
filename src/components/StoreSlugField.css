@@ -1,0 +1,114 @@
+/* StoreSlugField — رابط المتجر بصفحة تعديل المتجر (نفس ستايل حقول EditStoreProfile) */
+
+.ssf-input-row {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ssf-input-row:focus-within {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+.ssf-input-row--locked { background: #f9fafb; }
+
+.ssf-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  background: #f9fafb;
+  border-right: 1.5px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* بنلغي ستايل .esp-field input العام جوّا الصف */
+.esp-field .ssf-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  direction: ltr;
+  text-align: left;
+  background: transparent;
+}
+.esp-field .ssf-input:focus { box-shadow: none; }
+
+.ssf-status { min-height: 18px; font-size: 0.8rem; }
+.ssf-status span { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.ssf-muted { color: #6b7280; }
+.ssf-ok { color: #16a34a; font-weight: 600; }
+.ssf-bad { color: #dc2626; }
+
+.ssf-suggestion {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #f97316;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  direction: ltr;
+}
+
+.ssf-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.ssf-save,
+.ssf-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.ssf-save { background: #f97316; border: none; color: #fff; }
+.ssf-save:hover:not(:disabled) { background: #ea6c0a; }
+.ssf-save:disabled { opacity: 0.55; cursor: not-allowed; }
+.ssf-copy { background: #fff; border: 1.5px solid #e5e7eb; color: #374151; }
+.ssf-copy:hover { border-color: #f97316; color: #f97316; }
+
+.ssf-hint { font-size: 0.76rem; color: #9ca3af; line-height: 1.6; }
+
+.ssf-spin { animation: ssfSpin 0.8s linear infinite; }
+@keyframes ssfSpin { to { transform: rotate(360deg); } }
+
+/* ═══════════════ Dark Mode — كحلي + برتقالي ═══════════════ */
+.dark .ssf-input-row {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(138, 158, 201, 0.30);
+}
+.dark .ssf-input-row:focus-within {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20);
+}
+.dark .ssf-input-row--locked { background: rgba(51, 65, 85, 0.35); }
+.dark .ssf-prefix {
+  background: rgba(51, 65, 85, 0.45);
+  border-right-color: rgba(138, 158, 201, 0.30);
+  color: #94a3b8;
+}
+.dark .esp-field .ssf-input { background: transparent; }
+.dark .ssf-muted { color: #94a3b8; }
+.dark .ssf-ok { color: #4ade80; }
+.dark .ssf-bad { color: #f87171; }
+.dark .ssf-copy {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+.dark .ssf-copy:hover { border-color: #fb923c; color: #fb923c; }
+.dark .ssf-hint { color: #64748b; }

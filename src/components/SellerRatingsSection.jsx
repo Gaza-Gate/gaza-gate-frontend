@@ -13,6 +13,7 @@ import {
 
 import { getReviewsFromSellers } from "../services/reviewService";
 import { avatarColor, fullName } from "../utils/chatHelpers";
+import { storeProfilePath } from "../utils/sellerHelpers";
 import "./SellerRatingsSection.css";
 
 /* ── Helpers ─────────────────────────────────────────────── */
@@ -68,7 +69,7 @@ function ReviewCard({ review, index = 0, onSellerClick }) {
         onClick={() => {
           if (seller?.id) {
             if (onSellerClick) onSellerClick(seller);
-            else navigate(`/customer/store/${seller.id}`);
+            else navigate(storeProfilePath(seller) || `/customer/store/${seller.id}`);
           }
         }}
         title={seller?.id ? `صفحة ${sellerName}` : undefined}

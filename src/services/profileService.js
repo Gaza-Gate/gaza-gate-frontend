@@ -126,3 +126,28 @@ export async function deleteCustomerAddress(addressId) {
   const res = await api.delete(`/api/profile/customer/address/${addressId}`);
   return res.data;
 }
+// ════════════════════════════════════════════════════════════
+//  رابط المتجر (slug) — gazagate.store/store/<slug>
+// ════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/seller/profile/slug/availability?slug=...
+ * فحص فوري وهو بيكتب → { slug, available, reason?, suggestion? }
+ *   reason: "invalid" | "reserved" | "taken" | "current"
+ */
+export async function checkStoreSlugAvailability(slug) {
+  const res = await api.get("/api/seller/profile/slug/availability", {
+    params: { slug },
+  });
+  return res.data?.data;
+}
+
+/**
+ * PUT /api/seller/profile/slug  { slug }
+ * تغيير رابط المتجر → { slug, slugChangedAt, nextSlugChangeAt }
+ * (الرابط القديم بيضل يحوّل للجديد — مرة كل 30 يوم)
+ */
+export async function updateStoreSlug(slug) {
+  const res = await api.put("/api/seller/profile/slug", { slug });
+  return res.data?.data;
+}

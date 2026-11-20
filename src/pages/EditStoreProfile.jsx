@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Editstoreprofile.css";
 import { validateName, validateStoreName, validateStoreDescription } from "../utils/validators";
 import { getSellerProfile, updateSellerProfile } from "../services/profileService";
+import StoreSlugField from "../components/StoreSlugField";
 
 // ── Icons ──
 const StoreIcon = () => (
@@ -108,6 +109,8 @@ export default function EditStoreProfile() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [success, setSuccess] = useState("");
+  // ✅ رابط المتجر (slug) — بيتحفظ لحاله عبر StoreSlugField
+  const [slugInfo, setSlugInfo] = useState({ slug: null, nextSlugChangeAt: null });
 
   // ── جلب بيانات البروفايل الحقيقية عند فتح الصفحة ──
   useEffect(() => {
@@ -130,6 +133,10 @@ export default function EditStoreProfile() {
         });
 
         if (profile.avatar) setAvatarPreview(profile.avatar);
+        setSlugInfo({
+          slug: profile.slug ?? null,
+          nextSlugChangeAt: profile.nextSlugChangeAt ?? null,
+        });
       } catch (err) {
         // ✅ ما بنمنع الـ user من التعديل حتى لو الـ GET فشل
         //    (مثلاً 403 لأن الـ profile ناقص / أول مرة)
@@ -252,6 +259,12 @@ export default function EditStoreProfile() {
           <input name="storeName" value={form.storeName} onChange={handleChange} placeholder="متجر فلسطين" />
           {errors.storeName && <span className="esp-error">{errors.storeName}</span>}
         </div>
+
+        {/* ✅ رابط المتجر: gazagate.store/store/<slug> — حفظ منفصل (مرة كل 30 يوم) */}
+        <StoreSlugField
+          initialSlug={slugInfo.slug}
+          nextSlugChangeAt={slugInfo.nextSlugChangeAt}
+        />
 
         <div className="esp-field">
           <label>وصف المتجر</label>

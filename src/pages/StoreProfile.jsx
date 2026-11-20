@@ -50,6 +50,8 @@ const normalizeProfile = (apiResponseData) => {
     // 🆕 لازم لبناء رابط الـ QR — جرّبي الاحتمالات الشائعة لاسم الحقل
     //    لو ما ظبطت، افحصي شكل الـ response الفعلي (راجع الشرح تحت الكود)
     storeId: profile.sellerId ?? profile._id ?? profile.storeId ?? profile.id ?? null,
+    // ✅ رابط المتجر بالاسم (gazagate.store/store/<slug>) — للـ QR
+    storeSlug: profile.slug ?? null,
     // ⚠️ المهم: ما بنحط fallback مضلّل زي "متجر فلسطين" — لو ما في اسم، نرجع null
     //    والـ UI بيعرض "—" بدالها
     storeName: profile.storeName?.trim() || null,
@@ -275,7 +277,7 @@ const StoreProfile = () => {
             </button>
             {/* 🆕 كارد الـ QR الكامل — تحت زر تعديل الملف مباشرة، بعمود مستقل */}
             {storeData.storeId && (
-              <StoreQRCode storeId={storeData.storeId} storeName={storeData.storeName} />
+              <StoreQRCode storeId={storeData.storeId} storeSlug={storeData.storeSlug} storeName={storeData.storeName} />
             )}
           </div>
         </div>
