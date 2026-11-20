@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import SellerNavbar from "../components/SellerNavbar";
 import SimpleToast from "../components/SimpleToast";
+import { storeProfilePath } from "../utils/sellerHelpers";
 import {
   getMapStores,
   getMyStoreLocation,
@@ -552,7 +553,7 @@ export default function SellerMap() {
                   <button
                     type="button"
                     className="smap-selected-visit-btn"
-                    onClick={() => navigate(`/customer/store/${selectedStore.id}`)}
+                    onClick={() => navigate(storeProfilePath(selectedStore) || `/customer/store/${selectedStore.id}`)}
                   >
                     زيارة المتجر
                   </button>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Star,
   ShoppingBag,
@@ -34,6 +34,7 @@ import { getStoreProfile, getStoreProducts } from "../services/storeService";
 import { avatarColor } from "../utils/chatHelpers";
 import BuyerProductReviewsSection from "../components/BuyerProductReviewsSection";
 import StoreQRCode from "../components/StoreQRCode";
+import { isStoreId, storeShareUrl } from "../utils/sellerHelpers";
 import {
   EmptyState,
   ErrorState,
@@ -103,8 +104,11 @@ function formatJoinDate(dateStr) {
 
 // ── Main Component ─────────────────────────────────────────
 export default function CustomerStoreProfile() {
-  const { sellerId } = useParams();
+  // ✅ storeKey من الرابط: slug ("/store/gift-store") أو id ("/customer/store/<id>"
+  //    و "/store/<id>" — روابط قديمة و QR مطبوع، لازم تضل شغّالة للأبد)
+  const { sellerId: storeKey } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
 
@@ -140,11 +144,11 @@ export default function CustomerStoreProfile() {
 
   // ── جلب البروفايل ──
   const loadProfile = useCallback(async () => {
-    if (!sellerId) return;
+    if (!storeKey) return;
     try {
       setLoadingProfile(true);
       setError(null);
-      const data = await getStoreProfile(sellerId);
+      const data = await getStoreProfile(storeKey);
       setProfile(data);
     } catch (err) {
       console.error("Store profile error:", err);
@@ -152,19 +156,30 @@ export default function CustomerStoreProfile() {
     } finally {
       setLoadingProfile(false);
     }
-  }, [sellerId]);
+  }, [storeKey]);
 
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
 
+  // ✅ الرابط الرسمي للمتجر: "/store/<slug>". لو فتحه بالـ id أو بـ slug قديم
+  //    (المتجر غيّر رابطه) → منبدّل شريط العنوان للرابط الحالي بدون ما نضيف history.
+  const canonicalSlug = profile?.store?.slug;
+  useEffect(() => {
+    if (!canonicalSlug) return;
+    const canonicalPath = `/store/${canonicalSlug}`;
+    if (location.pathname !== canonicalPath) {
+      navigate(`${canonicalPath}${location.search}${location.hash}`, { replace: true });
+    }
+  }, [canonicalSlug, location.pathname, location.search, location.hash, navigate]);
+
   // ── جلب المنتجات (مع pagination) ──
   const loadProducts = useCallback(
     async (page = 1) => {
-      if (!sellerId) return;
+      if (!storeKey) return;
       try {
         setLoadingProducts(true);
-        const data = await getStoreProducts(sellerId, page);
+        const data = await getStoreProducts(storeKey, page);
         setProducts(data?.products ?? []);
         setProductsPagination(data?.pagination ?? null);
         setProductsPage(page);
@@ -174,7 +189,7 @@ export default function CustomerStoreProfile() {
         setLoadingProducts(false);
       }
     },
-    [sellerId]
+    [storeKey]
   );
 
   useEffect(() => {
@@ -193,6 +208,8 @@ export default function CustomerStoreProfile() {
 
   // ── Derived state ──
   const store = profile?.store;
+  // ✅ id المتجر الحقيقي (للمراسلة، السلة، التقييمات، الـ QR) — الرابط ممكن يكون slug
+  const sellerId = store?.id || (isStoreId(storeKey) ? storeKey : null);
   const stats = profile?.stats;
   const avatar = store?.user?.avatar;
   const storeName = store?.storeName || "متجر";
@@ -293,10 +310,16 @@ export default function CustomerStoreProfile() {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    // ✅ الرابط النظيف (gazagate.store/store/<slug>) — واتساب بيعمل منه بطاقة
+    //    معاينة (صورة + اسم + وصف المتجر) من الـ backend.
+    const url = storeShareUrl(store) || window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({ title: storeName, text: description, url });
+        await navigator.share({
+          title: storeName,
+          text: `تسوّق من متجر ${storeName} على Gaza Gate`,
+          url,
+        });
       } catch {
         /* user cancelled */
       }
@@ -1067,6 +1090,7 @@ export default function CustomerStoreProfile() {
             </button>
             <StoreQRCode
               storeId={sellerId}
+              storeSlug={store?.slug}
               storeName={storeName}
               title={`QR متجر ${storeName}`}
               subtitle="امسح الكود أو شاركه — بيفتح صفحة المتجر مباشرة، بدون تسجيل دخول"

@@ -17,6 +17,7 @@ import {
 
 import { getPublicCustomerProfile } from "../services/profileService";
 import { Skeleton } from "../components/LoadingState";
+import { storeProfilePath } from "../utils/sellerHelpers";
 import "./CustomerProfilePage.css";
 
 /* ──────────────────────────────────────────────
@@ -389,11 +390,10 @@ export default function CustomerProfilePage() {
                       </div>
                       <div className="cpp-review-seller">
                         {seller.id ? (
-                          // ✅ دائماً نوجّه إلى CustomerStoreProfile (مسار الـ public view-only)
-                          //    الـ seller.actionUrl اللي بيرجعه الباك = "/store/{id}" (مسار StoreProfile)
-                          //    لكن المطلوب دائماً CustomerStoreProfile بناءً على طلب الـ user
+                          // ✅ صفحة المتجر العامة (CustomerStoreProfile):
+                          //    "/store/<slug>" لو في slug، وإلا "/customer/store/<id>"
                           <Link
-                            to={`/customer/store/${seller.id}`}
+                            to={storeProfilePath(seller) || `/customer/store/${seller.id}`}
                             className="cpp-review-seller-link"
                             title={`زيارة متجر ${sellerName}`}
                             aria-label={`زيارة متجر ${sellerName}`}

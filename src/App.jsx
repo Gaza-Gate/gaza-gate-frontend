@@ -96,7 +96,6 @@ import CustomerChatWidget from "./components/CustomerChatWidget";
 import RoleSwitchListener from "./components/RoleSwitchListener";
 // ← الليّاوت الجديد يلي بيحتوي CustomerNavbar مرة وحدة لكل صفحات الزبون
 import CustomerLayout from "./components/CustomerLayout";
-import LegacyStoreRedirect from "./components/LegacyStoreRedirect";
 
 // ✅ زر تبديل الثيم العائم (FAB) — يظهر من Onboarding وما بعده
 import FloatingThemeToggle from "./components/FloatingThemeToggle";
@@ -259,6 +258,13 @@ export default function App() {
               فلازم تشتغل لأي زائر بدون ما يكون مسجّل دخول كمشتري.
               حاطينها جوا CustomerLayout بس (بدون RequireCustomer) عشان
               يضل شكلها متناسق (نفس الـ navbar) لكل الأدوار. */}
+        {/* ✅ رابط المتجر الرسمي: /store/<slug> (gazagate.store/store/gift-store).
+            نفس الصفحة بتقبل الـ id كمان: "/store/<id>" و "/customer/store/<id>"
+            (روابط قديمة و QR مطبوع — لازم تضل شغّالة للأبد)، وبتبدّل
+            الرابط بشريط العنوان لـ /store/<slug> أول ما تحمّل.
+            ⚠️ على السيرفر، /store/* بيروح للـ backend اللي بيرجّع نفس الصفحة
+               مع بطاقة المعاينة (واتساب/فيسبوك). */}
+        <Route path="/store/:sellerId" element={<CustomerStoreProfile />} />
         <Route path="/customer/store" element={<CustomerStoreProfile />} />
         <Route path="/customer/store/:sellerId" element={<CustomerStoreProfile />} />
         <Route path="/customer/profile/:customerId" element={<CustomerProfilePage />} />
@@ -306,8 +312,6 @@ export default function App() {
         {/* مسارات البائع يلي ما بدها حماية (onboarding + public store view) */}
         <Route path="/seller/onboarding"      element={<SellerOnboarding />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
-        {/* ✅ الرابط القديم للمتجر (روابط مشاركة قديمة) → صفحة المتجر للمشتري */}
-        <Route path="/store/:sellerId" element={<LegacyStoreRedirect />} />
         {/* مسارات الأدمن — كلها محمية بـ RequireAdmin */}
         <Route element={<RequireAdmin />}>
           <Route path="/admin/settings" element={<AdminSettings />} />

@@ -24,16 +24,34 @@
  * استخراج id البائع من actionUrl (مثل "/store/cc65b83c-..." → "cc65b83c-...")
  * Accepts both with/without leading slash, full URLs and bare paths.
  */
+// ✅ UUID كامل بس — عشان الـ slug (مثلاً "cafe-bead-face") ما ينفهم غلط كـ id
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isStoreId(value) {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
 function idFromActionUrl(actionUrl) {
   if (!actionUrl || typeof actionUrl !== "string") return null;
-  // شي زي "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8" أو "store/xxx" أو URL كامل
-  const m = actionUrl.match(/\/store\/([0-9a-f-]{8,})/i);
-  if (m && m[1]) return m[1];
-  // fallback: آخر segment بعد /
-  const parts = actionUrl.split("/").filter(Boolean);
-  const last = parts[parts.length - 1];
-  if (last && /^[0-9a-f-]{8,}$/i.test(last)) return last;
-  return null;
+  // شي زي "/store/cc65b83c-46df-46e2-b12b-312b3f1696f8" أو "/customer/store/<id>" أو URL كامل
+  // ⚠️ "/store/gift-store" (slug) → null — مش id
+  const parts = actionUrl.split(/[/?#]/).filter(Boolean);
+  const storeIndex = parts.lastIndexOf("store");
+  const candidate = storeIndex >= 0 ? parts[storeIndex + 1] : parts[parts.length - 1];
+  return isStoreId(candidate) ? candidate : null;
+}
+
+/**
+ * ✅ slug المتجر من أي شكل: { slug } / { seller: { slug } } / { store: { slug } }
+ *    أو actionUrl = "/store/<slug>" (الباك صار يبعته هيك للمتاجر اللي إلها slug)
+ */
+function slugFromStore(obj) {
+  if (!obj || typeof obj !== "object") return null;
+  const direct = obj.slug || obj.seller?.slug || obj.store?.slug;
+  if (direct) return direct;
+  const actionUrl = obj.actionUrl || obj.seller?.actionUrl || obj.store?.actionUrl;
+  const m = typeof actionUrl === "string" && actionUrl.match(/^\/store\/([a-z0-9-]+)$/);
+  return m && !isStoreId(m[1]) ? m[1] : null;
 }
 
 /**
@@ -131,23 +149,36 @@ export function customerProfilePath(person) {
 }
 
 /**
- * Build the store-profile route for a given product (or seller id).
- * يقبل كمان string (id مباشر) أو كائن.
+ * Build the store-profile route for a given product / seller / store (or id).
+ *
+ * ✅ رابط المتجر بالاسم:
+ *   - عنده slug          → "/store/<slug>"         (gazagate.store/store/gift-store)
+ *   - ما عنده (id بس)    → "/customer/store/<id>"  — الصفحة نفسها بتبدّل الرابط
+ *                           للـ slug أول ما تحمّل المتجر.
+ *
+ * ⚠️ الروابط بالـ id ("/store/<id>" و "/customer/store/<id>") لازم تضل شغّالة
+ *    للأبد — في QR مطبوع فيها.
  */
 export function storeProfilePath(productOrSeller) {
   if (!productOrSeller) return null;
-  // إذا جاي كـ string (id مباشر)
+  // إذا جاي كـ string: id أو slug مباشر
   if (typeof productOrSeller === "string") {
-    return productOrSeller ? `/customer/store/${productOrSeller}` : null;
+    if (isStoreId(productOrSeller)) return `/customer/store/${productOrSeller}`;
+    return `/store/${productOrSeller}`;
   }
+  const slug = slugFromStore(productOrSeller);
+  if (slug) return `/store/${slug}`;
   // استخرج الـ id بالـ helper
   const id = extractSellerId(productOrSeller);
   if (id) return `/customer/store/${id}`;
-  // آخر حل: لو في actionUrl جاهز، نستخدمه كما هو (لو الـ route متوافق)
-  const actionUrl = productOrSeller?.seller?.actionUrl;
-  if (actionUrl && actionUrl.startsWith("/store/")) {
-    const sellerId = idFromActionUrl(actionUrl);
-    if (sellerId) return `/customer/store/${sellerId}`;
-  }
   return null;
+}
+
+/**
+ * ✅ الرابط الكامل للمشاركة والـ QR: https://gazagate.store/store/<slug>
+ *    (بيقبل نفس المدخلات تبع storeProfilePath)
+ */
+export function storeShareUrl(productOrSeller) {
+  const path = storeProfilePath(productOrSeller);
+  return path ? `${window.location.origin}${path}` : null;
 }

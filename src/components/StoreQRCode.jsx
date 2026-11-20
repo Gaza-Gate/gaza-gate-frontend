@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Download, Share2 } from 'lucide-react'
-import { storeProfilePath } from '../utils/sellerHelpers'
+import { storeShareUrl } from '../utils/sellerHelpers'
 
 /**
  * StoreQRCode — يولّد QR code لصفحة المتجر العامة (يلي الزباين بيشوفوها)
@@ -11,14 +11,16 @@ import { storeProfilePath } from '../utils/sellerHelpers'
  *    والأزرار مرتبة بشكل أفقي جنب بعض بدل ما ياخدوا عرض الصفحة كامل.
  *
  * الاستخدام:
- *   <StoreQRCode storeId={store._id} storeName={store.storeName} />
+ *   <StoreQRCode storeId={store.id} storeSlug={store.slug} storeName={store.storeName} />
  *   // صفحة المتجر للمشتري بتمرّر title/subtitle مختلفين (مش "متجرك")
  *
- * ⚠️ الرابط مبني من storeProfilePath() — نفس رابط صفحة المتجر بكل الموقع.
- *    الـ QR المطبوع لازم يضل شغّال للأبد، فما منغيّر شكل هالرابط بدون redirect.
+ * ✅ الرابط: gazagate.store/store/<slug> (أو /customer/store/<id> لو ما في slug).
+ *    الـ QR المطبوع بيضل شغّال للأبد: الروابط بالـ id، والـ slugs القديمة لما
+ *    البائع يغيّر رابطه، كلها بتحوّل للمتجر.
  */
 export default function StoreQRCode({
   storeId,
+  storeSlug = null,
   storeName = 'المتجر',
   title = 'QR Code تبع متجرك',
   subtitle = 'شارك هالكود مع زبائنك — أي حدا يمسحه بيوديه مباشرة لصفحة متجرك',
@@ -26,7 +28,7 @@ export default function StoreQRCode({
   const canvasWrapperRef = useRef(null)
   const [copied, setCopied] = useState(false)
 
-  const storeUrl = `${window.location.origin}${storeProfilePath(String(storeId))}`
+  const storeUrl = storeShareUrl(storeSlug || String(storeId))
 
   const handleDownload = () => {
     const canvas = canvasWrapperRef.current?.querySelector('canvas')
